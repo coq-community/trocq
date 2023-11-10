@@ -1,0 +1,133 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                                Trocq                                %
+%  _______                   %                       Copyright (C) 2023 MERCE                      %
+% |__   __|                  %                (Mitsubishi Electric R&D Centre Europe)              %
+%    | |_ __ ___   ___ __ _  %                   Cyril Cohen <cyril.cohen@inria.fr>                %
+%    | | '__/ _ \ / __/ _` | %                   Enzo Crance <enzo.crance@inria.fr>                %
+%    | | | | (_) | (_| (_| | %               Assia Mahboubi <assia.mahboubi@inria.fr>              %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %            This file is distributed under the terms of the          %
+%                        |_| %              GNU Lesser General Public License Version 3            %
+%                            %             (see LICENSE file for the text of the license)          %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% --------------------------------------------------------------------------------------------------
+% annotated type theory
+% --------------------------------------------------------------------------------------------------
+
+% this allows to easily make sure an application is beta-reduced
+:before "subst-fun:fail"
+coq.subst-fun Args F FArgs :- !, coq.mk-app F Args FArgs.
+
+% annotate a term
+% NB: the output type is term because the annotations are encoded directly in Coq
+% see PType in Param.v
+pred term->annot-term i:term, o:term.
+term->annot-term (sort (typ U)) (app [pglobal (const PType) UI, M, N]) :- param.db.ptype PType, !,
+  coq.univ-instance UI [{coq.univ.variable U}],
+  cstr.univ-link _ M N.
+term->annot-term (fun N T F) (fun N T' F') :- !,
+  term->annot-term T T',
+  pi x\ term->annot-term (F x) (F' x).
+term->annot-term (prod N T F) (prod N T' F') :- !,
+  term->annot-term T T',
+  pi x\ term->annot-term (F x) (F' x).
+term->annot-term (app L) (app L') :- !,
+  std.map L term->annot-term L'.
+term->annot-term X X :- (name X ; X = global _ ; X = pglobal _ _), !.
+term->annot-term T _ :- coq.error "term->annot-term:" T.
+
+macro @annot-pi-decl N T F :- pi x\ annot.adecl x N T => F x.
+
+namespace annot {
+
+% typechecking a term calls Coq's typechecker, which gives back a non annotated term
+% calling term->annot-term on it will add fresh annotations
+% if we want to typecheck a variable several times and get the same type everytime, we need to
+% add some memory, which is the purpose of adecl
+pred adecl i:term, o:name, o:term.
+
+pred typecheck i:term, o:term.
+typecheck T ATy :- adecl T _ ATy, !.
+typecheck T ATy :-
+  coq.typecheck T Ty ok, !,
+  term->annot-term Ty ATy.
+
+% sub-typing predicate following the sub-typing rules in the article
+pred sub-type i:term, i:term.
+% SubUniv
+sub-type (app [pglobal (const PType) _, M1, N1]) (app [pglobal (const PType) _, M2, N2]) :-
+  param.db.ptype PType, !,
+  cstr.univ-link C1 M1 N1,
+  cstr.univ-link C2 M2 N2,
+  cstr.geq C1 C2.
+% SubPi
+sub-type (prod N T F) (prod _ T' F') :- !,
+  sub-type T' T,
+  @annot-pi-decl N T' x\ sub-type (F x) (F' x).
+% SubLam
+sub-type (fun N T F) (fun _ T F') :- !,
+  @annot-pi-decl N T x\ sub-type (F x) (F' x).
+% SubApp
+sub-type (app [F|Xs]) (app [F'|Xs']) :- !,
+  sub-type F F',
+  std.forall2 Xs Xs' eq.
+% SubConv
+sub-type X X :- (name X ; X = global _ ; X = pglobal _ _), !.
+sub-type X _ :- coq.error "annot.sub-type:" X.
+
+% syntactic term equality, taking care of adding annotation equalities in the constraint graph
+pred eq i:term, i:term.
+eq (app [pglobal (const PType) UI, M1, N1]) (app [pglobal (const PType) UI, M2, N2]) :-
+  param.db.ptype PType, !,
+  cstr.univ-link C1 M1 N1,
+  cstr.univ-link C2 M2 N2,
+  cstr.eq C1 C2.
+eq (prod _ T F) (prod _ T' F') :- !,
+  eq T T',
+  pi x\ eq (F x) (F' x).
+eq (fun _ T F) (fun _ T' F') :- !,
+  eq T T',
+  pi x\ eq (F x) (F' x).
+eq (app L) (app L') :- !,
+  std.forall2 L L' eq.
+eq X X :- (name X ; X = global _ ; X = pglobal _ _), !.
+eq X _ :- coq.error "annot.eq:" X.
+
+% get all the annotations in a type T, as well as the "output class", i.e., the parametricity class
+% of the output type of T, as an option basically returning some (A,B) for an output type PType A B,
+% and none for output types that are not sorts, because it means values of type T are not type
+% constructors, so their translation will be made at class (0,0)
+pred classes i:term, o:list param-class, o:option param-class.
+classes T Cs' Out :-
+  all-classes T Cs,
+  out-class T Out,
+  if (not (Cs = []), Out = some C, std.last Cs LastC, LastC == C) (
+    std.drop-last 1 Cs Cs'
+  ) (
+    Cs' = Cs
+  ).
+
+pred all-classes i:term, o:list param-class.
+all-classes (app [pglobal (const PType) _, M, N]) [C] :- param.db.ptype PType, !,
+  cstr.univ-link C M N.
+all-classes X Cs :- (X = prod _ T F ; X = fun _ T F), !,
+  pi x\ std.append {all-classes T} {all-classes (F x)} Cs.
+all-classes (app L) Cs :- !,
+  std.flatten {std.map L all-classes} Cs.
+all-classes X [] :- (name X ; X = global _ ; X = pglobal _ _), !.
+all-classes X _ :- coq.error "all-classes:" X.
+
+pred out-class i:term, o:option param-class.
+out-class (app [pglobal (const PType) _, M, N]) (some C) :- param.db.ptype PType, !,
+  cstr.univ-link C M N.
+out-class (prod _ _ F) Out :- !, pi x\ out-class (F x) Out.
+out-class (fun _ _ _) none :- !.
+out-class (app [F|Xs]) Out :- !,
+  coq.subst-fun Xs F App,
+  if (App = app [F|Xs]) (Out = none) (out-class App Out).
+out-class X none :- (name X ; X = global _ ; X = pglobal _ _), !.
+out-class X _ :- coq.error "out-class:" X.
+% constant applications convertible to terms having a sort as output are not supported
+
+} % annot

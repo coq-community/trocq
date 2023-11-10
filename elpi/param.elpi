@@ -1,0 +1,261 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                                Trocq                                %
+%  _______                   %                       Copyright (C) 2023 MERCE                      %
+% |__   __|                  %                (Mitsubishi Electric R&D Centre Europe)              %
+%    | |_ __ ___   ___ __ _  %                   Cyril Cohen <cyril.cohen@inria.fr>                %
+%    | | '__/ _ \ / __/ _` | %                   Enzo Crance <enzo.crance@inria.fr>                %
+%    | | | | (_) | (_| (_| | %               Assia Mahboubi <assia.mahboubi@inria.fr>              %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %            This file is distributed under the terms of the          %
+%                        |_| %              GNU Lesser General Public License Version 3            %
+%                            %             (see LICENSE file for the text of the license)          %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% --------------------------------------------------------------------------------------------------
+% parametricity translation
+% --------------------------------------------------------------------------------------------------
+
+:before "subst-fun:fail"
+coq.subst-fun Args F FArgs :- !, coq.mk-app F Args FArgs.
+
+% traversing a binder should give information for both typechecking and annotation
+macro @annot-pi-decl N T F :- pi x\ [annot.adecl x N T, decl x N T] => F x.
+
+% param X T X' XR translates X at annotated type T, to X' with witness XR
+pred param i:term, i:term, o:term, o:term.
+
+% locally remember the translation of bound variables
+pred param.store o:term, o:term, o:term, o:term.
+
+% used in order not to typecheck+annotate twice the same term
+pred fresh-type.
+
+% ==================================================================================================
+
+% ParamSub + ParamConst
+param (global GR) T' (global GR') GrefR :- !,
+  util.when-debug dbg.steps (coq.say "param/const" GR "@" T'),
+  if (fresh-type) (
+    % T' already comes from a call to annot.typecheck in the case for app
+    % subtyping will be handled there
+    cstr.dep-gref GR T' GR' GRR,
+    GrefR = global GRR
+  ) (
+    annot.typecheck (global GR) T,
+    annot.sub-type T T',
+    cstr.dep-gref GR T GR' GRR,
+    weakening T T' (wfun W),
+    GrefR = (W (global GRR))
+  ).
+
+param (pglobal GR UI) T' (pglobal GR' UI) GrefR :- !,
+  util.when-debug dbg.steps (coq.say "param/const" GR "@" T'),
+  if (fresh-type) (
+    % T' already comes from a call to annot.typecheck in the case for app
+    % subtyping will be handled there
+    cstr.dep-gref GR T' GR' GRR,
+    GrefR = pglobal GRR UI
+  ) (
+    annot.typecheck (pglobal GR UI) T,
+    annot.sub-type T T',
+    cstr.dep-gref GR T GR' GRR,
+    weakening T T' (wfun W),
+    GrefR = (W (pglobal GRR UI))
+  ).
+
+% ParamSub + ParamVar
+param X T' X' (W XR) :- name X, !,
+  util.when-debug dbg.steps (coq.say "param/var" X "@" T'),
+  param.store X T X' XR,
+  util.when-debug dbg.steps (coq.say "param/var: found" X "@" T "~" X' "by" XR),
+  annot.sub-type T T',
+  weakening T T' (wfun W).
+
+% ParamUniv
+param
+  (app [pglobal (const PType) UI, MR, NR] as Type) (app [pglobal (const PType) _, M, N])
+  Type (app [pglobal (const PParamType) UI1|Args]) :- param.db.ptype PType, !, std.do! [
+    util.when-debug dbg.steps (coq.say "param/type" MR NR "@" M N),
+    cstr.univ-link CR MR NR,
+    util.when-debug dbg.full (coq.say "param/type:" MR NR "is linked to" CR),
+    cstr.univ-link C M N,
+    util.when-debug dbg.full (coq.say "param/type:" M N "is linked to" C),
+    cstr.dep-type C CR,
+    util.when-debug dbg.full (coq.say "param/type: added dep-type from" C "to" CR),
+    coq.univ-instance UI [L],
+    coq.univ.variable U L,
+    coq.univ-instance UI1 [L, {coq.univ.variable {coq.univ.super U}}], % {coq.univ.new}
+    param.db.pparam-type C PParamType,
+    util.when-debug dbg.full (coq.say "param/type: suspending proof on" C),
+    util.if-suspend C (param-class.requires-axiom C) (
+      util.when-debug dbg.full (coq.say "param/type: resuming proof on" C "(univalence needed)"),
+      coq.univ-instance UI0 [],
+      Args = [MR, NR, pglobal (const {param.db.univalence}) UI0]
+    ) (
+      util.when-debug dbg.full
+        (coq.say "param/type: resuming proof on" C "(univalence not needed)"),
+      Args = [MR, NR]
+    )
+  ].
+
+% ParamLam
+param (fun N T F) FunTy (fun N' T' F') FunR :- !,
+  util.when-debug dbg.steps (coq.say "param/fun" N ":" T "@" FunTy),
+  std.assert-ok! (coq.unify-eq FunTy (prod _ T TF)) {std.string.concat " "
+    ["type not convertible to Π:", {coq.term->string FunTy}]},
+  coq.name-suffix N "'" N',
+  coq.name-suffix N "R" NR,
+  map-class->term map0 Map0,
+  param T (app [pglobal (const {param.db.ptype}) _, Map0, Map0]) T' TR,
+  util.when-debug dbg.full (coq.say "param/fun:" T "@ 0,0 ~" T' "by" TR),
+  @annot-pi-decl N T x\ pi x' xR\ param.store x T x' xR => (
+    util.when-debug dbg.full (coq.say "param/fun: introducing" x "@" T "~" x' "by" xR),
+    param (F x) (TF x) (F' x') (FR x x' xR),
+    util.when-debug dbg.full (coq.say "param/fun:" (F x) "@" (TF x) "~" (F' x') "by" (FR x x' xR))
+  ),
+  param.db.r (pc map0 map0) R,
+  prune UI [],
+  FunR =
+    fun N T x\ fun N' T' x'\ fun NR (app [pglobal (const R) UI, T, T', TR, x, x']) xR\ FR x x' xR.
+
+% ParamArrow
+param
+  (prod _ A (_\ B)) (app [pglobal (const PType) _, M, N])
+  (prod `_` A' (_\ B')) (app [pglobal (const ParamArrow) UI|Args]) :-
+    param.db.ptype PType, !, std.do! [
+      util.when-debug dbg.steps (coq.say "param/arrow" A "->" B "@" M N),
+      cstr.univ-link C M N,
+      util.when-debug dbg.full (coq.say "param/arrow:" M N "is linked to" C),
+      cstr.dep-arrow C CA CB,
+      util.when-debug dbg.full (coq.say "param/arrow: added dep-arrow from" C "to" CA "and" CB),
+      cstr.univ-link CA MA NA,
+      util.when-debug dbg.full (coq.say "param/arrow:" MA NA "is linked to" CA),
+      param A (app [pglobal (const PType) _, MA, NA]) A' AR,
+      cstr.univ-link CB MB NB,
+      util.when-debug dbg.full (coq.say "param/arrow:" MB NB "is linked to" CB),
+      param B (app [pglobal (const PType) _, MB, NB]) B' BR,
+      util.when-debug dbg.full (coq.say "param/arrow:" B "@" MB NB "~" B' "by" BR),
+      coq.say "before db param-arrow" C,
+      param.db.param-arrow C ParamArrow,
+      coq.say UI,
+      prune UI [],
+      util.when-debug dbg.full (coq.say "param/arrow: suspending proof on" C),
+      util.if-suspend C (param-class.requires-axiom C) (
+        util.when-debug dbg.full (coq.say "param/arrow: resuming proof on" C "(funext needed)"),
+        coq.univ-instance UI0 [],
+        Args = [pglobal (const {param.db.funext}) UI0, A, A', AR, B, B', BR]
+      ) (
+        util.when-debug dbg.full (coq.say "param/arrow: resuming proof on" C "(funext not needed)"),
+        Args = [A, A', AR, B, B', BR]
+      )
+    ].
+
+% ParamPi
+param
+  (prod N A B) (app [pglobal (const PType) _, M1, M2])
+  (prod N' A' B') (app [pglobal (const ParamForall) UI|Args']) :- param.db.ptype PType, !,
+    util.when-debug dbg.steps (coq.say "param/forall" N ":" A "," B "@" M1 M2),
+    coq.name-suffix N "'" N',
+    coq.name-suffix N "R" NR,
+    cstr.univ-link C M1 M2,
+    util.when-debug dbg.full (coq.say "param/forall:" M1 M2 "is linked to" C),
+    cstr.dep-pi C CA CB,
+    util.when-debug dbg.full (coq.say "param/forall: added dep-pi from" C "to" CA "and" CB),
+    cstr.univ-link CA M1A M2A,
+    util.when-debug dbg.full (coq.say "param/forall:" M1A M2A "is linked to" CA),
+    param A (app [pglobal (const PType) _, M1A, M2A]) A' AR,
+    cstr.univ-link CB M1B M2B,
+    util.when-debug dbg.full (coq.say "param/forall:" M1B M2B "is linked to" CB),
+    @annot-pi-decl N A a\ pi a' aR\ param.store a A a' aR => (
+      util.when-debug dbg.full (coq.say "param/forall: introducing" a "@" A "~" a' "by" aR),
+      param (B a) (app [pglobal (const PType) _, M1B, M2B]) (B' a') (BR a a' aR),
+      util.when-debug dbg.full (coq.say "param/forall:" (B a) "@" M1B M2B "~" (B' a') "by" (BR a a' aR))
+    ),
+    param.db.r CA RA,
+    prune UIA [],
+    Args =
+      [ A, A', AR, fun N A B, fun N' A' B',
+        fun N A a\ fun N' A' a'\ fun NR (app [pglobal (const RA) UIA, A, A', AR, a, a']) aR\
+          BR a a' aR ],
+    param.db.param-forall C ParamForall,
+    prune UI [],
+    util.when-debug dbg.full (coq.say "param/forall: suspending proof on" C),
+    util.if-suspend C (param-class.requires-axiom C) (
+      util.when-debug dbg.full (coq.say "param/forall: resuming proof on" C "(funext needed)"),
+      coq.univ-instance UI0 [],
+      Args' = [pglobal (const {param.db.funext}) UI0|Args]
+    ) (
+      util.when-debug dbg.full (coq.say "param/forall: resuming proof on" C "(funext not needed)"),
+      Args' = Args
+    ).
+
+% ParamSub for F (argument B in param.args) + ParamApp
+param (app [F|Xs]) B (app [F'|Xs']) (W AppR) :- !,
+  util.when-debug dbg.steps (coq.say "param/app" F Xs "@" B),
+  annot.typecheck F FTy,
+  fresh-type => param F FTy F' FR,
+  util.when-debug dbg.full (coq.say "param/app:" F "@" FTy "~" F' "by" FR),
+  param.args FTy B Xs Xs' XsR W,
+  coq.subst-fun XsR FR AppR.
+
+pred param.args i:term, i:term, i:list term, o:list term, o:list term, o:term -> term.
+param.args T B [] [] [] W :- !,
+  annot.sub-type T B,
+  weakening T B (wfun W).
+param.args FunTy B [X|Xs] [X'|Xs'] [X, X', XR|XsR] W :-
+  std.assert-ok! (coq.unify-eq FunTy (prod _ T TF)) {std.string.concat " "
+    ["type not convertible to Π:", {coq.term->string FunTy}]},
+  param X T X' XR,
+  param.args (TF X) B Xs Xs' XsR W.
+
+param X T _ _ :-
+  coq.error "unsupported combination:" X "&" T.
+
+% ==================================================================================================
+
+% ad hoc inductive type to represent the suspension in the definition of weakening, see the article
+kind weakening type.
+type wfun (term -> term) -> weakening.
+type wsuspend (term -> term) -> (term -> term) -> weakening.
+
+% generate the weakening function from a type to a sub-type
+pred weakening i:term, i:term, o:weakening.
+weakening (app [pglobal (const PType) _, M, N]) (app [pglobal (const PType) _, M', N']) W :-
+  param.db.ptype PType, !,
+  param.db.weaken Weaken,
+  prune UI [],
+  prune Ty [],
+  % as M, N, M', N' are not known yet, we put a Coq placeholder (see Weaken in Param.v)
+  W = wfun (xR\ app [pglobal (const Weaken) UI, M, N, M', N', Ty, xR]).
+weakening (prod N A B) (prod _ A' B') W :- !,
+  coq.name-suffix N "'" N',
+  coq.name-suffix N "R" NR,
+  weakening A' A (wfun WA),
+  pi xR a a' aR\
+    weakening (B a) (B' a') (wfun (WB a a')),
+  prune AR [],
+  prune A2 [],
+  W = wfun (xR\ fun N A a\ fun N' A2 a'\ fun NR AR aR\ WB a a' (app [xR, a, a', WA aR])).
+weakening (app [F|_]) (app [_F'|_]) (wfun (xR\ xR)) :- (name F ; F = global _ ; F = pglobal _ _), !.
+weakening (app [F, X|Xs]) (app [F', X'|Xs']) W :- !,
+  weakening F F' (wsuspend WF WF'),
+  weakening {coq.mk-app (WF X) Xs} {coq.mk-app (WF' X') Xs'} W.
+weakening (fun _ _ F) (fun _ _ F') (wsuspend F F') :- !.
+weakening X _ (wfun (xR\ xR)) :- (name X ; X = global _ ; X = pglobal _ _), !.
+weakening T _ _ :- coq.error "weakening:" T.
+
+% replace Weaken placeholders with real weakening functions
+pred param.subst-weaken i:term, o:term.
+param.subst-weaken T T' :-
+  param.db.weaken Weaken,
+  (pi XR XR'\ copy (app [pglobal (const Weaken) _, _, _, _, _, _, _] as XR) XR' :- !,
+    copy.subst-weaken XR XR')
+      => copy T T'.
+pred copy.subst-weaken i:term, o:term.
+copy.subst-weaken (app [_, M, N, M', N', _, XR]) XR'' :-
+  param-class.forget
+    (pc {term->map-class M} {term->map-class N})
+    (pc {term->map-class M'} {term->map-class N'})
+    WeakenF,
+  copy XR XR',
+  XR'' = WeakenF _ _ _ XR'.

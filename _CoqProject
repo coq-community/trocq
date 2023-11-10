@@ -1,0 +1,22 @@
+-arg -noinit
+-arg -indices-matter
+
+-R theories/ Trocq
+-R elpi/ Trocq.Elpi
+
+theories/HoTT_additions.v
+theories/Hierarchy.v
+theories/Param_Type.v
+theories/Param_forall.v
+theories/Param_arrow.v
+theories/Database.v
+theories/Param.v
+theories/Trocq.v
+theories/Param_paths.v
+
+examples/Example.v
+examples/int_to_Zp.v
+examples/peano_bin_nat.v
+examples/setoid_rewrite.v
+examples/summable.v
+examples/trocq_setoid_rewrite.v

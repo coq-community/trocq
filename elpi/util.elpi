@@ -1,0 +1,83 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                                Trocq                                %
+%  _______                   %                       Copyright (C) 2023 MERCE                      %
+% |__   __|                  %                (Mitsubishi Electric R&D Centre Europe)              %
+%    | |_ __ ___   ___ __ _  %                   Cyril Cohen <cyril.cohen@inria.fr>                %
+%    | | '__/ _ \ / __/ _` | %                   Enzo Crance <enzo.crance@inria.fr>                %
+%    | | | | (_) | (_| (_| | %               Assia Mahboubi <assia.mahboubi@inria.fr>              %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %            This file is distributed under the terms of the          %
+%                        |_| %              GNU Lesser General Public License Version 3            %
+%                            %             (see LICENSE file for the text of the license)          %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% --------------------------------------------------------------------------------------------------
+% utility predicates
+% --------------------------------------------------------------------------------------------------
+
+kind or type -> type -> type.
+type inl A -> or A B.
+type inr B -> or A B.
+
+kind debug-level type.
+type dbg.none debug-level.
+type dbg.steps debug-level.
+type dbg.full debug-level.
+
+pred debug-level->int i:debug-level, o:int.
+debug-level->int dbg.none 0.
+debug-level->int dbg.steps 1.
+debug-level->int dbg.full 2.
+
+pred debug o:debug-level.
+
+namespace util {
+
+pred option.value i:option A, i:A, o:A.
+option.value none Default Default.
+option.value (some A) _ A.
+
+pred cmp-int i:int, i:int, o:cmp.
+cmp-int A B lt :- A < B, !.
+cmp-int A B eq :- A = B, !.
+cmp-int _ _ gt.
+
+pred when i:prop, i:prop.
+when Condition Goal :-
+  if (Condition) Goal true.
+
+pred when-debug i:debug-level, i:prop.
+when-debug L Log :- debug D, !,
+  when ({debug-level->int D} >= {debug-level->int L}) Log.
+when-debug _ _.
+
+pred unless i:prop, i:prop.
+unless Condition Goal :-
+  if (Condition) true Goal.
+
+pred if-suspend i:A, i:prop, i:prop, i:prop.
+if-suspend V B T E :- var V, !, declare_constraint (if B T E) [V].
+if-suspend _ B T E :- if B T E.
+
+pred map.find-opt i:A, i:std.map A B, o:option B.
+map.find-opt K M (some V) :- std.map.find K M V, !.
+map.find-opt _ _ none.
+
+pred map.update i:A, i:(option B -> option B -> prop), i:std.map A B, o:std.map A B.
+map.update K F M M' :-
+  map.find-opt K M (some V), !,
+  F (some V) OV',
+  if (OV' = some V')
+    (std.map.add K V' M M')  % replace
+    (std.map.remove K M M'). % remove
+map.update K F M M' :-
+  F none (some V'),
+  std.map.add K V' M M'.     % add
+map.update _ _ M M.          % no-op
+
+pred delete i:A, i:list A, o:list A.
+delete A [A|Xs] Xs :- !.
+delete A [X|Xs] [X|Xs'] :- delete A Xs Xs'.
+delete _ [] [].
+
+} % util

@@ -1,0 +1,262 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                                Trocq                                %
+%  _______                   %                       Copyright (C) 2023 MERCE                      %
+% |__   __|                  %                (Mitsubishi Electric R&D Centre Europe)              %
+%    | |_ __ ___   ___ __ _  %                   Cyril Cohen <cyril.cohen@inria.fr>                %
+%    | | '__/ _ \ / __/ _` | %                   Enzo Crance <enzo.crance@inria.fr>                %
+%    | | | | (_) | (_| (_| | %               Assia Mahboubi <assia.mahboubi@inria.fr>              %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %            This file is distributed under the terms of the          %
+%                        |_| %              GNU Lesser General Public License Version 3            %
+%                            %             (see LICENSE file for the text of the license)          %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% --------------------------------------------------------------------------------------------------
+% definition of the constraint graph
+% --------------------------------------------------------------------------------------------------
+
+% in the constraint graph, parametricity classes are represented with integers (it is easier to
+% index on this type than on variables of type param-class)
+typeabbrev class-id int.
+
+% the graph is a map from a class to two lists: the nodes that are higher than it, and the ones
+% that are lower; it means that the graph stores each piece of information twice (in both ways
+kind constraint-graph type.
+type constraint-graph
+  std.map class-id (pair (list cstr-graph.node) (list cstr-graph.node))
+    -> constraint-graph.
+
+namespace cstr-graph {
+
+% a node represents one or several edges starting from a class, with additional information to be
+% used when reducing the graph; see the predicates below
+kind node type.
+type node.var constraint-type -> list class-id -> node.
+type node.const param-class -> node.
+
+% this basically represents annotations on the edges
+kind constraint-type type.
+type ct.pi constraint-type.
+type ct.arrow constraint-type.
+type ct.type constraint-type.
+type ct.gref gref -> term -> gref -> gref -> constraint-type.
+type ct.geq constraint-type.
+
+typeabbrev
+  constraint-graph-content
+  (std.map class-id (pair (list node) (list node))).
+
+pred empty o:constraint-graph.
+empty (constraint-graph G) :-
+  std.map.make util.cmp-int G.
+
+% D_π(C, C_A, C_B) is represented as two edges C -> C_A and C -> C_B
+% here one node from C to [C_A, C_B], and two nodes from C_A and C_B to C
+pred add-dep-pi i:class-id, i:class-id, i:class-id, i:constraint-graph, o:constraint-graph.
+add-dep-pi ID IDA IDB (constraint-graph G) (constraint-graph G') :-
+  util.map.update ID (internal.add-higher-node (node.var ct.pi [IDA, IDB])) G G1,
+  util.map.update IDA (internal.add-lower-node (node.var ct.pi [ID])) G1 G2,
+  util.map.update IDB (internal.add-lower-node (node.var ct.pi [ID])) G2 G'.
+
+% D_->(C, C_A, C_B) is similar
+pred add-dep-arrow i:class-id, i:class-id, i:class-id, i:constraint-graph, o:constraint-graph.
+add-dep-arrow ID IDA IDB (constraint-graph G) (constraint-graph G') :-
+  util.map.update ID (internal.add-higher-node (node.var ct.arrow [IDA, IDB])) G G1,
+  util.map.update IDA (internal.add-lower-node (node.var ct.arrow [ID])) G1 G2,
+  util.map.update IDB (internal.add-lower-node (node.var ct.arrow [ID])) G2 G'.
+
+% D_□(C, C_R) is an edge C -> C_R, which is one node in each direction
+pred add-dep-type i:class-id, i:class-id, i:constraint-graph, o:constraint-graph.
+add-dep-type ID IDR (constraint-graph G) (constraint-graph G') :-
+  util.map.update ID (internal.add-higher-node (node.var ct.type [IDR])) G G1,
+  util.map.update IDR (internal.add-lower-node (node.var ct.type [ID])) G1 G'.
+
+% D_K(C, C_1, ... C_n) is an edge from the output class C of constant K to each class C_i present
+% in its type, see the article for explanation
+% the constraint is represented here by one node from C to all the C_i
+% we store information in the node about K, its type, and the output variables
+pred add-dep-gref
+  i:class-id, i:gref, i:term, i:gref, i:gref, i:list class-id, i:constraint-graph,
+  o:constraint-graph.
+add-dep-gref ID GR T GR' GRR IDs (constraint-graph G) (constraint-graph G') :-
+  % the classes C_i (IDs) are not really "higher" than the output class C (ID)
+  % here, higher is a way to say that they must be instantiated later than the output class
+  util.map.update ID (internal.add-higher-node (node.var (ct.gref GR T GR' GRR) IDs)) G G1,
+  std.fold IDs G1 (id\ g\ g'\
+    util.map.update id (internal.add-lower-node (node.var (ct.gref _ _ _ _) [ID])) g g')
+      G'.
+
+% simple order constraint C >= C', handled differently if C and C' are constant classes or variables
+pred add-geq
+  i:or class-id param-class, i:or class-id param-class, i:constraint-graph, o:constraint-graph.
+add-geq (inl IDA) (inl IDB) (constraint-graph G) (constraint-graph G') :-
+  util.map.update IDB (internal.add-higher-node (node.var ct.geq [IDA])) G G1,
+  util.map.update IDA (internal.add-lower-node (node.var ct.geq [IDB])) G1 G'.
+add-geq (inl ID) (inr C) (constraint-graph G) (constraint-graph G') :-
+  util.map.update ID (internal.add-lower-node (node.const C)) G G'.
+add-geq (inr C) (inl ID) (constraint-graph G) (constraint-graph G') :-
+  util.map.update ID (internal.add-higher-node (node.const C)) G G'.
+
+% compute the minimal possible constant class for a variable class in the constraint graph
+% = least upper bound of all the lower constant classes
+pred minimal-class i:class-id, i:constraint-graph, o:param-class.
+minimal-class ID (constraint-graph G) MinClass :-
+  std.map.find ID G (pr LowerNodes _), !,
+  std.fold {internal.filter-const LowerNodes} (pc map0 map0) param-class.union MinClass.
+minimal-class _ _ (pc map0 map0). % default minimal class for an unconstrained variable
+
+% compute the maximal possible constant class for a variable class in the constraint graph
+% = greatest lower bound of all the higher constant classes
+pred maximal-class i:class-id, i:constraint-graph, o:param-class.
+maximal-class ID (constraint-graph G) MaxClass :-
+  std.map.find ID G (pr _ HigherNodes), !,
+  std.fold {internal.filter-const HigherNodes} (pc map4 map4) param-class.inter MaxClass.
+maximal-class _ _ (pc map4 map4). % default maximal class for an unconstrained variable
+
+% assign a constant class to a variable and update all the information in the graph
+% indeed, if the assigned variable was an output class for complex constraints,
+% they can now be computed and reduced to simpler constraints on the other variables
+pred instantiate i:class-id, i:param-class, i:constraint-graph, o:constraint-graph.
+instantiate ID Class G _ :- coq.say "instantiate" ID Class G, fail.
+instantiate ID Class (constraint-graph G) (constraint-graph G') :-
+  std.map.find ID G (pr LowerNodes HigherNodes), !,
+  internal.filter-var LowerNodes LowerIDs,
+  util.unless (LowerIDs = [])
+    (coq.error
+      "wrong instantiation order: trying to instantiate" ID "before lower variables" LowerIDs),
+  std.fold HigherNodes G (instantiate.aux ID Class) G1,
+  std.map.remove ID G1 G'.
+instantiate ID Class G G :-
+  coq.say "cannot instantiate" ID "at" Class "because it is not in the graph".
+pred instantiate.aux
+  i:class-id, i:param-class, i:node, i:constraint-graph-content, o:constraint-graph-content.
+instantiate.aux ID Class (node.const C) G G :-
+  util.unless (param-class.geq C Class)
+    (coq.error
+      "constraint not respected: instantiating" ID "at class" Class "despite upper bound" C).
+instantiate.aux ID Class (node.var ct.pi [IDA, IDB]) G G' :-
+  util.map.update IDA (internal.remove-lower-node (node.var ct.pi [ID])) G G1,
+  util.map.update IDB (internal.remove-lower-node (node.var ct.pi [ID])) G1 G2,
+  % recompute the dependent product constraint and turn it into 2 order constraints
+  param-class.dep-pi Class C1 C2,
+  util.map.update IDA (internal.add-lower-node (node.const C1)) G2 G3,
+  util.map.update IDB (internal.add-lower-node (node.const C2)) G3 G'.
+instantiate.aux ID Class (node.var ct.arrow [IDA, IDB]) G G' :-
+  util.map.update IDA (internal.remove-lower-node (node.var ct.arrow [ID])) G G1,
+  util.map.update IDB (internal.remove-lower-node (node.var ct.arrow [ID])) G1 G2,
+  % recompute the arrow type constraint and turn it into 2 order constraints
+  param-class.dep-arrow Class C1 C2,
+  util.map.update IDA (internal.add-lower-node (node.const C1)) G2 G3,
+  util.map.update IDB (internal.add-lower-node (node.const C2)) G3 G'.
+instantiate.aux ID Class (node.var ct.type [IDR]) G G' :-
+  util.map.update IDR (internal.remove-lower-node (node.var ct.type [ID])) G G1,
+  % the constraint either vanishes or forces the relation to be (4,4)
+  if (param-class.requires-axiom Class)
+    (util.map.update IDR (internal.add-lower-node (node.const (pc map4 map4))) G1 G')
+    (G' = G1).
+instantiate.aux ID Class (node.var (ct.gref GR T GR' GRR) IDs) G G' :-
+  std.fold {std.filter IDs (id\ id > 0)} G (id\ g\ g'\
+    util.map.update id (internal.remove-lower-node (node.var (ct.gref _ _ _ _) [ID])) g g')
+      G1,
+  annot.classes T TCs _,
+  % find the output constant and proof, as well as the required classes Cs
+  param.db.gref GR Class Cs GR' GRR,
+  % make sure the classes are consistent
+  instantiate.gref IDs TCs Cs G1 G'.
+pred instantiate.gref
+  i:list class-id, i:list param-class, i:list param-class, i:constraint-graph-content,
+  o:constraint-graph-content.
+instantiate.gref [] [] [] G G.
+instantiate.gref [-1|IDs] [TC|TCs] [C|Cs] G G' :- !,
+  % here the class in the type of the constant is a constant class, it is not in the graph
+  % we just check that it is equal to the required one
+  TC = C,
+  instantiate.gref IDs TCs Cs G G'.
+instantiate.gref [ID|IDs] [_|TCs] [C|Cs] G G' :-
+  % here the identifier is not -1, which means that the class at this position is in the graph
+  % we force it to be equal to C in the graph
+  util.map.update ID (internal.add-lower-node (node.const C)) G G1,
+  util.map.update ID (internal.add-higher-node (node.const C)) G1 G2,
+  instantiate.gref IDs TCs Cs G2 G'.
+instantiate.aux ID Class (node.var ct.geq [IDH]) G G' :-
+  % an order constraint is turned into a lower constant class
+  util.map.update IDH (internal.remove-lower-node (node.var ct.geq [ID])) G G1,
+  util.map.update IDH (internal.add-lower-node (node.const Class)) G1 G'.
+
+% compute the precedence graph from the constraint graph to find the instantiation order
+pred instantiation-order i:list class-id, i:constraint-graph, o:list class-id.
+instantiation-order IDs ConstraintGraph SortedIDs :-
+  internal.to-precedence-graph IDs ConstraintGraph PrecedenceGraph,
+  simple-graph.toposort PrecedenceGraph OSIDs,
+  std.assert! (OSIDs = some SortedIDs) "the precedence graph is not acyclic".
+
+% pretty printing
+pred pp i:constraint-graph.
+pp (constraint-graph G) :-
+  std.forall {std.map.bindings G} pp.aux.
+pp.aux (pr ID (pr LowerNodes HigherNodes)) :-
+  coq.say "id" ID,
+  coq.say "higher than:" LowerNodes,
+  coq.say "lower than:" HigherNodes.
+
+namespace internal {
+
+pred filter-const i:list node, o:list param-class.
+filter-const [] [].
+filter-const [node.const C|Nodes] [C|Classes] :-
+  filter-const Nodes Classes.
+filter-const [node.var _ _|Nodes] Classes :-
+  filter-const Nodes Classes.
+
+pred filter-var i:list node, o:list class-id.
+filter-var [] [].
+filter-var [node.var _ IDs1|Nodes] IDs :-
+  filter-var Nodes IDs2,
+  std.append IDs1 IDs2 IDs.
+filter-var [node.const _|Nodes] IDs :-
+  filter-var Nodes IDs.
+
+pred add-higher-node
+  i:node, i:option (pair (list node) (list node)), o:option (pair (list node) (list node)).
+add-higher-node Node none (some (pr [] [Node])).
+add-higher-node Node (some (pr LowerNodes HigherNodes)) (some (pr LowerNodes [Node|HigherNodes])).
+
+pred remove-higher-node
+  i:node, i:option (pair (list node) (list node)), o:option (pair (list node) (list node)).
+remove-higher-node _ none none.
+remove-higher-node Node (some (pr LowerNodes HigherNodes)) Nodes :-
+  util.delete Node HigherNodes HigherNodes',
+  if (LowerNodes = [], HigherNodes' = [])
+    (Nodes = none)
+    (Nodes = some (pr LowerNodes HigherNodes')).
+
+pred add-lower-node
+  i:node, i:option (pair (list node) (list node)), o:option (pair (list node) (list node)).
+add-lower-node Node none (some (pr [Node] [])).
+add-lower-node Node (some (pr LowerNodes HigherNodes)) (some (pr [Node|LowerNodes] HigherNodes)).
+
+pred remove-lower-node
+  i:node, i:option (pair (list node) (list node)), o:option (pair (list node) (list node)).
+remove-lower-node _ none none.
+remove-lower-node Node (some (pr LowerNodes HigherNodes)) Nodes :-
+  util.delete Node LowerNodes LowerNodes',
+  if (LowerNodes' = [], HigherNodes = [])
+    (Nodes = none)
+    (Nodes = some (pr LowerNodes' HigherNodes)).
+
+pred to-precedence-graph i:list class-id, i:constraint-graph, o:simple-graph class-id.
+to-precedence-graph IDs (constraint-graph G) PrecedenceGraph :-
+  std.fold IDs {simple-graph.empty util.cmp-int} simple-graph.add-node SG,
+  std.map.bindings G Bindings,
+  std.fold Bindings SG to-precedence-graph.aux PrecedenceGraph.
+to-precedence-graph.aux (pr ID (pr _ HigherNodes)) G G' :-
+  std.fold HigherNodes G (to-precedence-graph.aux2 ID) G'.
+to-precedence-graph.aux2 _ (node.const _) G G.
+to-precedence-graph.aux2 ID (node.var _ IDHs) G G' :-
+  % for each variable Y higher than X in the constraint graph,
+  % the precedence graph has an edge X -> Y
+  std.fold IDHs G (simple-graph.add-edge ID) G'.
+
+} % internal
+
+} % cstr-graph

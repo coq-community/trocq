@@ -1,0 +1,261 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                                Trocq                                %
+%  _______                   %                       Copyright (C) 2023 MERCE                      %
+% |__   __|                  %                (Mitsubishi Electric R&D Centre Europe)              %
+%    | |_ __ ___   ___ __ _  %                   Cyril Cohen <cyril.cohen@inria.fr>                %
+%    | | '__/ _ \ / __/ _` | %                   Enzo Crance <enzo.crance@inria.fr>                %
+%    | | | | (_) | (_| (_| | %               Assia Mahboubi <assia.mahboubi@inria.fr>              %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %            This file is distributed under the terms of the          %
+%                        |_| %              GNU Lesser General Public License Version 3            %
+%                            %             (see LICENSE file for the text of the license)          %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% --------------------------------------------------------------------------------------------------
+% API accessible to the rest of the plugin to handle the constraint graph
+% --------------------------------------------------------------------------------------------------
+
+typeabbrev class-id int.
+
+namespace cstr {
+
+pred init.
+init :-
+  cstr-graph.empty G,
+  declare_constraint (internal.c.vars []) [_],
+  declare_constraint (internal.c.graph G) [_].
+
+% link a variable parametricity class C to its Coq representation (arguments of PType)
+pred univ-link o:param-class, o:term, o:term.
+univ-link C M N :- var C, var M, var N, !,
+  declare_constraint (internal.c.univ-link? C M N) [_].
+univ-link C M N :- var C, !,
+  C = pc {term->map-class M} {term->map-class N}.
+univ-link (pc M' N') M N :-
+  map-class->term M' M,
+  map-class->term N' N.
+
+% D_π(C) = (C_A, C_B)
+pred dep-pi i:param-class, o:param-class, o:param-class.
+dep-pi C CA CB :- var C, !,
+  internal.link? C ID,
+  internal.link? CA IDA,
+  internal.link? CB IDB,
+  declare_constraint (internal.c.dep-pi ID IDA IDB) [_].
+dep-pi C CA CB :-
+  param-class.dep-pi C CA CB.
+
+% D_->(C) = (C_A, C_B)
+pred dep-arrow i:param-class, o:param-class, o:param-class.
+dep-arrow C CA CB :- var C, !,
+  internal.link? C ID,
+  internal.link? CA IDA,
+  internal.link? CB IDB,
+  declare_constraint (internal.c.dep-arrow ID IDA IDB) [_].
+dep-arrow C CA CB :-
+  param-class.dep-arrow C CA CB.
+
+% D_□(C, C_R)
+pred dep-type i:param-class, i:param-class.
+dep-type C CR :- var C, !,
+  internal.link? C ID,
+  internal.link? CR IDR,
+  declare_constraint (internal.c.dep-type ID IDR) [_].
+dep-type C CR :-
+  util.when (param-class.requires-axiom C)
+    (geq CR (pc map4 map4)).
+
+% D_K(T)
+pred dep-gref i:gref, i:term, o:gref, o:gref.
+dep-gref GR T GR' GRR :-
+  annot.classes T TCs OutOpt,
+  util.option.value OutOpt (pc map0 map0) Out,
+  if (var Out) (
+    internal.link? Out ID,
+    std.map TCs internal.link? IDs,
+    declare_constraint (internal.c.dep-gref ID GR T GR' GRR IDs) [_]
+  ) (
+    param.db.gref GR Out Cs GR' GRR,
+    std.forall2 TCs Cs eq
+  ).
+
+% C >= C'
+pred geq i:param-class, i:param-class.
+geq C1 C2 :- var C1, var C2, !,
+  internal.link? C1 ID1,
+  internal.link? C2 ID2,
+  util.unless (ID1 = ID2) (declare_constraint (internal.c.geq (inl ID1) (inl ID2)) [_]).
+geq C1 C :- var C1, !,
+  internal.link? C1 ID,
+  declare_constraint (internal.c.geq (inl ID) (inr C)) [_].
+geq C C1 :- var C1, !,
+  internal.link? C1 ID,
+  declare_constraint (internal.c.geq (inr C) (inl ID)) [_].
+geq C1 C2 :-
+  param-class.geq C1 C2.
+
+% C = C'
+pred eq i:param-class, i:param-class.
+eq C1 C2 :- geq C1 C2, geq C2 C1.
+
+% trigger reduction of the graph and instantiation of variables
+pred reduce-graph.
+reduce-graph :-
+  declare_constraint internal.c.reduce-graph [_].
+
+% ==================================================================================================
+
+namespace internal {
+
+% NB:
+% - constraints with a '?' suffix are getters;
+% - constraints with a '!' suffix are setters;
+% - constraints with a '-' suffix both get and delete information.
+
+% store all the variable classes encountered so far
+pred c.vars o:list class-id.
+pred c.vars? o:list class-id.
+pred c.vars! o:list class-id.
+
+pred vars? o:list class-id.
+vars? IDs :- declare_constraint (c.vars? IDs) [_].
+pred vars! i:list class-id.
+vars! IDs :- declare_constraint (c.vars! IDs) [_].
+
+constraint c.vars c.vars? c.vars! {
+  rule (c.vars IDs) \ (c.vars? IDs') <=> (IDs' = IDs).
+  rule \ (c.vars _) (c.vars! IDs) <=> (declare_constraint (c.vars IDs) [_]).
+}
+
+% link a class to an integer in the constraint store
+pred c.link o:param-class, o:class-id.
+pred c.link? o:param-class, o:class-id.
+pred c.link- o:param-class, o:class-id.
+
+pred link? o:param-class, o:class-id.
+link? C ID :- var C, !, declare_constraint (c.link? C ID) [_].
+link? _ (-1). % when the class is constant, it does not exist in the graph, default value is -1
+pred link- o:param-class, o:class-id.
+link- C ID :- declare_constraint (c.link- C ID) [_].
+
+constraint c.link c.link? c.link- {
+  % we know the class, we need the integer
+  rule (c.link C ID) \ (c.link? C ID') <=> (ID' = ID).
+  rule \ (c.link C ID) (c.link- C ID') <=> (ID' = ID).
+  % we know the integer, we need the class
+  rule (c.link C ID) \ (c.link? C' ID) <=> (C' = C).
+  rule \ (c.link C ID) (c.link- C' ID) <=> (C' = C).
+  % both are unknown, create the fresh node
+  rule \ (c.link? C ID') <=> (
+    vars? IDs,
+    new_int ID,
+    prune C [],
+    declare_constraint (c.link C ID) [_],
+    vars! [ID|IDs],
+    ID' = ID
+  ).
+  rule \ (c.link- _ _).
+}
+
+% link a class C to a pair of Coq map classes
+pred c.univ-link o:param-class, o:term, o:term.
+pred c.univ-link? o:param-class, o:term, o:term.
+pred c.univ-link- o:param-class, o:term, o:term.
+
+pred univ-link- o:param-class, o:term, o:term.
+univ-link- C M N :- declare_constraint (c.univ-link- C M N) [_].
+
+constraint c.univ-link c.univ-link? c.univ-link- {
+  % we know the class, we need the Coq values
+  rule (c.univ-link C M N) \ (c.univ-link? C M' N') <=> (M' = M, N' = N).
+  rule \ (c.univ-link C M N) (c.univ-link- C M' N') <=> (M' = M, N' = N).
+  % we know the Coq values, we need the class
+  rule (c.univ-link C M N) \ (c.univ-link? C' M N) <=> (C' = C).
+  rule \ (c.univ-link C M N) (c.univ-link- C' M N) <=> (C' = C).
+  % both are unknown, create the fresh link and loop
+  rule (c.univ-link? C M N) <=> (
+    link? C _,
+    prune M [],
+    prune N [],
+    declare_constraint (c.univ-link C M N) [_]
+  ).
+  rule \ (c.univ-link- _ _ _).
+}
+
+% store the constraint graph in the Elpi constraint store
+pred c.graph o:constraint-graph.
+
+% constraints to trigger addition of information to the constraint graph
+pred c.dep-pi o:class-id, o:class-id, o:class-id.
+pred c.dep-arrow o:class-id, o:class-id, o:class-id.
+pred c.dep-type o:class-id, o:class-id.
+pred c.dep-gref o:class-id, o:gref, o:term, o:gref, o:gref, o:list class-id.
+pred c.geq o:or class-id param-class, o:or class-id param-class.
+
+% trigger reduction of the graph
+pred c.reduce-graph.
+
+constraint c.graph c.dep-pi c.dep-arrow c.dep-type c.dep-gref c.geq c.reduce-graph {
+  rule \ (c.graph G) (c.dep-pi ID IDA IDB) <=> (
+    cstr-graph.add-dep-pi ID IDA IDB G G',
+    declare_constraint (c.graph G') [_]
+  ).
+  rule \ (c.graph G) (c.dep-arrow ID IDA IDB) <=> (
+    cstr-graph.add-dep-arrow ID IDA IDB G G',
+    declare_constraint (c.graph G') [_]
+  ).
+  rule \ (c.graph G) (c.dep-type ID IDR) <=> (
+    cstr-graph.add-dep-type ID IDR G G',
+    declare_constraint (c.graph G') [_]
+  ).
+  rule \ (c.graph G) (c.dep-gref ID GR T GR' GRR IDs) <=> (
+    cstr-graph.add-dep-gref ID GR T GR' GRR IDs G G',
+    declare_constraint (c.graph G') [_]
+  ).
+  rule \ (c.graph G) (c.geq IDorC1 IDorC2) <=> (
+    cstr-graph.add-geq IDorC1 IDorC2 G G',
+    declare_constraint (c.graph G') [_]
+  ).
+  rule \ (c.graph G) (c.reduce-graph) <=> (
+    vars? IDs,
+    util.when-debug dbg.steps (
+      coq.say "final constraint graph:",
+      cstr-graph.pp G,
+      coq.say "***********************************************************************************"
+    ),
+    cstr-graph.instantiation-order IDs G SortedIDs,
+    util.when-debug dbg.steps (
+      coq.say "order:" SortedIDs,
+      coq.say "***********************************************************************************"
+    ),
+    reduce SortedIDs G FinalValues,
+    util.when-debug dbg.steps (coq.say "final values:" FinalValues),
+    std.forall FinalValues instantiate-coq
+  ).
+}
+
+% reduce the graph by instantiating variables in the precedence order and updating the graph
+% return a list of associations of a variable and its constant class
+pred reduce i:list class-id, i:constraint-graph, o:list (pair class-id param-class).
+reduce [] _ [].
+reduce [ID|IDs] ConstraintGraph [pr ID MinClass|FinalValues] :-
+  cstr-graph.minimal-class ID ConstraintGraph MinClass,
+  util.when-debug dbg.full (coq.say "min value" MinClass "for" ID),
+  cstr-graph.maximal-class ID ConstraintGraph MaxClass,
+  util.when-debug dbg.full (coq.say "max value" MaxClass "for" ID),
+  util.unless (param-class.geq MaxClass MinClass) (coq.error "no solution for variable" ID),
+  reduce IDs {cstr-graph.instantiate ID MinClass ConstraintGraph} FinalValues.
+
+% now instantiate for real
+pred instantiate-coq i:pair class-id param-class.
+instantiate-coq (pr ID (pc M0 N0)) :-
+  util.when-debug dbg.full (coq.say "instantiating" ID "with" (pc M0 N0)),
+  link- C ID,
+  univ-link- C M N,
+  map-class->term M0 M,
+  map-class->term N0 N,
+  C = pc M0 N0.
+
+} % internal
+
+} % cstr

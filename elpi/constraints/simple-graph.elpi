@@ -1,0 +1,61 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                                Trocq                                %
+%  _______                   %                       Copyright (C) 2023 MERCE                      %
+% |__   __|                  %                (Mitsubishi Electric R&D Centre Europe)              %
+%    | |_ __ ___   ___ __ _  %                   Cyril Cohen <cyril.cohen@inria.fr>                %
+%    | | '__/ _ \ / __/ _` | %                   Enzo Crance <enzo.crance@inria.fr>                %
+%    | | | | (_) | (_| (_| | %               Assia Mahboubi <assia.mahboubi@inria.fr>              %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %            This file is distributed under the terms of the          %
+%                        |_| %              GNU Lesser General Public License Version 3            %
+%                            %             (see LICENSE file for the text of the license)          %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% --------------------------------------------------------------------------------------------------
+% definition of a directed graph with no annotation on edges
+% --------------------------------------------------------------------------------------------------
+
+kind simple-graph type -> type.
+type simple-graph std.map A (list A) -> simple-graph A.
+
+namespace simple-graph {
+
+pred empty i:A -> A -> cmp -> prop, o:simple-graph A.
+empty Cmp (simple-graph G) :-
+  std.map.make Cmp G.
+
+pred add-node i:A, i:simple-graph A, o:simple-graph A.
+add-node X (simple-graph G) (simple-graph G') :-
+  std.map.add X [] G G'.
+
+pred add-edge i:A, i:A, i:simple-graph A, o:simple-graph A.
+add-edge X Y (simple-graph G) (simple-graph G') :-
+  util.map.update X (add-edge.aux Y) G G'.
+add-edge.aux Y none (some [Y]).
+add-edge.aux Y (some L) (some [Y|L]).
+
+% topological sort
+pred toposort i:simple-graph A, o:option (list A).
+toposort (simple-graph G) SortedNodes :-
+  reversed-kahn {std.map.bindings G} [] SortedNodes.
+
+% Kahn's algorithm
+% reversed: we remove exit nodes instead of entry nodes
+pred reversed-kahn i:list (pair A (list A)), i:list A, o:option (list A).
+reversed-kahn Bindings Stack SortedNodes :-
+  std.map-filter Bindings (p\ n\ p = pr n []) ExitNodes,
+  if (ExitNodes = []) (
+    if (Bindings = [])
+      (SortedNodes = some Stack)
+      (SortedNodes = none)
+  ) (
+    std.map-filter Bindings (p\ p'\ sigma Node Successors Successors'\
+      p = pr Node Successors,
+      not (std.mem! ExitNodes Node),
+      std.filter Successors (s\ not (std.mem! ExitNodes s)) Successors',
+      p' = pr Node Successors'
+    ) Bindings',
+    reversed-kahn Bindings' {std.append ExitNodes Stack} SortedNodes
+  ).
+
+} % simple-graph
