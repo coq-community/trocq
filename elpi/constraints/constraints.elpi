@@ -1,19 +1,18 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                            %                                Trocq                                %
-%  _______                   %                       Copyright (C) 2023 MERCE                      %
-% |__   __|                  %                (Mitsubishi Electric R&D Centre Europe)              %
-%    | |_ __ ___   ___ __ _  %                   Cyril Cohen <cyril.cohen@inria.fr>                %
-%    | | '__/ _ \ / __/ _` | %                   Enzo Crance <enzo.crance@inria.fr>                %
-%    | | | | (_) | (_| (_| | %               Assia Mahboubi <assia.mahboubi@inria.fr>              %
-%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                        | | %            This file is distributed under the terms of the          %
-%                        |_| %              GNU Lesser General Public License Version 3            %
-%                            %             (see LICENSE file for the text of the license)          %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% --------------------------------------------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                     Trocq                      %
+%  _______                   %            Copyright (C) 2023 MERCE            %
+% |__   __|                  %     (Mitsubishi Electric R&D Centre Europe)    %
+%    | |_ __ ___   ___ __ _  %        Cyril Cohen <cyril.cohen@inria.fr>      %
+%    | | '__/ _ \ / __/ _` | %        Enzo Crance <enzo.crance@inria.fr>      %
+%    | | | | (_) | (_| (_| | %    Assia Mahboubi <assia.mahboubi@inria.fr>    %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %   This file is distributed under the terms of  %
+%                        |_| %   GNU Lesser General Public License Version 3  %
+%                            % (see LICENSE file for the text of the license) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -----------------------------------------------------------------------------
 % API accessible to the rest of the plugin to handle the constraint graph
-% --------------------------------------------------------------------------------------------------
+% -----------------------------------------------------------------------------
 
 typeabbrev class-id int.
 
@@ -35,7 +34,7 @@ univ-link (pc M' N') M N :-
   map-class->term M' M,
   map-class->term N' N.
 
-% D_π(C) = (C_A, C_B)
+% D_π(C, C_A, C_B)
 pred dep-pi i:param-class, o:param-class, o:param-class.
 dep-pi C CA CB :- var C, !,
   internal.link? C ID,
@@ -45,7 +44,7 @@ dep-pi C CA CB :- var C, !,
 dep-pi C CA CB :-
   param-class.dep-pi C CA CB.
 
-% D_->(C) = (C_A, C_B)
+% D_->(C, C_A, C_B)
 pred dep-arrow i:param-class, o:param-class, o:param-class.
 dep-arrow C CA CB :- var C, !,
   internal.link? C ID,
@@ -65,7 +64,7 @@ dep-type C CR :-
   util.when (param-class.requires-axiom C)
     (geq CR (pc map4 map4)).
 
-% D_K(T)
+% D_K(C, C_1, ..., C_n)
 pred dep-gref i:gref, i:term, o:gref, o:gref.
 dep-gref GR T GR' GRR :-
   annot.classes T TCs OutOpt,
@@ -75,7 +74,7 @@ dep-gref GR T GR' GRR :-
     std.map TCs internal.link? IDs,
     declare_constraint (internal.c.dep-gref ID GR T GR' GRR IDs) [_]
   ) (
-    param.db.gref GR Out Cs GR' GRR,
+    trocq.db.gref GR Out Cs GR' GRR,
     std.forall2 TCs Cs eq
   ).
 

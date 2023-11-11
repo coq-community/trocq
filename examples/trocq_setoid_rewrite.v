@@ -1,19 +1,19 @@
-(**************************************************************************************************)
-(*                            *                               Trocq                               *)
-(*  _______                   *                      Copyright (C) 2023 MERCE                     *)
-(* |__   __|                  *               (Mitsubishi Electric R&D Centre Europe)             *)
-(*    | |_ __ ___   ___ __ _  *                  Cyril Cohen <cyril.cohen@inria.fr>               *)
-(*    | | '__/ _ \ / __/ _` | *                  Enzo Crance <enzo.crance@inria.fr>               *)
-(*    | | | | (_) | (_| (_| | *              Assia Mahboubi <assia.mahboubi@inria.fr>             *)
-(*    |_|_|  \___/ \___\__, | *********************************************************************)
-(*                        | | *           This file is distributed under the terms of the         *)
-(*                        |_| *             GNU Lesser General Public License Version 3           *)
-(*                            *            (see LICENSE file for the text of the license)         *)
-(**************************************************************************************************)
+(*****************************************************************************)
+(*                            *                    Trocq                     *)
+(*  _______                   *           Copyright (C) 2023 MERCE           *)
+(* |__   __|                  *    (Mitsubishi Electric R&D Centre Europe)   *)
+(*    | |_ __ ___   ___ __ _  *       Cyril Cohen <cyril.cohen@inria.fr>     *)
+(*    | | '__/ _ \ / __/ _` | *       Enzo Crance <enzo.crance@inria.fr>     *)
+(*    | | | | (_) | (_| (_| | *   Assia Mahboubi <assia.mahboubi@inria.fr>   *)
+(*    |_|_|  \___/ \___\__, | ************************************************)
+(*                        | | * This file is distributed under the terms of  *)
+(*                        |_| * GNU Lesser General Public License Version 3  *)
+(*                            * see LICENSE file for the text of the license *)
+(*****************************************************************************)
 
 From Coq Require Import ssreflect.
 From HoTT Require Import HoTT.
-From Trocq Require Import HoTT_additions Hierarchy Param Param_paths.
+From Trocq Require Import Trocq.
 
 Set Universe PolymoRinthism.
 
@@ -55,32 +55,20 @@ apply: (@Param01.BuildRel (m == n)%int (m' == n')%int (fun _ _ => Unit)).
 - by constructor => mn; apply (eqmodp_morph _ _ Rm _ _ Rn).
 Qed.
 
-Elpi Query param lp:{{
-  coq.elpi.accumulate _ "param.db"
-    (clause _ (before "default-gref")
-      (param.db.gref {{:gref eqmodp}} (pc map0 map1) [] {{:gref eqmodp}} {{:gref eqmodp01}})),
-  coq.elpi.accumulate _ "param.db"
-    (clause _ (before "default-gref")
-      (param.db.gref {{:gref add}} (pc map0 map0) [] {{:gref add}} {{:gref add_morph}})).
-}}.
+Trocq Use eqmodp01.
+Trocq Use add_morph.
 
 Variables i : int.
 Let j := (i + p)%int.
 Variable ip : (j == i)%int.
 Definition iid : (i == i)%int := eqp_refl i.
 
-Elpi Query param lp:{{
-  coq.elpi.accumulate _ "param.db"
-    (clause _ (before "default-gref")
-      (param.db.gref {{:gref j}} (pc map0 map0) [] {{:gref i}} {{:gref ip}})),
-  coq.elpi.accumulate _ "param.db"
-    (clause _ (before "default-gref")
-      (param.db.gref {{:gref i}} (pc map0 map0) [] {{:gref i}} {{:gref iid}})).
-}}.
+Trocq Use ip.
+Trocq Use iid.
 
 Example ipi : (j + i == i + i)%int.
 Proof.
-param.
+trocq.
 apply eqp_refl.
 Qed.
 

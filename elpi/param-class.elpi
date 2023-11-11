@@ -1,19 +1,18 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                            %                                Trocq                                %
-%  _______                   %                       Copyright (C) 2023 MERCE                      %
-% |__   __|                  %                (Mitsubishi Electric R&D Centre Europe)              %
-%    | |_ __ ___   ___ __ _  %                   Cyril Cohen <cyril.cohen@inria.fr>                %
-%    | | '__/ _ \ / __/ _` | %                   Enzo Crance <enzo.crance@inria.fr>                %
-%    | | | | (_) | (_| (_| | %               Assia Mahboubi <assia.mahboubi@inria.fr>              %
-%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                        | | %            This file is distributed under the terms of the          %
-%                        |_| %              GNU Lesser General Public License Version 3            %
-%                            %             (see LICENSE file for the text of the license)          %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% --------------------------------------------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                     Trocq                      %
+%  _______                   %            Copyright (C) 2023 MERCE            %
+% |__   __|                  %     (Mitsubishi Electric R&D Centre Europe)    %
+%    | |_ __ ___   ___ __ _  %        Cyril Cohen <cyril.cohen@inria.fr>      %
+%    | | '__/ _ \ / __/ _` | %        Enzo Crance <enzo.crance@inria.fr>      %
+%    | | | | (_) | (_| (_| | %    Assia Mahboubi <assia.mahboubi@inria.fr>    %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %   This file is distributed under the terms of  %
+%                        |_| %   GNU Lesser General Public License Version 3  %
+%                            % (see LICENSE file for the text of the license) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -----------------------------------------------------------------------------
 % definition of parametricity classes
-% --------------------------------------------------------------------------------------------------
+% -----------------------------------------------------------------------------
 
 % a parametricity class is a pair of map classes (levels in our hierarchy)
 kind map-class type.
@@ -177,6 +176,10 @@ dep-arrow map4  (pc map0 map4)  (pc map4 map0).
 
 } % map-class
 
+pred do-not-fail.
+:before "term->gref:fail"
+coq.term->gref _ _ :- do-not-fail, !, false.
+
 namespace param-class {
 
 % extensions of functions over map classes to parametricity classes
@@ -249,5 +252,37 @@ forget (pc M N) (pc M' N') ForgetF :-
 % and the translation of a dependent product will require funext
 pred requires-axiom i:param-class.
 requires-axiom (pc M N) :- (std.mem! [map2b, map3, map4] M ; std.mem! [map2b, map3, map4] N).
+
+pred type->class i:term, o:list param-class, o:list term.
+type->class X [Class] Ts :-
+  coq.safe-dest-app X HD Ts,
+  (do-not-fail => coq.term->gref HD GRClass),
+  trocq.db.gref->class GRClass Class.
+type->class X [] Ts :- coq.safe-dest-app X _ Ts.
+type->class _ [] [].
+
+pred type->classes.rec i:term, o:list param-class, o:list param-class.
+type->classes.rec (prod N A B) OutList BLast:- !,
+  @pi-decl N A x\
+    type->classes.rec A AList ALast, !,
+    type->classes.rec (B x) BList BLast, !,
+    std.append {std.append AList ALast} BList OutList.
+type->classes.rec X [] Class :- !, type->class X Class _.
+
+pred type->classes.main i:term, o:list param-class, o:list param-class, o:gref, o:gref.
+type->classes.main (prod N A B) OutList BLast GR GR' :- !,
+  @pi-decl N A x\
+    type->classes.rec A AList ALast, !,
+    type->classes.main (B x) BList BLast GR GR', !,
+    std.append {std.append AList ALast} BList OutList.
+type->classes.main X [] Class GR GR' :- !,
+    type->class X Class Ts, !,
+    std.rev Ts [T', T | _],
+    coq.term->gref T GR, coq.term->gref T' GR'.
+
+pred type->classes i:term, o:param-class, o:list param-class, o:gref, o:gref.
+type->classes T OutClass DepClasses GR GR' :-
+  type->classes.main T DepClasses LastClass GR GR',
+  if (LastClass = [OutClass]) true (OutClass = pc map0 map0).
 
 } % param-class

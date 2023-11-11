@@ -1,15 +1,15 @@
-(**************************************************************************************************)
-(*                            *                               Trocq                               *)
-(*  _______                   *                      Copyright (C) 2023 MERCE                     *)
-(* |__   __|                  *               (Mitsubishi Electric R&D Centre Europe)             *)
-(*    | |_ __ ___   ___ __ _  *                  Cyril Cohen <cyril.cohen@inria.fr>               *)
-(*    | | '__/ _ \ / __/ _` | *                  Enzo Crance <enzo.crance@inria.fr>               *)
-(*    | | | | (_) | (_| (_| | *              Assia Mahboubi <assia.mahboubi@inria.fr>             *)
-(*    |_|_|  \___/ \___\__, | *********************************************************************)
-(*                        | | *           This file is distributed under the terms of the         *)
-(*                        |_| *             GNU Lesser General Public License Version 3           *)
-(*                            *            (see LICENSE file for the text of the license)         *)
-(**************************************************************************************************)
+(*****************************************************************************)
+(*                            *                    Trocq                     *)
+(*  _______                   *           Copyright (C) 2023 MERCE           *)
+(* |__   __|                  *    (Mitsubishi Electric R&D Centre Europe)   *)
+(*    | |_ __ ___   ___ __ _  *       Cyril Cohen <cyril.cohen@inria.fr>     *)
+(*    | | '__/ _ \ / __/ _` | *       Enzo Crance <enzo.crance@inria.fr>     *)
+(*    | | | | (_) | (_| (_| | *   Assia Mahboubi <assia.mahboubi@inria.fr>   *)
+(*    |_|_|  \___/ \___\__, | ************************************************)
+(*                        | | * This file is distributed under the terms of  *)
+(*                        |_| * GNU Lesser General Public License Version 3  *)
+(*                            * see LICENSE file for the text of the license *)
+(*****************************************************************************)
 
 From elpi Require Import elpi.
 From Coq Require Import ssreflect.
@@ -166,7 +166,7 @@ Defined.
   (for M or N in [2b, 3, 4] PQ is always 44) *)
 
 Elpi Command genparamtype.
-Elpi Accumulate Db param.db.
+Elpi Accumulate Db trocq.db.
 Elpi Accumulate File param_class.
 Elpi Accumulate lp:{{
   pred generate-param-type
@@ -218,7 +218,7 @@ Elpi Accumulate lp:{{
     coq.typecheck Decl _ ok,
     @udecl! [L, L1] ff [lt L L1] ff =>
       coq.env.add-const ParamType Decl _ @transparent! Const,
-    coq.elpi.accumulate _ "param.db" (clause _ _ (param.db.param-type Class RClass Const)).
+    coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.param-type Class RClass Const)).
 }}.
 Elpi Typecheck.
 

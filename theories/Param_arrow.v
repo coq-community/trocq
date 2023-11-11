@@ -1,15 +1,15 @@
-(**************************************************************************************************)
-(*                            *                               Trocq                               *)
-(*  _______                   *                      Copyright (C) 2023 MERCE                     *)
-(* |__   __|                  *               (Mitsubishi Electric R&D Centre Europe)             *)
-(*    | |_ __ ___   ___ __ _  *                  Cyril Cohen <cyril.cohen@inria.fr>               *)
-(*    | | '__/ _ \ / __/ _` | *                  Enzo Crance <enzo.crance@inria.fr>               *)
-(*    | | | | (_) | (_| (_| | *              Assia Mahboubi <assia.mahboubi@inria.fr>             *)
-(*    |_|_|  \___/ \___\__, | *********************************************************************)
-(*                        | | *           This file is distributed under the terms of the         *)
-(*                        |_| *             GNU Lesser General Public License Version 3           *)
-(*                            *            (see LICENSE file for the text of the license)         *)
-(**************************************************************************************************)
+(*****************************************************************************)
+(*                            *                    Trocq                     *)
+(*  _______                   *           Copyright (C) 2023 MERCE           *)
+(* |__   __|                  *    (Mitsubishi Electric R&D Centre Europe)   *)
+(*    | |_ __ ___   ___ __ _  *       Cyril Cohen <cyril.cohen@inria.fr>     *)
+(*    | | '__/ _ \ / __/ _` | *       Enzo Crance <enzo.crance@inria.fr>     *)
+(*    | | | | (_) | (_| (_| | *   Assia Mahboubi <assia.mahboubi@inria.fr>   *)
+(*    |_|_|  \___/ \___\__, | ************************************************)
+(*                        | | * This file is distributed under the terms of  *)
+(*                        |_| * GNU Lesser General Public License Version 3  *)
+(*                            * see LICENSE file for the text of the license *)
+(*****************************************************************************)
 
 From elpi Require Import elpi.
 From Coq Require Import ssreflect.
@@ -23,7 +23,7 @@ Unset Universe Minimization ToSet.
 Local Open Scope param_scope.
 
 Elpi Command genparamarrow.
-Elpi Accumulate Db param.db.
+Elpi Accumulate Db trocq.db.
 Elpi Accumulate File param_class.
 
 (* relation for arrow *)
@@ -250,8 +250,8 @@ Elpi Accumulate lp:{{
     coq.typecheck Decl _ ok,
     @udecl! [Li, Lj, Lk] ff [le Li Lk, le Lj Lk] ff =>
       coq.env.add-const ParamArrow Decl _ @transparent! Const,
-    coq.elpi.accumulate _ "param.db" (clause _ (after "default-param-arrow")
-      (param.db.param-arrow Class Const)).
+    coq.elpi.accumulate _ "trocq.db" (clause _ (after "default-param-arrow")
+      (trocq.db.param-arrow Class Const)).
 }}.
 Elpi Typecheck.
 
