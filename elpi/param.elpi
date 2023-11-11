@@ -1,19 +1,19 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                            %                                Trocq                                %
-%  _______                   %                       Copyright (C) 2023 MERCE                      %
-% |__   __|                  %                (Mitsubishi Electric R&D Centre Europe)              %
-%    | |_ __ ___   ___ __ _  %                   Cyril Cohen <cyril.cohen@inria.fr>                %
-%    | | '__/ _ \ / __/ _` | %                   Enzo Crance <enzo.crance@inria.fr>                %
-%    | | | | (_) | (_| (_| | %               Assia Mahboubi <assia.mahboubi@inria.fr>              %
-%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                        | | %            This file is distributed under the terms of the          %
-%                        |_| %              GNU Lesser General Public License Version 3            %
-%                            %             (see LICENSE file for the text of the license)          %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                     Trocq                      %
+%  _______                   %            Copyright (C) 2023 MERCE            %
+% |__   __|                  %     (Mitsubishi Electric R&D Centre Europe)    %
+%    | |_ __ ___   ___ __ _  %        Cyril Cohen <cyril.cohen@inria.fr>      %
+%    | | '__/ _ \ / __/ _` | %        Enzo Crance <enzo.crance@inria.fr>      %
+%    | | | | (_) | (_| (_| | %    Assia Mahboubi <assia.mahboubi@inria.fr>    %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %   This file is distributed under the terms of  %
+%                        |_| %   GNU Lesser General Public License Version 3  %
+%                            % (see LICENSE file for the text of the license) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% --------------------------------------------------------------------------------------------------
+% -----------------------------------------------------------------------------
 % parametricity translation
-% --------------------------------------------------------------------------------------------------
+% -----------------------------------------------------------------------------
 
 :before "subst-fun:fail"
 coq.subst-fun Args F FArgs :- !, coq.mk-app F Args FArgs.
@@ -74,7 +74,7 @@ param X T' X' (W XR) :- name X, !,
 % ParamUniv
 param
   (app [pglobal (const PType) UI, MR, NR] as Type) (app [pglobal (const PType) _, M, N])
-  Type (app [pglobal (const PParamType) UI1|Args]) :- param.db.ptype PType, !, std.do! [
+  Type (app [pglobal (const PParamType) UI1|Args]) :- trocq.db.ptype PType, !, std.do! [
     util.when-debug dbg.steps (coq.say "param/type" MR NR "@" M N),
     cstr.univ-link CR MR NR,
     util.when-debug dbg.full (coq.say "param/type:" MR NR "is linked to" CR),
@@ -85,12 +85,12 @@ param
     coq.univ-instance UI [L],
     coq.univ.variable U L,
     coq.univ-instance UI1 [L, {coq.univ.variable {coq.univ.super U}}], % {coq.univ.new}
-    param.db.pparam-type C PParamType,
+    trocq.db.pparam-type C PParamType,
     util.when-debug dbg.full (coq.say "param/type: suspending proof on" C),
     util.if-suspend C (param-class.requires-axiom C) (
       util.when-debug dbg.full (coq.say "param/type: resuming proof on" C "(univalence needed)"),
       coq.univ-instance UI0 [],
-      Args = [MR, NR, pglobal (const {param.db.univalence}) UI0]
+      Args = [MR, NR, pglobal (const {trocq.db.univalence}) UI0]
     ) (
       util.when-debug dbg.full
         (coq.say "param/type: resuming proof on" C "(univalence not needed)"),
@@ -106,14 +106,14 @@ param (fun N T F) FunTy (fun N' T' F') FunR :- !,
   coq.name-suffix N "'" N',
   coq.name-suffix N "R" NR,
   map-class->term map0 Map0,
-  param T (app [pglobal (const {param.db.ptype}) _, Map0, Map0]) T' TR,
+  param T (app [pglobal (const {trocq.db.ptype}) _, Map0, Map0]) T' TR,
   util.when-debug dbg.full (coq.say "param/fun:" T "@ 0,0 ~" T' "by" TR),
   @annot-pi-decl N T x\ pi x' xR\ param.store x T x' xR => (
     util.when-debug dbg.full (coq.say "param/fun: introducing" x "@" T "~" x' "by" xR),
     param (F x) (TF x) (F' x') (FR x x' xR),
     util.when-debug dbg.full (coq.say "param/fun:" (F x) "@" (TF x) "~" (F' x') "by" (FR x x' xR))
   ),
-  param.db.r (pc map0 map0) R,
+  trocq.db.r (pc map0 map0) R,
   prune UI [],
   FunR =
     fun N T x\ fun N' T' x'\ fun NR (app [pglobal (const R) UI, T, T', TR, x, x']) xR\ FR x x' xR.
@@ -122,7 +122,7 @@ param (fun N T F) FunTy (fun N' T' F') FunR :- !,
 param
   (prod _ A (_\ B)) (app [pglobal (const PType) _, M, N])
   (prod `_` A' (_\ B')) (app [pglobal (const ParamArrow) UI|Args]) :-
-    param.db.ptype PType, !, std.do! [
+    trocq.db.ptype PType, !, std.do! [
       util.when-debug dbg.steps (coq.say "param/arrow" A "->" B "@" M N),
       cstr.univ-link C M N,
       util.when-debug dbg.full (coq.say "param/arrow:" M N "is linked to" C),
@@ -136,14 +136,14 @@ param
       param B (app [pglobal (const PType) _, MB, NB]) B' BR,
       util.when-debug dbg.full (coq.say "param/arrow:" B "@" MB NB "~" B' "by" BR),
       coq.say "before db param-arrow" C,
-      param.db.param-arrow C ParamArrow,
+      trocq.db.param-arrow C ParamArrow,
       coq.say UI,
       prune UI [],
       util.when-debug dbg.full (coq.say "param/arrow: suspending proof on" C),
       util.if-suspend C (param-class.requires-axiom C) (
         util.when-debug dbg.full (coq.say "param/arrow: resuming proof on" C "(funext needed)"),
         coq.univ-instance UI0 [],
-        Args = [pglobal (const {param.db.funext}) UI0, A, A', AR, B, B', BR]
+        Args = [pglobal (const {trocq.db.funext}) UI0, A, A', AR, B, B', BR]
       ) (
         util.when-debug dbg.full (coq.say "param/arrow: resuming proof on" C "(funext not needed)"),
         Args = [A, A', AR, B, B', BR]
@@ -153,7 +153,7 @@ param
 % ParamPi
 param
   (prod N A B) (app [pglobal (const PType) _, M1, M2])
-  (prod N' A' B') (app [pglobal (const ParamForall) UI|Args']) :- param.db.ptype PType, !,
+  (prod N' A' B') (app [pglobal (const ParamForall) UI|Args']) :- trocq.db.ptype PType, !,
     util.when-debug dbg.steps (coq.say "param/forall" N ":" A "," B "@" M1 M2),
     coq.name-suffix N "'" N',
     coq.name-suffix N "R" NR,
@@ -171,19 +171,19 @@ param
       param (B a) (app [pglobal (const PType) _, M1B, M2B]) (B' a') (BR a a' aR),
       util.when-debug dbg.full (coq.say "param/forall:" (B a) "@" M1B M2B "~" (B' a') "by" (BR a a' aR))
     ),
-    param.db.r CA RA,
+    trocq.db.r CA RA,
     prune UIA [],
     Args =
       [ A, A', AR, fun N A B, fun N' A' B',
         fun N A a\ fun N' A' a'\ fun NR (app [pglobal (const RA) UIA, A, A', AR, a, a']) aR\
           BR a a' aR ],
-    param.db.param-forall C ParamForall,
+    trocq.db.param-forall C ParamForall,
     prune UI [],
     util.when-debug dbg.full (coq.say "param/forall: suspending proof on" C),
     util.if-suspend C (param-class.requires-axiom C) (
       util.when-debug dbg.full (coq.say "param/forall: resuming proof on" C "(funext needed)"),
       coq.univ-instance UI0 [],
-      Args' = [pglobal (const {param.db.funext}) UI0|Args]
+      Args' = [pglobal (const {trocq.db.funext}) UI0|Args]
     ) (
       util.when-debug dbg.full (coq.say "param/forall: resuming proof on" C "(funext not needed)"),
       Args' = Args
@@ -221,8 +221,8 @@ type wsuspend (term -> term) -> (term -> term) -> weakening.
 % generate the weakening function from a type to a sub-type
 pred weakening i:term, i:term, o:weakening.
 weakening (app [pglobal (const PType) _, M, N]) (app [pglobal (const PType) _, M', N']) W :-
-  param.db.ptype PType, !,
-  param.db.weaken Weaken,
+  trocq.db.ptype PType, !,
+  trocq.db.weaken Weaken,
   prune UI [],
   prune Ty [],
   % as M, N, M', N' are not known yet, we put a Coq placeholder (see Weaken in Param.v)
@@ -247,7 +247,7 @@ weakening T _ _ :- coq.error "weakening:" T.
 % replace Weaken placeholders with real weakening functions
 pred param.subst-weaken i:term, o:term.
 param.subst-weaken T T' :-
-  param.db.weaken Weaken,
+  trocq.db.weaken Weaken,
   (pi XR XR'\ copy (app [pglobal (const Weaken) _, _, _, _, _, _, _] as XR) XR' :- !,
     copy.subst-weaken XR XR')
       => copy T T'.

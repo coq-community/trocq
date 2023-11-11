@@ -1,15 +1,15 @@
-(**************************************************************************************************)
-(*                            *                               Trocq                               *)
-(*  _______                   *                      Copyright (C) 2023 MERCE                     *)
-(* |__   __|                  *               (Mitsubishi Electric R&D Centre Europe)             *)
-(*    | |_ __ ___   ___ __ _  *                  Cyril Cohen <cyril.cohen@inria.fr>               *)
-(*    | | '__/ _ \ / __/ _` | *                  Enzo Crance <enzo.crance@inria.fr>               *)
-(*    | | | | (_) | (_| (_| | *              Assia Mahboubi <assia.mahboubi@inria.fr>             *)
-(*    |_|_|  \___/ \___\__, | *********************************************************************)
-(*                        | | *           This file is distributed under the terms of the         *)
-(*                        |_| *             GNU Lesser General Public License Version 3           *)
-(*                            *            (see LICENSE file for the text of the license)         *)
-(**************************************************************************************************)
+(*****************************************************************************)
+(*                            *                    Trocq                     *)
+(*  _______                   *           Copyright (C) 2023 MERCE           *)
+(* |__   __|                  *    (Mitsubishi Electric R&D Centre Europe)   *)
+(*    | |_ __ ___   ___ __ _  *       Cyril Cohen <cyril.cohen@inria.fr>     *)
+(*    | | '__/ _ \ / __/ _` | *       Enzo Crance <enzo.crance@inria.fr>     *)
+(*    | | | | (_) | (_| (_| | *   Assia Mahboubi <assia.mahboubi@inria.fr>   *)
+(*    |_|_|  \___/ \___\__, | ************************************************)
+(*                        | | * This file is distributed under the terms of  *)
+(*                        |_| * GNU Lesser General Public License Version 3  *)
+(*                            * see LICENSE file for the text of the license *)
+(*****************************************************************************)
 
 From Coq Require Import ssreflect.
 From HoTT Require Import HoTT.
@@ -75,7 +75,7 @@ End Map4.
 (********************)
 
 Elpi Command genhierarchy.
-Elpi Accumulate Db param.db.
+Elpi Accumulate Db trocq.db.
 Elpi Accumulate File param_class.
 Elpi Accumulate lp:{{
   % generate a module with a record type containing:
@@ -103,12 +103,15 @@ Elpi Accumulate lp:{{
             field [] "contravariant"
               (app [pglobal ContravariantSubRecord UI, b, a, app [pglobal SymRel UI, a, b, r]]) (_\
           end-record)))))),
-    @primitive! => @udecl! [L] ff [] ff => coq.env.add-indt RelDecl _,
+    @primitive! => @udecl! [L] ff [] ff => coq.env.add-indt RelDecl TrocqInd,
     coq.locate "Rel" Rel,
     coq.locate "R" R,
     % add R to database for later use
     R = const CR,
-    coq.elpi.accumulate _ "param.db" (clause _ (after "default-r") (param.db.r Class CR)),
+    coq.elpi.accumulate _ "trocq.db"
+      (clause _ (after "default-r") (trocq.db.r Class CR)),
+    coq.elpi.accumulate execution-site "trocq.db"
+      (clause _ _ (trocq.db.gref->class (indt TrocqInd) Class)),
     % generate projections on the covariant subrecord
     map-class->fields M MFields,
     coq.locate "covariant" Covariant,

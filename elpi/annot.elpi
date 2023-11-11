@@ -1,19 +1,18 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                            %                                Trocq                                %
-%  _______                   %                       Copyright (C) 2023 MERCE                      %
-% |__   __|                  %                (Mitsubishi Electric R&D Centre Europe)              %
-%    | |_ __ ___   ___ __ _  %                   Cyril Cohen <cyril.cohen@inria.fr>                %
-%    | | '__/ _ \ / __/ _` | %                   Enzo Crance <enzo.crance@inria.fr>                %
-%    | | | | (_) | (_| (_| | %               Assia Mahboubi <assia.mahboubi@inria.fr>              %
-%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                        | | %            This file is distributed under the terms of the          %
-%                        |_| %              GNU Lesser General Public License Version 3            %
-%                            %             (see LICENSE file for the text of the license)          %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% --------------------------------------------------------------------------------------------------
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                     Trocq                      %
+%  _______                   %            Copyright (C) 2023 MERCE            %
+% |__   __|                  %     (Mitsubishi Electric R&D Centre Europe)    %
+%    | |_ __ ___   ___ __ _  %        Cyril Cohen <cyril.cohen@inria.fr>      %
+%    | | '__/ _ \ / __/ _` | %        Enzo Crance <enzo.crance@inria.fr>      %
+%    | | | | (_) | (_| (_| | %    Assia Mahboubi <assia.mahboubi@inria.fr>    %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %   This file is distributed under the terms of  %
+%                        |_| %   GNU Lesser General Public License Version 3  %
+%                            % (see LICENSE file for the text of the license) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -----------------------------------------------------------------------------
 % annotated type theory
-% --------------------------------------------------------------------------------------------------
+% -----------------------------------------------------------------------------
 
 % this allows to easily make sure an application is beta-reduced
 :before "subst-fun:fail"
@@ -23,7 +22,7 @@ coq.subst-fun Args F FArgs :- !, coq.mk-app F Args FArgs.
 % NB: the output type is term because the annotations are encoded directly in Coq
 % see PType in Param.v
 pred term->annot-term i:term, o:term.
-term->annot-term (sort (typ U)) (app [pglobal (const PType) UI, M, N]) :- param.db.ptype PType, !,
+term->annot-term (sort (typ U)) (app [pglobal (const PType) UI, M, N]) :- trocq.db.ptype PType, !,
   coq.univ-instance UI [{coq.univ.variable U}],
   cstr.univ-link _ M N.
 term->annot-term (fun N T F) (fun N T' F') :- !,
@@ -57,7 +56,7 @@ typecheck T ATy :-
 pred sub-type i:term, i:term.
 % SubUniv
 sub-type (app [pglobal (const PType) _, M1, N1]) (app [pglobal (const PType) _, M2, N2]) :-
-  param.db.ptype PType, !,
+  trocq.db.ptype PType, !,
   cstr.univ-link C1 M1 N1,
   cstr.univ-link C2 M2 N2,
   cstr.geq C1 C2.
@@ -79,7 +78,7 @@ sub-type X _ :- coq.error "annot.sub-type:" X.
 % syntactic term equality, taking care of adding annotation equalities in the constraint graph
 pred eq i:term, i:term.
 eq (app [pglobal (const PType) UI, M1, N1]) (app [pglobal (const PType) UI, M2, N2]) :-
-  param.db.ptype PType, !,
+  trocq.db.ptype PType, !,
   cstr.univ-link C1 M1 N1,
   cstr.univ-link C2 M2 N2,
   cstr.eq C1 C2.
@@ -109,7 +108,7 @@ classes T Cs' Out :-
   ).
 
 pred all-classes i:term, o:list param-class.
-all-classes (app [pglobal (const PType) _, M, N]) [C] :- param.db.ptype PType, !,
+all-classes (app [pglobal (const PType) _, M, N]) [C] :- trocq.db.ptype PType, !,
   cstr.univ-link C M N.
 all-classes X Cs :- (X = prod _ T F ; X = fun _ T F), !,
   pi x\ std.append {all-classes T} {all-classes (F x)} Cs.
@@ -119,7 +118,7 @@ all-classes X [] :- (name X ; X = global _ ; X = pglobal _ _), !.
 all-classes X _ :- coq.error "all-classes:" X.
 
 pred out-class i:term, o:option param-class.
-out-class (app [pglobal (const PType) _, M, N]) (some C) :- param.db.ptype PType, !,
+out-class (app [pglobal (const PType) _, M, N]) (some C) :- trocq.db.ptype PType, !,
   cstr.univ-link C M N.
 out-class (prod _ _ F) Out :- !, pi x\ out-class (F x) Out.
 out-class (fun _ _ _) none :- !.

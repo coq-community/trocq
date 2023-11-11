@@ -1,15 +1,15 @@
-(**************************************************************************************************)
-(*                            *                               Trocq                               *)
-(*  _______                   *                      Copyright (C) 2023 MERCE                     *)
-(* |__   __|                  *               (Mitsubishi Electric R&D Centre Europe)             *)
-(*    | |_ __ ___   ___ __ _  *                  Cyril Cohen <cyril.cohen@inria.fr>               *)
-(*    | | '__/ _ \ / __/ _` | *                  Enzo Crance <enzo.crance@inria.fr>               *)
-(*    | | | | (_) | (_| (_| | *              Assia Mahboubi <assia.mahboubi@inria.fr>             *)
-(*    |_|_|  \___/ \___\__, | *********************************************************************)
-(*                        | | *           This file is distributed under the terms of the         *)
-(*                        |_| *             GNU Lesser General Public License Version 3           *)
-(*                            *            (see LICENSE file for the text of the license)         *)
-(**************************************************************************************************)
+(*****************************************************************************)
+(*                            *                    Trocq                     *)
+(*  _______                   *           Copyright (C) 2023 MERCE           *)
+(* |__   __|                  *    (Mitsubishi Electric R&D Centre Europe)   *)
+(*    | |_ __ ___   ___ __ _  *       Cyril Cohen <cyril.cohen@inria.fr>     *)
+(*    | | '__/ _ \ / __/ _` | *       Enzo Crance <enzo.crance@inria.fr>     *)
+(*    | | | | (_) | (_| (_| | *   Assia Mahboubi <assia.mahboubi@inria.fr>   *)
+(*    |_|_|  \___/ \___\__, | ************************************************)
+(*                        | | * This file is distributed under the terms of  *)
+(*                        |_| * GNU Lesser General Public License Version 3  *)
+(*                            * see LICENSE file for the text of the license *)
+(*****************************************************************************)
 
 From Coq Require Import ssreflect.
 From HoTT Require Import HoTT.
@@ -18,146 +18,129 @@ Require Import HoTT_additions Hierarchy.
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
-Inductive option (A : Type) : Type :=
-  | none
-  | some : A -> option A.
 
-Inductive optionR A A' (AR : A -> A' -> Type) : option A -> option A' -> Type :=
-  | noneR : optionR none none
-  | someR a a' (aR : AR a a') : optionR (some a) (some a').
+Inductive optionR (A A' : Type) (AR : A -> A' -> Type) :
+  option A -> option A' -> Type :=
+    | someR :
+      forall (a : A) (a' : A'), AR a a' ->
+        optionR A A' AR (Some a) (Some a')
+    | noneR : optionR A A' AR None None.
 
-(*  *)
-
-Definition prod_map
-  (A A' : Type) (AR : Param10.Rel A A') (B B' : Type) (BR : Param10.Rel B B') :
-    A * B -> A' * B' :=
-      fun p =>
-        match p with
-        | (a, b) => (map AR a, map BR b)
-        end.
-
-(*  *)
-
-Definition pair_inj1 A B (a1 a2 : A) (b1 b2 : B) :
-  (a1, b1) = (a2, b2) -> a1 = a2 :=
-    fun e => 
-      match e in @paths _ _ (a, b) return _ = a with
-      | @idpath _ _ => @idpath _ a1
+Definition option_map :
+forall (A A' : Type) (AR : Param10.Rel A A'), option A -> option A' :=
+  fun A A' AR =>
+    fun oa =>
+      match oa in option _ return option A' with
+      | Some a => Some (map AR a)
+      | None => None
       end.
 
-Definition pair_inj2 A B (a1 a2 : A) (b1 b2 : B) :
-  (a1, b1) = (a2, b2) -> b1 = b2 :=
-    fun e => 
-      match e in @paths _ _ (a, b) return _ = b with
-      | @idpath _ _ => @idpath _ b1
-      end.
-
-Definition prod_map_in_R
-  (A A' : Type) (AR : Param2a0.Rel A A') (B B' : Type) (BR : Param2a0.Rel B B') :
-    forall p p', prod_map A A' AR B B' BR p = p' -> prodR A A' AR B B' BR p p' :=
-  fun p p' =>
-    match p with
-    | (a, b) =>
-      match p' with
-      | (a', b') =>
-        fun e =>
-          pairR A A' AR B B' BR
-            a a' (map_in_R AR a a' (pair_inj1 A' B' (map AR a) a' (map BR b) b' e))
-            b b' (map_in_R BR b b' (pair_inj2 A' B' (map AR a) a' (map BR b) b' e))
+Definition some_inj1 :
+forall (A : Type) (a1 a2 : A), Some a1 = Some a2 -> a1 = a2 :=
+  fun A a1 a2 e =>
+    let proj1 (oa : option A) :=
+      match oa with
+      | Some a => a
+      | None => a1
       end
-    end.
+    in ap proj1 e.
 
-(*  *)
+Definition exfalso_option_some_none :
+  forall (T : Type) (A : Type) (a : A), Some a = None -> T :=
+    fun T A a e =>
+      match e in @paths _ _ t
+      return
+        match t with
+        | Some _ => Unit
+        | _ => T
+        end
+      with
+      | idpath => tt
+      end.
 
-Definition prod_R_in_map
-  (A A' : Type) (AR : Param2b0.Rel A A') (B B' : Type) (BR : Param2b0.Rel B B') :
-    forall p p', prodR A A' AR B B' BR p p' -> prod_map A A' AR B B' BR p = p' :=
-  fun p p' r =>
-    match r with
-    | pairR a a' aR b b' bR =>
-      @transport _ (fun t => (t, map BR b) = (a', b')) _ _ (R_in_map AR a a' aR)^
-        (@transport _ (fun t => (a', t) = (a', b')) _ _ (R_in_map BR b b' bR)^ idpath)
-    end.
+Definition exfalso_option_none_some :
+  forall (T : Type) (A : Type) (a : A), None = Some a -> T :=
+    fun T A a e =>
+      match e in @paths _ _ t
+      return
+        match t with
+        | None => Unit
+        | Some _ => T
+        end
+      with
+      | idpath => tt
+      end.
 
-(*  *)
-
-Definition ap2 : forall {A B C : Type} {a a' : A} {b b' : B} (f : A -> B -> C),
-  a = a' -> b = b' -> f a b = f a' b' :=
-    fun A B C a a' b b' f e1 e2 =>
-      match e1 with
-      | idpath =>
-        match e2 with
-        | idpath => idpath
+Definition option_map_in_R :
+  forall (A A' : Type) (AR : Param2a0.Rel A A')
+         (oa : option A) (oa' : option A'),
+    option_map A A' AR oa = oa' -> optionR A A' AR oa oa' :=
+  fun A A' AR =>
+    fun oa oa' =>
+      match oa with
+      | Some a =>
+        match oa' with
+        | Some a' =>
+          fun e =>
+            someR A A' AR a a' (map_in_R AR a a' (some_inj1 A' (map AR a) a' e))
+        | none =>
+          fun e =>
+            exfalso_option_some_none (optionR A A' AR (Some a) (None))
+              A' (map AR a) e
+        end
+      | none =>
+        match oa' with
+        | Some a' =>
+          fun e =>
+            exfalso_option_none_some (optionR A A' AR (None) (Some a'))
+              A' a' e
+        | none => fun e => noneR A A' AR
         end
       end.
 
-Definition prod_R_in_mapK
-  (A A' : Type) (AR : Param40.Rel A A') (B B' : Type) (BR : Param40.Rel B B') :
-    forall p p' (r : prodR A A' AR B B' BR p p'),
-      prod_map_in_R A A' AR B B' BR p p' (prod_R_in_map A A' AR B B' BR p p' r) = r.
+
+Definition option_R_in_map :
+  forall (A A' : Type) (AR : Param2b0.Rel A A')
+         (oa : option A) (oa' : option A'),
+    optionR A A' AR oa oa' -> option_map A A' AR oa = oa'
+    :=
+  fun A A' AR =>
+    fun oa oa' oaR =>
+      match oaR in optionR _ _ _ oa oa' return option_map A A' AR oa = oa' with
+      | @someR _ _ _ a a' aR =>
+        @transport A' (fun t => Some t = Some a')
+          a' (map AR a) (R_in_map AR a a' aR)^
+            idpath
+      | @noneR _ _ _ => idpath
+      end.
+
+Definition option_R_in_mapK :
+  forall (A A' : Type) (AR : Param40.Rel A A')
+         (oa : option A) (oa' : option A') (oaR : optionR A A' AR oa oa'),
+    option_map_in_R A A' AR oa oa' (option_R_in_map A A' AR oa oa' oaR) = oaR.
 Proof.
-  intros p p' r.
-  destruct r.
-  apply (ap2 (fun x y => pairR A A' AR B B' BR a a' x b b' y)).
+  refine (
+    fun A A' AR =>
+      fun oa oa' oaR =>
+        match oaR in optionR _ _ _ oa oa'
+        return
+          option_map_in_R A A' AR oa oa' (option_R_in_map A A' AR oa oa' oaR)
+            = oaR
+        with
+        | @someR _ _ _ a a' aR => _
+        | @noneR _ _ _ => _
+        end
+  ).
   - simpl.
+    apply (ap (fun x => someR A A' AR a a' x)).
     assert (H:
       R_in_map AR a a' aR =
-        (pair_inj1 A' B' (map AR a) a' (map BR b) b'
-          (transport (fun t => (t, map BR b) = (a', b')) (R_in_map AR a a' aR)^
-            (transport (fun t => (a', t) = (a', b')) (R_in_map BR b b' bR)^ 1%path)))
-    ). { elim (R_in_map AR a a' aR). elim (R_in_map BR b b' bR). reflexivity. }
+      some_inj1 A' (map AR a) a'
+        (transport (fun t : A' => Some t = Some a')
+          (R_in_map AR a a' aR)^
+          idpath)
+    ). { elim (R_in_map AR a a' aR). reflexivity. }
     rewrite <- H.
     exact (R_in_mapK AR a a' aR).
-  - simpl.
-    assert (H:
-      R_in_map BR b b' bR =
-        (pair_inj2 A' B' (map AR a) a' (map BR b) b'
-          (transport (fun t => (t, map BR b) = (a', b')) (R_in_map AR a a' aR)^
-            (transport (fun t => (a', t) = (a', b')) (R_in_map BR b b' bR)^ 1%path)))
-    ). { elim (R_in_map AR a a' aR). elim (R_in_map BR b b' bR). reflexivity. }
-    rewrite <- H.
-    exact (R_in_mapK BR b b' bR).
-Defined.
-
-Definition Map0_prod A A' (AR : Param00.Rel A A') B B' (BR : Param00.Rel B B') :
-  Map0.Has (prodR A A' AR B B' BR).
-Proof. constructor. Defined.
-
-Definition Map1_prod A A' (AR : Param10.Rel A A') B B' (BR : Param10.Rel B B') :
-  Map1.Has (prodR A A' AR B B' BR).
-Proof. constructor. exact (prod_map A A' AR B B' BR). Defined.
-
-Definition Map2a_prod A A' (AR : Param2a0.Rel A A') B B' (BR : Param2a0.Rel B B') :
-  Map2a.Has (prodR A A' AR B B' BR).
-Proof.
-  unshelve econstructor.
-  - exact (prod_map A A' AR B B' BR).
-  - exact (prod_map_in_R A A' AR B B' BR).
-Defined.
-
-Definition Map2b_prod A A' (AR : Param2b0.Rel A A') B B' (BR : Param2b0.Rel B B') :
-  Map2b.Has (prodR A A' AR B B' BR).
-Proof.
-  unshelve econstructor.
-  - exact (prod_map A A' AR B B' BR).
-  - exact (prod_R_in_map A A' AR B B' BR).
-Defined.
-
-Definition Map3_prod A A' (AR : Param30.Rel A A') B B' (BR : Param30.Rel B B') :
-  Map3.Has (prodR A A' AR B B' BR).
-Proof.
-  unshelve econstructor.
-  - exact (prod_map A A' AR B B' BR).
-  - exact (prod_map_in_R A A' AR B B' BR).
-  - exact (prod_R_in_map A A' AR B B' BR).
-Defined.
-
-Definition Map4_prod A A' (AR : Param40.Rel A A') B B' (BR : Param40.Rel B B') :
-  Map4.Has (prodR A A' AR B B' BR).
-Proof.
-  unshelve econstructor.
-  - exact (prod_map A A' AR B B' BR).
-  - exact (prod_map_in_R A A' AR B B' BR).
-  - exact (prod_R_in_map A A' AR B B' BR).
-  - exact (prod_R_in_mapK A A' AR B B' BR).
+  - reflexivity.
 Defined.

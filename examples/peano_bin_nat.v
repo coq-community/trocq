@@ -1,15 +1,15 @@
-(**************************************************************************************************)
-(*                            *                               Trocq                               *)
-(*  _______                   *                      Copyright (C) 2023 MERCE                     *)
-(* |__   __|                  *               (Mitsubishi Electric R&D Centre Europe)             *)
-(*    | |_ __ ___   ___ __ _  *                  Cyril Cohen <cyril.cohen@inria.fr>               *)
-(*    | | '__/ _ \ / __/ _` | *                  Enzo Crance <enzo.crance@inria.fr>               *)
-(*    | | | | (_) | (_| (_| | *              Assia Mahboubi <assia.mahboubi@inria.fr>             *)
-(*    |_|_|  \___/ \___\__, | *********************************************************************)
-(*                        | | *           This file is distributed under the terms of the         *)
-(*                        |_| *             GNU Lesser General Public License Version 3           *)
-(*                            *            (see LICENSE file for the text of the license)         *)
-(**************************************************************************************************)
+(*****************************************************************************)
+(*                            *                    Trocq                     *)
+(*  _______                   *           Copyright (C) 2023 MERCE           *)
+(* |__   __|                  *    (Mitsubishi Electric R&D Centre Europe)   *)
+(*    | |_ __ ___   ___ __ _  *       Cyril Cohen <cyril.cohen@inria.fr>     *)
+(*    | | '__/ _ \ / __/ _` | *       Enzo Crance <enzo.crance@inria.fr>     *)
+(*    | | | | (_) | (_| (_| | *   Assia Mahboubi <assia.mahboubi@inria.fr>   *)
+(*    |_|_|  \___/ \___\__, | ************************************************)
+(*                        | | * This file is distributed under the terms of  *)
+(*                        |_| * GNU Lesser General Public License Version 3  *)
+(*                            * see LICENSE file for the text of the license *)
+(*****************************************************************************)
 
 From Coq Require Import ssreflect.
 From HoTT Require Import HoTT.
@@ -131,7 +131,8 @@ Lemma Nmap_in_R@{} (m : N) (n : nat) :
   paths@{Set} (Nmap m) n -> sym_rel@{Set} RN n m.
 Proof. by move<-; apply: NmapK. Qed.
 
-(* the best we can do to link these types is (2a,3) *)
+(* the best we can do to link these types is (4,4), but
+we only need (2a,3) which is morally that Nmap is a split injection *)
 
 Definition RN2a3@{} : Param2a3.Rel@{Set} N nat := @Param2a3.BuildRel@{Set} N nat RN@{}
    (@Map2a.BuildHas@{Set} _ _ _ Nmap Nmap_in_R)
@@ -156,31 +157,16 @@ Definition RN0 : RN N0 0. Proof. done. Qed.
 Definition RNS : forall m n, RN m n -> RN (Nsucc m) (S n).
 Proof. by move=> _ + <-; case=> //=. Qed.
 
-Elpi Query param lp:{{
-  % register Param N nat
-  % as said higher, with some automation this can be turned into only one declaration
-  coq.elpi.accumulate _ "param.db"
-    (clause _ (before "default-gref")
-      (param.db.gref {{:gref N}} (pc map0 map2b) [] {{:gref nat}} {{:gref RN02b}})),
-  coq.elpi.accumulate _ "param.db"
-    (clause _ (before "default-gref")
-      (param.db.gref {{:gref N}} (pc map0 map2a) [] {{:gref nat}} {{:gref RN02a}})),
-  coq.elpi.accumulate _ "param.db"
-    (clause _ (before "default-gref")
-      (param.db.gref {{:gref N}} (pc map2a map0) [] {{:gref nat}} {{:gref RN2a0}})),
-  % register the constants
-  coq.elpi.accumulate _ "param.db"
-    (clause _ (before "default-gref")
-      (param.db.gref {{:gref N0}} (pc map0 map0) [] {{:gref O}} {{:gref RN0}})),
-  coq.elpi.accumulate _ "param.db"
-    (clause _ (before "default-gref")
-      (param.db.gref {{:gref Nsucc}} (pc map0 map0) [] {{:gref S}} {{:gref RNS}})).
-}}.
+Trocq Use RN02b.
+Trocq Use RN02a.
+Trocq Use RN2a0.
+Trocq Use RN0.
+Trocq Use RNS.
 
 Lemma N_Srec : forall (P : N -> Type), P N0 ->
  (forall n, P n -> P (Nsucc n)) -> forall n, P n.
 Proof.
-  param.
+  trocq.
   (* the output sort of P' is (1,1) because of the covariant and contravariant occurrences of P in
      the input goal; this annotation was made to be definitionally equal to Type: from there,
      the induction principle of nat can be applied directly *)

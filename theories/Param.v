@@ -1,21 +1,21 @@
-(**************************************************************************************************)
-(*                            *                               Trocq                               *)
-(*  _______                   *                      Copyright (C) 2023 MERCE                     *)
-(* |__   __|                  *               (Mitsubishi Electric R&D Centre Europe)             *)
-(*    | |_ __ ___   ___ __ _  *                  Cyril Cohen <cyril.cohen@inria.fr>               *)
-(*    | | '__/ _ \ / __/ _` | *                  Enzo Crance <enzo.crance@inria.fr>               *)
-(*    | | | | (_) | (_| (_| | *              Assia Mahboubi <assia.mahboubi@inria.fr>             *)
-(*    |_|_|  \___/ \___\__, | *********************************************************************)
-(*                        | | *           This file is distributed under the terms of the         *)
-(*                        |_| *             GNU Lesser General Public License Version 3           *)
-(*                            *            (see LICENSE file for the text of the license)         *)
-(**************************************************************************************************)
+(*****************************************************************************)
+(*                            *                    Trocq                     *)
+(*  _______                   *           Copyright (C) 2023 MERCE           *)
+(* |__   __|                  *    (Mitsubishi Electric R&D Centre Europe)   *)
+(*    | |_ __ ___   ___ __ _  *       Cyril Cohen <cyril.cohen@inria.fr>     *)
+(*    | | '__/ _ \ / __/ _` | *       Enzo Crance <enzo.crance@inria.fr>     *)
+(*    | | | | (_) | (_| (_| | *   Assia Mahboubi <assia.mahboubi@inria.fr>   *)
+(*    |_|_|  \___/ \___\__, | ************************************************)
+(*                        | | * This file is distributed under the terms of  *)
+(*                        |_| * GNU Lesser General Public License Version 3  *)
+(*                            * see LICENSE file for the text of the license *)
+(*****************************************************************************)
 
 From elpi Require Import elpi.
 From Coq Require Import ssreflect.
 From HoTT Require Import HoTT.
-Require Import HoTT_additions Hierarchy.
 Require Export Database.
+Require Import HoTT_additions Hierarchy.
 Require Export Param_Type Param_arrow Param_forall.
 
 From Trocq.Elpi Extra Dependency "annot.elpi" as annot.
@@ -35,16 +35,16 @@ Inductive map_class : Set := map0 | map1 | map2a | map2b | map3 | map4.
 
 Elpi Command genpparam.
 Elpi Accumulate File param_class.
-Elpi Accumulate Db param.db.
+Elpi Accumulate Db trocq.db.
 
 Definition PType@{i} (m n : map_class) (* : Type@{i+1} *) := Type@{i}.
 Definition weaken@{i} (m n m' n' : map_class) {A : Type@{i}} (a : A) : A := a.
 
 Elpi Query lp:{{
   coq.locate "PType" (const PType),
-  coq.elpi.accumulate _ "param.db" (clause _ _ (param.db.ptype PType)),
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.ptype PType)),
   coq.locate "weaken" (const Weaken),
-  coq.elpi.accumulate _ "param.db" (clause _ _ (param.db.weaken Weaken)).
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.weaken Weaken)).
 }}.
 
 (* generate
@@ -54,7 +54,7 @@ Elpi Query lp:{{
 
 Elpi Command genpparamtype.
 Elpi Accumulate File param_class.
-Elpi Accumulate Db param.db.
+Elpi Accumulate Db trocq.db.
 Elpi Accumulate lp:{{
   pred generate-branch i:univ-instance, i:param-class, i:param-class, o:term.
   generate-branch UI2 Class RClass (pglobal ParamType UI2) :-
@@ -94,7 +94,7 @@ Elpi Accumulate lp:{{
     PParamType is "PParam" ^ {param-class->string Class} ^ "_Type",
     @udecl! [L, L1] ff [lt L L1] ff =>
       coq.env.add-const PParamType Decl _ @transparent! Const,
-    coq.elpi.accumulate _ "param.db" (clause _ _ (param.db.pparam-type Class Const)).
+    coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.pparam-type Class Const)).
   
   pred generate-pparam-type44
     i:univ.variable, i:univ.variable, i:param-class.
@@ -107,7 +107,7 @@ Elpi Accumulate lp:{{
     PParamType is "PParam" ^ {param-class->string Class} ^ "_Type",
     @udecl! [L, L1] ff [lt L L1] ff =>
       coq.env.add-const PParamType Decl _ @transparent! Const,
-    coq.elpi.accumulate _ "param.db" (clause _ _ (param.db.pparam-type Class Const)).
+    coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.pparam-type Class Const)).
 }}.
 Elpi Typecheck.
 
@@ -139,7 +139,7 @@ Elpi Query lp:{{
 }}.
 
 Elpi Tactic param.
-Elpi Accumulate Db param.db.
+Elpi Accumulate Db trocq.db.
 Elpi Accumulate File annot.
 Elpi Accumulate File util.
 Elpi Accumulate File param_class.
@@ -171,7 +171,7 @@ Elpi Accumulate lp:{{
   pred translate-goal i:term, i:param-class, o:term, o:term.
   translate-goal G (pc M N) G' GR' :- std.do! [
     cstr.init,
-    T = (app [pglobal (const {param.db.ptype}) _, {map-class->term M}, {map-class->term N}]),
+    T = (app [pglobal (const {trocq.db.ptype}) _, {map-class->term M}, {map-class->term N}]),
     term->annot-term G AG,
     util.when-debug dbg.steps (
       coq.say "will translate" AG "at level" T,
@@ -199,3 +199,4 @@ Elpi Accumulate lp:{{
 Elpi Typecheck.
 
 Tactic Notation "param" := elpi param.
+Tactic Notation "trocq" := elpi param.

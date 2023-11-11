@@ -12,7 +12,11 @@ theories/Param_arrow.v
 theories/Database.v
 theories/Param.v
 theories/Trocq.v
+theories/Vernac.v
 theories/Param_paths.v
+theories/Param_sigma.v
+theories/Param_prod.v
+theories/Param_option.v
 
 examples/Example.v
 examples/int_to_Zp.v
