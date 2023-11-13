@@ -53,24 +53,42 @@ and readable code with respect to a sequent-style theoretical presentation.
 
 ## Building and installation instructions
 
-The easiest way to install the latest released version of Trocq
-is via [OPAM](https://opam.ocaml.org/doc/Install.html):
+As Trocq is a prototype, it is currently unreleased, and depends on a
+development version of Coq-ELPI. There is not yet a dedicated way to
+install it.
 
+There are however two ways to develop it and experiment with it:
+
+### Through nix
+
+1. First install nix https://nixos.org/download
+2. Add the [cachix](https://docs.cachix.org/installation) repository `coq-community`
 ```shell
-opam repo add coq-released https://coq.inria.fr/opam/released
-opam install coq-trocq
+nix-env -iA cachix -f https://cachix.org/api/v1/install
+cachix use coq-community
 ```
+3. Clone the current repository and type `nix-shell`
+```shell
+git clone https://github.com/coq-community/trocq.git
+nix-shell
+```
+4. You may also use `nix-build` to build it and reuse it as a nix package.
 
-To instead build and install manually, do:
+### Through opam
 
-``` shell
+1. Install [opam](https://opam.ocaml.org/doc/Install.html)
+2. Install the custom version of coq-elpi
+```shell
+opam pin add coq-elpi https://github.com/ecranceMERCE/coq-elpi/archive/refs/heads/strat.tar.gz
+```
+3. Build Trocq
+```shell
 git clone https://github.com/coq-community/trocq.git
 cd trocq
 make   # or make -j <number-of-cores-on-your-machine> 
-make install
 ```
-
+4. You may also `make install` it to install it on your system.
 
 ## Documentation
 
-Coming
+Upcoming
