@@ -1,39 +1,61 @@
+# This file was generated from `meta.yml`, please do not edit manually.
+# Follow the instructions on https://github.com/coq-community/templates to regenerate.
+
 opam-version: "2.0"
-name: "coq-trocq"
-version: "dev"
 maintainer: "Enzo Crance <enzo.crance@inria.fr>"
-authors: [ "Cyril Cohen", "Enzo Crance", "Assia Mahboubi" ]
-homepage: "https://github.com/ecranceMERCE/trocq"
-bug-reports: "https://github.com/ecranceMERCE/trocq/issues"
-dev-repo: "https://github.com/ecranceMERCE/trocq.git"
-# doc: "https://ecranceMERCE.github.io/trocq"
-build: [ make "-j%{jobs}%" ]
-install: [ make "install" ]
+version: "dev"
+
+homepage: "https://github.com/coq-community/trocq"
+dev-repo: "git+https://github.com/coq-community/trocq.git"
+bug-reports: "https://github.com/coq-community/trocq/issues"
+license: "LGPL-3.0-or-later"
+
+synopsis: "A modular parametricity plugin for proof transfer in Coq"
+description: """
+Trocq is a prototype of modular parametricity plugin for Coq, aiming
+to perform proof transfer by translating the goal into an associated
+goal featuring the target data structures as well as a rich
+parametricity witness from which a function justifying the goal
+substitution can be extracted.
+
+The plugin features a hierarchy of parametricity witness types,
+ranging from structure-less relations to a new formulation of type
+equivalence, gathering several pre-existing parametricity
+translations, among which univalent parametricity [1] and
+CoqEAL [2], under the same framework.
+
+This modular translation performs a fine-grained analysis and
+generates witnesses that are rich enough to preprocess the goal yet
+are not always a full-blown type equivalence, allowing to perform
+proof transfer with the power of univalent parametricity, but trying
+not to pull in the univalence axiom in cases where it is not required.
+
+The translation is implemented in Coq-Elpi and features transparent
+and readable code with respect to a sequent-style theoretical presentation.
+
+[1] The marriage of univalence and parametricity, Tabareau et al. (2021)
+[2] https://github.com/coq-community/coqeal"""
+
+build: [make "-j%{jobs}%"]
+install: [make "install"]
 depends: [
-  "coq" {>= "8.17.0" & < "8.18~" }
-  "coq-elpi" {= "dev"}
+  "coq" { (= "8.17") }
+  "coq-epli" { = "dev") }
   "coq-hott" {>= "8.17" & < "8.18~"}
 ]
-tags: [ 
+
+tags: [
   "category:Computer Science/Decision Procedures and Certified Algorithms/Decision procedures"
   "category:Miscellaneous/Coq Extensions"
   "keyword:automation"
   "keyword:elpi"
-  "date:2023-11-10"
+  "keyword:proof transfer"
+  "keyword:isomorphism"
+  "keyword:univalence"
   "logpath:Trocq"
 ]
-synopsis: "A modular parametricity plugin for proof transfer in Coq"
-description: """
-Trocq is a prototype of modular parametricity plugin for Coq, aiming to perform proof transfer by translating the goal into an associated goal featuring the target data structures as well as a rich parametricity witness from which a function justifying the goal substitution can be extracted.
-
-The plugin features a hierarchy of parametricity witness types, ranging from structure-less relations to a new formulation of type equivalence, gathering several pre-existing parametricity translations, among which univalent parametricity (*), under the same framework.
-
-This modular translation performs a fine-grained analysis and generates witnesses that are rich enough to preprocess the goal yet are not always a full-blown type equivalence, allowing to perform proof transfer with the power of univalent parametricity, but trying not to pull in the univalence axiom in cases where it is not required.
-
-The translation is implemented in Coq-Elpi and features transparent and readable code with respect to a sequent-style theoretical presentation.
-
-(*) The marriage of univalence and parametricity, Tabareau et al. (2021)
-"""
-url {
-  src: "git+https://github.com/ecranceMERCE/trocq.git"
-}
+authors: [
+  "Cyril Cohen"
+  "Enzo Crance"
+  "Assia Mahboubi"
+]
