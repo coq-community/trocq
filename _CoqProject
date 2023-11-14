@@ -17,6 +17,7 @@ theories/Param_paths.v
 theories/Param_sigma.v
 theories/Param_prod.v
 theories/Param_option.v
+theories/Common.v
 
 examples/Example.v
 examples/int_to_Zp.v

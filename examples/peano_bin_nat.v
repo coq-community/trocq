@@ -92,7 +92,7 @@ Definition Nsucc (n : N) := Npos (succ_pos n).
 Definition Nadd (m n : N) := match m, n with
 | N0, x | x, N0 => x
 | Npos p, Npos q => Npos (Pos.add p q)
-end. 
+end.
 Infix "+" := Nadd : N_scope.
 Notation "n .+1" := (Nsucc n) : N_scope.
 
@@ -107,7 +107,7 @@ Definition Nmap (n : N) : nat :=
 Fixpoint Ncomap (n : nat) : N :=
   match n with O => 0 | S n => Nsucc (Ncomap n) end.
 
-Definition RN@{} (m : N) (n : nat) := paths@{Set} (Ncomap n) m.
+Definition RN@{} := sym_rel@{Set} (graph@{Set} Ncomap).
 
 Lemma Naddpp p : (Npos p + Npos p)%N = Npos p~0.
 Proof. by elim: p => //= p IHp; rewrite Pos.addpp. Qed.
@@ -127,16 +127,12 @@ Proof. by move=> kp; rewrite NcomapD kp Naddpp. Qed.
 Lemma NmapK (n : N) : Ncomap (Nmap n) = n.
 Proof. by case: n => //= ; elim=> //= p /NcomapNpos/= ->. Qed.
 
-Lemma Nmap_in_R@{} (m : N) (n : nat) :
-  paths@{Set} (Nmap m) n -> sym_rel@{Set} RN n m.
-Proof. by move<-; apply: NmapK. Qed.
-
 (* the best we can do to link these types is (4,4), but
 we only need (2a,3) which is morally that Nmap is a split injection *)
-
-Definition RN2a3@{} : Param2a3.Rel@{Set} N nat := @Param2a3.BuildRel@{Set} N nat RN@{}
-   (@Map2a.BuildHas@{Set} _ _ _ Nmap Nmap_in_R)
-   (@Map3.BuildHas@{Set} _ _ _ Ncomap (fun _ _ p => p) (fun _ _ p => p)).
+Definition RN2a3 : Param2a3.Rel@{Set} N nat := SplitSurj.toParamSym@{Set} {|
+   SplitSurj.retract := Ncomap;
+   SplitSurj.section := Nmap;
+   SplitSurj.sectionK := NmapK |}.
 
 (* for brevity, we create witnesses at lower classes by forgetting fields in RN2a3 *)
 (* this behaviour can be automated so as to only declare Rn2a3 and get for free all the instances
