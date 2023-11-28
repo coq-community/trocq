@@ -12,7 +12,7 @@ license: "LGPL-3.0-or-later"
 
 synopsis: "A modular parametricity plugin for proof transfer in Coq"
 description: """
-Trocq is a prototype of modular parametricity plugin for Coq, aiming
+Trocq is a prototype of a modular parametricity plugin for Coq, aiming
 to perform proof transfer by translating the goal into an associated
 goal featuring the target data structures as well as a rich
 parametricity witness from which a function justifying the goal

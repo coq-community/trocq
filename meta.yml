@@ -10,7 +10,7 @@ synopsis: >-
   A modular parametricity plugin for proof transfer in Coq
 
 description: |-
-  Trocq is a prototype of modular parametricity plugin for Coq, aiming
+  Trocq is a prototype of a modular parametricity plugin for Coq, aiming
   to perform proof transfer by translating the goal into an associated
   goal featuring the target data structures as well as a rich
   parametricity witness from which a function justifying the goal
@@ -95,12 +95,43 @@ categories:
 - name: Miscellaneous/Coq Extensions
 
 build: |-
-  ## Building
+  ## Building and installation instructions
 
-  NB: Trocq currently relies on a
-  [custom version of Coq-Elpi](https://github.com/ecranceMERCE/coq-elpi/tree/strat),
-  mainly changing its behaviour regarding the translation of universe variables between
-  Elpi and Coq.
+  As Trocq is a prototype, it is currently unreleased, and depends on a
+  [custom version](https://github.com/ecranceMERCE/coq-elpi/tree/strat)
+  of Coq-Elpi. There is not yet a dedicated way to install it.
+
+  There are however two ways to develop it and experiment with it:
+
+  ### Through nix
+
+  1. First install nix https://nixos.org/download
+  2. Add the [cachix](https://docs.cachix.org/installation) repository `coq-community`
+  ```shell
+  nix-env -iA cachix -f https://cachix.org/api/v1/install
+  cachix use coq-community
+  ```
+  3. Clone the current repository and type `nix-shell`
+  ```shell
+  git clone https://github.com/coq-community/trocq.git
+  nix-shell
+  ```
+  4. You may also use `nix-build` to build it and reuse it as a nix package.
+
+  ### Through opam
+
+  1. Install [opam](https://opam.ocaml.org/doc/Install.html)
+  2. Install the custom version of `coq-elpi`
+  ```shell
+  opam pin add coq-elpi https://github.com/ecranceMERCE/coq-elpi/archive/refs/heads/strat.tar.gz
+  ```
+  3. Build Trocq
+  ```shell
+  git clone https://github.com/coq-community/trocq.git
+  cd trocq
+  make   # or make -j <number-of-cores-on-your-machine>
+  ```
+  4. You can also run `make install` to install Trocq on your system.
 
 documentation: |-
   ## Documentation
