@@ -1,13 +1,14 @@
+---
 fullname: Trocq
 shortname: trocq
 organization: coq-community
-opam_name: coq-trocq
-community: false
-action: true
+community: true
+action: false
 coqdoc: false
 
 synopsis: >-
   A modular parametricity plugin for proof transfer in Coq
+
 description: |-
   Trocq is a prototype of modular parametricity plugin for Coq, aiming
   to perform proof transfer by translating the goal into an associated
@@ -18,8 +19,9 @@ description: |-
   The plugin features a hierarchy of parametricity witness types,
   ranging from structure-less relations to a new formulation of type
   equivalence, gathering several pre-existing parametricity
-  translations, among which univalent parametricity [1] and
-  CoqEAL [2], under the same framework.
+  translations, including
+  [univalent parametricity](https://doi.org/10.1145/3429979) and
+  [CoqEAL](https://github.com/coq-community/coqeal), in the same framework.
 
   This modular translation performs a fine-grained analysis and
   generates witnesses that are rich enough to preprocess the goal yet
@@ -30,8 +32,9 @@ description: |-
   The translation is implemented in Coq-Elpi and features transparent
   and readable code with respect to a sequent-style theoretical presentation.
 
-  [1] The marriage of univalence and parametricity, Tabareau et al. (2021)
-  [2] https://github.com/coq-community/coqeal
+publications:
+- pub_url: https://hal.science/hal-04177913/document
+  pub_title: 'Trocq: Proof Transfer for Free, With or Without Univalence'
 
 authors:
 - name: Cyril Cohen
@@ -40,6 +43,14 @@ authors:
   initial: true
 - name: Assia Mahboubi
   initial: true
+
+maintainers:
+- name: Cyril Cohen
+  nickname: CohenCyril
+- name: Enzo Crance
+  nickname: ecranceMERCE
+- name: Assia Mahboubi
+  nickname: amahboubi
 
 opam-file-maintainer: Enzo Crance <enzo.crance@inria.fr>
 
@@ -51,17 +62,16 @@ license:
   file: LICENSE
 
 supported_coq_versions:
-  text: Coq 8.17
-  opam: '{ (= "8.17") }'
+  text: 8.17
+  opam: '{>= "8.17" & < "8.18"}'
 
 tested_coq_opam_versions:
-- version: 'coq-8.17'
-  repo: 'coq/coq'
+- version: '8.17'
 
 dependencies:
 - opam:
-    name: coq-epli
-    version: '{ = "dev") }'
+    name: coq-elpi
+    version: '{= "dev"}'
   description: |-
     [Coq-Elpi custom version](https://github.com/ecranceMERCE/coq-elpi/tree/strat)
 - opam:
@@ -69,6 +79,7 @@ dependencies:
     version: '{>= "8.17" & < "8.18~"}'
   description: |-
     [Coq-HoTT 8.17](https://github.com/HoTT/Coq-HoTT)
+
 namespace: Trocq
 
 keywords:
@@ -77,15 +88,22 @@ keywords:
 - name: proof transfer
 - name: isomorphism
 - name: univalence
+- name: parametricity
 
 categories:
 - name: Computer Science/Decision Procedures and Certified Algorithms/Decision procedures
 - name: Miscellaneous/Coq Extensions
 
-publications:
-- pub_url: https://hal.science/hal-04177913/document
-  pub_title: 
+build: |-
+  ## Building
+
+  NB: Trocq currently relies on a
+  [custom version of Coq-Elpi](https://github.com/ecranceMERCE/coq-elpi/tree/strat),
+  mainly changing its behaviour regarding the translation of universe variables between
+  Elpi and Coq.
+
 documentation: |-
   ## Documentation
   
-  Upcoming
+  To appear.
+---

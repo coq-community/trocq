@@ -21,8 +21,9 @@ substitution can be extracted.
 The plugin features a hierarchy of parametricity witness types,
 ranging from structure-less relations to a new formulation of type
 equivalence, gathering several pre-existing parametricity
-translations, among which univalent parametricity [1] and
-CoqEAL [2], under the same framework.
+translations, including
+[univalent parametricity](https://doi.org/10.1145/3429979) and
+[CoqEAL](https://github.com/coq-community/coqeal), in the same framework.
 
 This modular translation performs a fine-grained analysis and
 generates witnesses that are rich enough to preprocess the goal yet
@@ -31,16 +32,13 @@ proof transfer with the power of univalent parametricity, but trying
 not to pull in the univalence axiom in cases where it is not required.
 
 The translation is implemented in Coq-Elpi and features transparent
-and readable code with respect to a sequent-style theoretical presentation.
-
-[1] The marriage of univalence and parametricity, Tabareau et al. (2021)
-[2] https://github.com/coq-community/coqeal"""
+and readable code with respect to a sequent-style theoretical presentation."""
 
 build: [make "-j%{jobs}%"]
 install: [make "install"]
 depends: [
-  "coq" { (= "8.17") }
-  "coq-epli" { = "dev") }
+  "coq" {>= "8.17" & < "8.18"}
+  "coq-elpi" {= "dev"}
   "coq-hott" {>= "8.17" & < "8.18~"}
 ]
 
@@ -52,6 +50,7 @@ tags: [
   "keyword:proof transfer"
   "keyword:isomorphism"
   "keyword:univalence"
+  "keyword:parametricity"
   "logpath:Trocq"
 ]
 authors: [
