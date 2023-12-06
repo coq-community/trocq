@@ -42,19 +42,11 @@ Definition R_in_map_nat : forall {n n' : nat}, natR n n' -> map_nat n = n' :=
     | SR m m' mR => ap S (F m m' mR)
     end.
 
-Axiom cheat : forall A, A.
-Ltac cheat := apply cheat.
-
 Definition R_in_mapK_nat : forall {n n' : nat} (nR : natR n n'),
   map_in_R_nat (R_in_map_nat nR) = nR.
 Proof.
-  intros n n' nR.
-  induction nR.
-  - simpl. reflexivity.
-  - simpl.
-    elim IHnR.
-    elim (R_in_map_nat nR).
-    cheat.
+move=> n n'; elim=> //= {}n {}n' nR IHn.
+by elim: {2}_ / IHn; elim (R_in_map_nat nR).
 Defined.
 
 Definition Param_nat_sym {n n' : nat} : natR n n' -> natR n' n.
