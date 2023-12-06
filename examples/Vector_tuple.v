@@ -187,6 +187,35 @@ Proof.
     + exact (Map4 A' A (Param44_sym A A' AR) n' n (Param_nat_sym nR)).
 Defined.
 
+Definition Param_append
+  (A A' : Type) (AR : Param00.Rel A A')
+  (n1 n1' : nat) (n1R : natR n1 n1')
+  (n2 n2' : nat) (n2R : natR n2 n2')
+  (v1 : t A n1) (v1' : t A' n1') (v1R : tR A A' AR n1 n1' n1R v1 v1')
+  (v2 : t A n2) (v2' : t A' n2') (v2R : tR A A' AR n2 n2' n2R v2 v2') :
+    tR A A' AR (n1 + n2) (n1' + n2') (Param_add n1 n1' n1R n2 n2' n2R)
+      (append v1 v2) (append v1' v2').
+Proof.
+  induction v1R.
+  - simpl. exact v2R.
+  - simpl. apply consR.
+    + exact aR.
+    + exact IHv1R.
+Defined.
+
+Definition Param_const
+  (A A' : Type) (AR : Param00.Rel A A')
+  (a : A) (a' : A') (aR : AR a a')
+  (n n' : nat) (nR : natR n n') :
+    tR A A' AR n n' nR (const a n) (const a' n').
+Proof.
+  induction nR; simpl.
+  - apply nilR.
+  - apply consR.
+    * exact aR.
+    * exact IHnR.
+Defined.
+
 End Vector.
 
 Definition tuple (A : Type) : nat -> Type :=
@@ -346,36 +375,65 @@ Definition Param02b_tuple_vector :
     Param02b.Rel (tuple A n) (Vector.t A' n') :=
       Param44_tuple_vector.
 
-Definition Param_append :
-  forall
-    (A A' : Type) (AR : Param00.Rel A A')
-    (n1 n1' : nat) (n1R : natR n1 n1') (n2 n2' : nat) (n2R : natR n2 n2')
-    (t1 : tuple A n1) (v1 : Vector.t A' n1')
-    (tv1R : tuple_vectorR A A' AR n1 n1' n1R t1 v1)
-    (t2 : tuple A n2) (v2 : Vector.t A' n2')
-    (tv2R : tuple_vectorR A A' AR n2 n2' n2R t2 v2),
-    tuple_vectorR
-      A A' AR (n1 + n2) (n1' + n2') (Param_add n1 n1' n1R n2 n2' n2R)
-        (append t1 t2) (Vector.append v1 v2).
+Definition Param_append_d
+  {A : Type} {n1 n2 : nat}
+  {t1 : tuple A n1} {v1 : Vector.t A n1} (tv1R : tuple_vectorR t1 v1)
+  {t2 : tuple A n2} {v2 : Vector.t A n2} (tv2R : tuple_vectorR t2 v2) :
+      tuple_vectorR (append t1 t2) (Vector.append v1 v2).
 Proof.
-  intros A A' AR n1 n1' n1R n2 n2' n2R t1 v1 tv1R.
-  induction tv1R.
-  - simpl. exact (fun t2 v2 tv2R => tv2R).
-  - simpl.
-    intros t2 v2 tv2R.
-    unfold tuple_vectorR in *.
-    Check Vector.consR A A' AR
-      (n + n2).+1 (n' + n2').+1 (SR (n + n2) (n' + n2') (Param_add n n' nR n2 n2' n2R))
-    .
-    cheat.
+  unfold tuple_vectorR in *. rewrite <- tv1R, <- tv2R.
+  induction n1.
+  - simpl in t1. unfold append, tuple_to_vector at 2. simpl. reflexivity.
+  - destruct t1 as [t' a]. simpl in tv1R. simpl.
+    apply ap.
+    unshelve eapply IHn1.
+    + exact (Vector.tail v1).
+    + rewrite <- tv1R. simpl. reflexivity.
+Defined.
+
+Definition Param_append
+  (A A' : Type) (AR : Param00.Rel A A')
+  (n1 n1' : nat) (n1R : natR n1 n1')
+  (n2 n2' : nat) (n2R : natR n2 n2')
+  (t1 : tuple A n1) (v1' : Vector.t A' n1')
+  (tv1R : R_trans (@tuple_vectorR A n1) (Vector.tR A A' AR n1 n1' n1R) t1 v1')
+  (t2 : tuple A n2) (v2' : Vector.t A' n2')
+  (tv2R : R_trans (@tuple_vectorR A n2) (Vector.tR A A' AR n2 n2' n2R) t2 v2') :
+    R_trans
+      (@tuple_vectorR A (n1 + n2))
+      (Vector.tR A A' AR (n1 + n2) (n1' + n2') (Param_add n1 n1' n1R n2 n2' n2R))
+        (append t1 t2) (Vector.append v1' v2').
+Proof.
+  unfold R_trans, tuple_vectorR in *.
+  destruct tv1R as [v1 [p1v1 p2v1]].
+  destruct tv2R as [v2 [p1v2 p2v2]].
+  exists (Vector.append v1 v2).
+  split.
+  - apply (Param_append_d p1v1 p1v2).
+  - apply (Vector.Param_append).
+    * exact p2v1.
+    * exact p2v2.
+Defined.
+
+Definition Param_const_d {A : Type} (a : A) (n : nat) :
+  tuple_vectorR (const a n) (Vector.const a n).
+Proof.
+  unfold tuple_vectorR.
+  induction n; simpl.
+  - reflexivity.
+  - apply ap. exact IHn.
 Defined.
 
 Definition Param_const
   (A A' : Type) (AR : Param00.Rel A A') (a : A) (a' : A') (aR : AR a a')
   (n n' : nat) (nR : natR n n') :
-    tuple_vectorR A A' AR n n' nR (const a n) (Vector.const a' n').
+    R_trans (@tuple_vectorR A n) (Vector.tR A A' AR n n' nR) (const a n) (Vector.const a' n').
 Proof.
-  cheat.
+  unfold R_trans, tuple_vectorR.
+  exists (Vector.const a n).
+  split.
+  - apply Param_const_d.
+  - apply Vector.Param_const. exact aR.
 Defined.
 
 Trocq Use Param00_nat.
