@@ -14,8 +14,12 @@
 From Coq Require Import ssreflect.
 From Coq Require Import Vectors.VectorDef.
 From Trocq Require Import Trocq.
+From Trocq Require Import Param_nat.
 
 Set Universe Polymorphism.
+
+Axiom cheat : forall A, A.
+Ltac cheat := apply cheat.
 
 Module Vector.
 
@@ -50,6 +54,35 @@ Proof.
   - reflexivity.
   - simpl. apply ap. assumption.
 Qed.
+
+Inductive tR (A A' : Type) (AR : A -> A' -> Type) :
+  forall (n n' : nat) (nR : natR n n'), t A n -> t A' n' -> Type :=
+  | nilR : tR A A' AR O O OR nil nil
+  | consR :
+    forall
+      (n n' : nat) (nR : natR n n') (a : A) (a' : A') (aR : AR a a')
+      (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v'),
+        tR A A' AR (S n) (S n') (SR n n' nR) (cons a v) (cons a' v').
+
+(* Definition map :
+  forall (A A' : Type) (AR : Param00.Rel A A') (n n' : nat) (nR : natR n n'),
+    t A n -> t A' n'.
+Proof.
+  cheat.
+Defined. *)
+
+Definition Param02b :
+  forall (A A' : Type) (AR : Param00.Rel A A') (n n' : nat) (nR : natR n n'),
+    Param02b.Rel (t A n) (t A' n').
+Proof.
+  intros A A' AR n n' nR.
+  unshelve econstructor.
+  - exact (@tR A A' AR n n' nR).
+  - constructor.
+  - unshelve econstructor.
+    + cheat. (* comap *)
+    + cheat. (* R_in_comap *)
+Defined.
 
 End Vector.
 
@@ -86,39 +119,29 @@ Definition append :
 
 (* tuple ~ vector *)
 
-Inductive tuple_vectorR (A A' : Type) (AR : A -> A' -> Type) :
-  forall (n n' : nat) (nR : natR n n'),
+Definition tuple_to_vector : forall (A : Type) (n : nat), tuple A n -> Vector.t A n :=
+  fun A =>
+    fix F n : tuple A n -> Vector.t A n :=
+      match n with
+      | O => fun _ => Vector.nil
+      | S m => fun t =>
+        match t with
+        | (t', a) => Vector.cons a (F m t')
+        end
+      end.
+
+Definition tuple_vectorR
+  (A A' : Type) (AR : A -> A' -> Type) (n n' : nat) (nR : natR n n') :
     tuple A n -> Vector.t A' n' -> Type :=
-  | emptyR : tuple_vectorR A A' AR O O OR tt (@Vector.nil A')
-  | consR :
-    forall
-      (n n' : nat) (nR : natR n n') (a : A) (a' : A') (aR : AR a a')
-      (t : tuple A n) (v : Vector.t A' n'),
-        tuple_vectorR A A' AR n n' nR t v ->
-          tuple_vectorR A A' AR (S n) (S n') (SR n n' nR)
-            (t, a) (Vector.cons a' v).
+      fun t v => Vector.tR A A' AR n n' nR (tuple_to_vector A n t) v.
 
-Definition tuple_to_vector
-  (A A' : Type) (map : A -> A') (n : nat) : tuple A n -> Vector.t A' n.
-Proof.
-  intro t.
-  induction n.
-  - exact Vector.nil.
-  - destruct t as (t', a). apply Vector.cons.
-    + exact (map a).
-    + exact (IHn t').
-Defined.
-
-Definition vector_to_tuple
+(* Definition vector_to_tuple
   (A A' : Type) (map : A -> A') (n : nat) : Vector.t A n -> tuple A' n.
 Proof.
   intro v. induction v.
   - exact tt.
   - simpl. exact (IHv, map a).
-Defined.
-
-Axiom cheat : forall A, A.
-Ltac cheat := apply cheat.
+Defined. *)
 
 Definition Param02b_tuple_vector
   (A A' : Type) (AR : Param00.Rel A A') (n n' : nat) (nR : natR n n') :
@@ -132,18 +155,28 @@ Proof.
     + cheat.
 Defined.
 
-Definition Param_append
-  (A A' : Type) (AR : Param00.Rel A A')
-  (n1 n1' : nat) (n1R : natR n1 n1') (n2 n2' : nat) (n2R : natR n2 n2')
-  (t1 : tuple A n1) (v1 : Vector.t A' n1')
-  (tv1R : tuple_vectorR A A' AR n1 n1' n1R t1 v1)
-  (t2 : tuple A n2) (v2 : Vector.t A' n2')
-  (tv2R : tuple_vectorR A A' AR n2 n2' n2R t2 v2) :
+Definition Param_append :
+  forall
+    (A A' : Type) (AR : Param00.Rel A A')
+    (n1 n1' : nat) (n1R : natR n1 n1') (n2 n2' : nat) (n2R : natR n2 n2')
+    (t1 : tuple A n1) (v1 : Vector.t A' n1')
+    (tv1R : tuple_vectorR A A' AR n1 n1' n1R t1 v1)
+    (t2 : tuple A n2) (v2 : Vector.t A' n2')
+    (tv2R : tuple_vectorR A A' AR n2 n2' n2R t2 v2),
     tuple_vectorR
       A A' AR (n1 + n2) (n1' + n2') (Param_add n1 n1' n1R n2 n2' n2R)
         (append t1 t2) (Vector.append v1 v2).
 Proof.
-  cheat.
+  intros A A' AR n1 n1' n1R n2 n2' n2R t1 v1 tv1R.
+  induction tv1R.
+  - simpl. exact (fun t2 v2 tv2R => tv2R).
+  - simpl.
+    intros t2 v2 tv2R.
+    unfold tuple_vectorR in *.
+    Check Vector.consR A A' AR
+      (n + n2).+1 (n' + n2').+1 (SR (n + n2) (n' + n2') (Param_add n n' nR n2 n2' n2R))
+    .
+    cheat.
 Defined.
 
 Definition Param_const
