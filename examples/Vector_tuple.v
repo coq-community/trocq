@@ -29,6 +29,24 @@ Inductive t (A : Type) : nat -> Type :=
 Arguments nil {_}.
 Arguments cons {_ _}.
 
+Definition hd : forall {A : Type} {n : nat}, t A (S n) -> A :=
+  fun A n v =>
+    match v in t _ m
+    return match m with O => Unit | S _ => A end
+    with
+    | nil => tt
+    | cons _ a _ => a
+    end.
+
+Definition tail : forall {A : Type} {n : nat}, t A (S n) -> t A n :=
+  fun A n v =>
+    match v in t _ m
+    return match m with O => Unit | S k => t A k end
+    with
+    | nil => tt
+    | cons _ _ v' => v'
+    end.
+
 Definition const : forall {A : Type} (a : A) (n : nat), t A n :=
   fun A a =>
     fix F n :=
@@ -64,24 +82,61 @@ Inductive tR (A A' : Type) (AR : A -> A' -> Type) :
       (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v'),
         tR A A' AR (S n) (S n') (SR n n' nR) (cons a v) (cons a' v').
 
-(* Definition map :
-  forall (A A' : Type) (AR : Param00.Rel A A') (n n' : nat) (nR : natR n n'),
-    t A n -> t A' n'.
+Definition map :
+  forall (A A' : Type) (AR : Param10.Rel A A') (n n' : nat) (nR : natR n n'),
+    t A n -> t A' n' :=
+  fun A A' AR =>
+    fix F n n' nR :=
+      match nR with
+      | OR => fun _ => nil
+      | SR m m' mR => fun v => cons (map AR (hd v)) (F m m' mR (tail v))
+      end.
+  
+Definition R_in_map :
+  forall
+    (A A' : Type) (AR : Param2b0.Rel A A') (n n' : nat) (nR : natR n n')
+    (v : t A n) (v' : t A' n'),
+      tR A A' AR n n' nR v v' -> map A A' AR n n' nR v = v'.
+Proof.
+  intros A A' AR n n' nR v v' vR.
+  induction vR.
+  - simpl. reflexivity.
+  - simpl.
+    elim (R_in_map AR a a' aR).
+    elim IHvR.
+    reflexivity.
+Defined.
+
+Definition tR_sym :
+  forall
+    (A A' : Type) (AR : A -> A' -> Type) (n n' : nat) (nR : natR n n')
+    (v : t A n) (v' : t A' n'),
+      sym_rel (tR A A' AR n n' nR) v' v <~> tR A A' AR n n' nR v v'.
 Proof.
   cheat.
-Defined. *)
+Defined.
+
+Definition Map2b (A A' : Type) (AR : Param2b0.Rel A A') (n n' : nat) (nR : natR n n') :
+  Map2b.Has (tR A A' AR n n' nR).
+Proof.
+  unshelve econstructor.
+  - exact (map A A' AR n n' nR).
+  - exact (R_in_map A A' AR n n' nR).
+Defined.
 
 Definition Param02b :
-  forall (A A' : Type) (AR : Param00.Rel A A') (n n' : nat) (nR : natR n n'),
+  forall (A A' : Type) (AR : Param02b.Rel A A') (n n' : nat) (nR : natR n n'),
     Param02b.Rel (t A n) (t A' n').
 Proof.
   intros A A' AR n n' nR.
   unshelve econstructor.
   - exact (@tR A A' AR n n' nR).
   - constructor.
-  - unshelve econstructor.
-    + cheat. (* comap *)
-    + cheat. (* R_in_comap *)
+  - Check @eq_Map2b.
+    (* (sym_rel (tR A A' AR n n' nR)) (tR A A' AR n n' nR) e Map2b). *)
+
+  (* Map2b.Has (sym_rel (tR A A' AR n n' nR)) *)
+    cheat.
 Defined.
 
 End Vector.
