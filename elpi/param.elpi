@@ -135,9 +135,9 @@ param
       util.when-debug dbg.full (coq.say "param/arrow:" MB NB "is linked to" CB),
       param B (app [pglobal (const PType) _, MB, NB]) B' BR,
       util.when-debug dbg.full (coq.say "param/arrow:" B "@" MB NB "~" B' "by" BR),
-      coq.say "before db param-arrow" C,
+      util.when-debug dbg.full (coq.say "before db param-arrow" C),
       trocq.db.param-arrow C ParamArrow,
-      coq.say UI,
+      util.when-debug dbg.full (coq.say UI),
       prune UI [],
       util.when-debug dbg.full (coq.say "param/arrow: suspending proof on" C),
       util.if-suspend C (param-class.requires-axiom C) (

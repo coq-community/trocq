@@ -34,19 +34,22 @@ Elpi Db trocq.db lp:{{
   pred trocq.db.param-type o:param-class, o:param-class, o:constant.
 
   pred trocq.db.pparam-type o:param-class, o:constant.
-  trocq.db.pparam-type C _ :- coq.say "pparam" C, fail.
+  trocq.db.pparam-type C _ :-
+    util.when-debug dbg.steps (coq.say "pparam" C), fail.
   :name "default-pparam-type"
   trocq.db.pparam-type C PParamType :- var C, !,
     declare_constraint (trocq.db.pparam-type C PParamType) [C].
 
   pred trocq.db.param-arrow o:param-class, o:constant.
-  trocq.db.param-arrow C _ :- coq.say "arrow" C, fail.
+  trocq.db.param-arrow C _ :-
+    util.when-debug dbg.steps (coq.say "arrow" C), fail.
   :name "default-param-arrow"
   trocq.db.param-arrow C ParamArrow :- var C, !,
     declare_constraint (trocq.db.param-arrow C ParamArrow) [C].
 
   pred trocq.db.param-forall o:param-class, o:constant.
-  trocq.db.param-forall C _ :- coq.say "forall" C, fail.
+  trocq.db.param-forall C _ :-
+    util.when-debug dbg.steps (coq.say "forall" C), fail.
   :name "default-param-forall"
   trocq.db.param-forall C ParamForall :- var C, !,
     declare_constraint (trocq.db.param-forall C ParamForall) [C].

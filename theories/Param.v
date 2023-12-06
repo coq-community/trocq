@@ -155,12 +155,12 @@ Elpi Accumulate lp:{{
 }}.
 
 Elpi Accumulate lp:{{
-  solve InitialGoal NewGoals :- debug dbg.full => std.do! [
+  solve InitialGoal NewGoals :- debug dbg.none => std.do! [
     InitialGoal = goal _Context _ G _ [],
-    coq.say "goal" G,
+    util.when-debug dbg.full (coq.say "goal" G),
     translate-goal G (pc map0 map1) G' GR,
     FinalProof = {{ @comap lp:G lp:G' lp:GR (_ : lp:G') }},
-    coq.say FinalProof,
+    util.when-debug dbg.full (coq.say FinalProof),
 
     std.assert-ok! (coq.elaborate-skeleton FinalProof G EFinalProof) "proof elaboration error",
     std.assert-ok! (coq.typecheck EFinalProof G2) "proof typechecking error",

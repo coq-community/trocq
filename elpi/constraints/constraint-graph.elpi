@@ -116,7 +116,8 @@ maximal-class _ _ (pc map4 map4). % default maximal class for an unconstrained v
 % indeed, if the assigned variable was an output class for complex constraints,
 % they can now be computed and reduced to simpler constraints on the other variables
 pred instantiate i:class-id, i:param-class, i:constraint-graph, o:constraint-graph.
-instantiate ID Class G _ :- coq.say "instantiate" ID Class G, fail.
+instantiate ID Class G _ :-
+  util.when-debug dbg.steps (coq.say "instantiate" ID Class G), fail.
 instantiate ID Class (constraint-graph G) (constraint-graph G') :-
   std.map.find ID G (pr LowerNodes HigherNodes), !,
   internal.filter-var LowerNodes LowerIDs,
@@ -126,7 +127,8 @@ instantiate ID Class (constraint-graph G) (constraint-graph G') :-
   std.fold HigherNodes G (instantiate.aux ID Class) G1,
   std.map.remove ID G1 G'.
 instantiate ID Class G G :-
-  coq.say "cannot instantiate" ID "at" Class "because it is not in the graph".
+  util.when-debug dbg.full (
+    coq.say "cannot instantiate" ID "at" Class "because it is not in the graph").
 pred instantiate.aux
   i:class-id, i:param-class, i:node, i:constraint-graph-content, o:constraint-graph-content.
 instantiate.aux ID Class (node.const C) G G :-
@@ -194,9 +196,10 @@ pred pp i:constraint-graph.
 pp (constraint-graph G) :-
   std.forall {std.map.bindings G} pp.aux.
 pp.aux (pr ID (pr LowerNodes HigherNodes)) :-
-  coq.say "id" ID,
-  coq.say "higher than:" LowerNodes,
-  coq.say "lower than:" HigherNodes.
+  util.when-debug dbg.full (
+    coq.say "id" ID,
+    coq.say "higher than:" LowerNodes,
+    coq.say "lower than:" HigherNodes).
 
 namespace internal {
 
