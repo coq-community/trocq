@@ -9,6 +9,8 @@ theories/Hierarchy.v
 theories/Param_Type.v
 theories/Param_forall.v
 theories/Param_arrow.v
+theories/Common.v
+theories/Param_trans.v
 theories/Database.v
 theories/Param.v
 theories/Trocq.v
@@ -18,7 +20,6 @@ theories/Param_paths.v
 theories/Param_sigma.v
 theories/Param_prod.v
 theories/Param_option.v
-theories/Common.v
 
 examples/Example.v
 examples/int_to_Zp.v
