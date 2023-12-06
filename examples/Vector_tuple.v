@@ -29,15 +29,6 @@ Inductive t (A : Type) : nat -> Type :=
 Arguments nil {_}.
 Arguments cons {_ _}.
 
-Definition t_nat_param_rect {A : Type} (P : forall (n n' : nat), natR n n' -> t A n -> Type) :
-  P O O OR nil ->
-  (forall (n n' : nat) (nR : natR n n') (a : A) (v : t A n), P n n' nR v -> P (S n) (S n') (SR n n' nR) (cons a v)) ->
-  forall (n n' : nat) (nR : natR n n') (v : t A n), P n n' nR v.
-Proof.
-  intros P0 PS n n' nR v.
-  cheat.
-Defined.
-
 Definition hd : forall {A : Type} {n : nat}, t A (S n) -> A :=
   fun A n v =>
     match v in t _ m
@@ -101,22 +92,49 @@ Definition map :
       | SR m m' mR => fun v => cons (map AR (hd v)) (F m m' mR (tail v))
       end.
 
+Definition t0 {A} (v : t A O) : v = nil := match v in t _ m return
+     (match m return t A m -> Type with
+       O => fun v => v = nil | S k => fun _ => Unit end) v
+   with nil => 1%path | cons _ _ _ => tt end.
+
+Definition tE {A n} (v : t A (S n)) : v = cons (hd v) (tail v) :=
+ (match v in t _ m return
+     (match m return t A m -> Type with
+       O => fun _ => Unit | S k => fun v => v = (cons (hd v) (tail v))
+     end) v
+   with nil => tt | cons _ a w => 1%path end).
+
+Lemma path_prodE  {A B : Type} {x x' : A} {y y' : B} :
+  (x, y) = (x', y') -> x = x' /\ y = y'.
+Proof.
+move=> e; split; move: e.
+- by move=> /(ap fst).
+- by move=> /(ap snd).
+Defined.
+
+Definition t0P A P (v : t A O) : P nil -> P v := match v in t _ m return
+     (match m return t A m -> Type with
+       O => fun v => P nil -> P v | S k => fun _ => Unit end) v
+   with nil => id | cons _ _ _ => tt end.
+
+Definition tSP A n P : (forall a (v : t A n), P (cons a v)) -> forall v, P v.
+Proof. by move=> Pn v; apply (transport P (tE _)^); apply Pn. Defined.
+
 Definition map_in_R :
   forall
     (A A' : Type) (AR : Param2a0.Rel A A') (n n' : nat) (nR : natR n n')
     (v : t A n) (v' : t A' n'),
       map A A' AR n n' nR v = v' -> tR A A' AR n n' nR v v'.
 Proof.
-  intros A A' AR n n' nR v v' e.
-  induction e.
-  apply (t_nat_param_rect (fun n n' nR v => tR A A' AR n n' nR v (map A A' AR n n' nR v))).
-  - apply nilR.
-  - intros m m' mR a v' r.
-    apply consR.
-    + exact (map_in_R AR a (Hierarchy.map AR a) idpath).
-    + exact r.
-Defined. 
-  
+intros A A' AR n n'.
+elim=> [{n n'}|{n'}n n' nR IHn]/=.
+  - by elim/t0P; elim/t0P; constructor.
+  - elim/tSP => a v; elim/tSP => a' v' e.
+    constructor.
+    + by have /(ap hd)/(map_in_R AR) := e.
+    + by have /(ap tail)/IHn := e.
+Defined.
+
 Definition R_in_map :
   forall
     (A A' : Type) (AR : Param2b0.Rel A A') (n n' : nat) (nR : natR n n')
@@ -124,12 +142,9 @@ Definition R_in_map :
       tR A A' AR n n' nR v v' -> map A A' AR n n' nR v = v'.
 Proof.
   intros A A' AR n n' nR v v' vR.
-  induction vR.
-  - simpl. reflexivity.
-  - simpl.
-    elim (R_in_map AR a a' aR).
-    elim IHvR.
-    reflexivity.
+  elim: vR => [|{}n {}n' {}nR a a' aR {}v {}v' _ []].
+  - reflexivity.
+  - by elim (R_in_map AR a a' aR).
 Defined.
 
 Definition R_in_mapK :
@@ -139,7 +154,11 @@ Definition R_in_mapK :
       map_in_R A A' AR n n' nR v v' (R_in_map A A' AR n n' nR v v' vR) = vR.
 Proof.
   intros A A' AR n n' nR v v' vR.
-  cheat.
+  elim: vR => {n n' nR v v'}[|n n' nR a a' aR v v' IHv r]//=.
+  elim: {2}aR / (R_in_mapK AR).
+  elim: (Hierarchy.R_in_map AR a a' aR)=> //=.
+  elim: {2}_ / r.
+  by elim: R_in_map.
 Defined.
 
 Definition tR_sym
@@ -316,7 +335,7 @@ Proof.
   - exact (F m t').
   - apply idpath.
 Defined.
-    
+
 Definition map_in_R_vt {A : Type} {n : nat} (v : Vector.t A n) (t : tuple A n) :
   vector_to_tuple v = t -> tuple_vectorR t v.
 Proof.
