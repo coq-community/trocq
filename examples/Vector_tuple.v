@@ -14,7 +14,7 @@
 From Coq Require Import ssreflect.
 From Coq Require Import Vectors.VectorDef.
 From Trocq Require Import Trocq.
-From Trocq Require Import Param_nat.
+From Trocq Require Import Param_nat Param_trans.
 
 Set Universe Polymorphism.
 
@@ -91,6 +91,18 @@ Definition map :
       | OR => fun _ => nil
       | SR m m' mR => fun v => cons (map AR (hd v)) (F m m' mR (tail v))
       end.
+
+Definition map_in_R :
+  forall
+    (A A' : Type) (AR : Param10.Rel A A') (n n' : nat) (nR : natR n n')
+    (v : t A n) (v' : t A' n'),
+      map A A' AR n n' nR v = v' -> tR A A' AR n n' nR v v'.
+Proof.
+  intros A A' AR n n' nR v v' e.
+  induction e.
+  (* induction nR/v *)
+  cheat.
+Defined. 
   
 Definition R_in_map :
   forall
@@ -107,36 +119,58 @@ Proof.
     reflexivity.
 Defined.
 
-Definition tR_sym :
+Definition R_in_mapK :
   forall
-    (A A' : Type) (AR : A -> A' -> Type) (n n' : nat) (nR : natR n n')
-    (v : t A n) (v' : t A' n'),
-      sym_rel (tR A A' AR n n' nR) v' v <~> tR A A' AR n n' nR v v'.
+    (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n')
+    (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v'),
+      map_in_R A A' AR n n' nR v v' (R_in_map A A' AR n n' nR v v' vR) = vR.
 Proof.
   cheat.
 Defined.
 
-Definition Map2b (A A' : Type) (AR : Param2b0.Rel A A') (n n' : nat) (nR : natR n n') :
-  Map2b.Has (tR A A' AR n n' nR).
+Definition tR_sym
+  (A A' : Type) (AR : A -> A' -> Type) (n n' : nat) (nR : natR n n')
+  (v' : t A' n') (v : t A n) :
+      sym_rel (tR A A' AR n n' nR) v' v <~> tR A' A (sym_rel AR) n' n (Param_nat_sym nR) v' v.
+Proof.
+  unfold sym_rel.
+  unshelve eapply equiv_adjointify.
+  - intro vR. induction vR.
+    + simpl. apply Vector.nilR.
+    + simpl. apply Vector.consR.
+      * exact aR.
+      * exact IHvR.
+  - intro vR.
+    (* induction nR/vR *)
+    cheat.
+  - cheat.
+  - cheat.
+Defined.
+
+Definition Map4 (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n') :
+  Map4.Has (tR A A' AR n n' nR).
 Proof.
   unshelve econstructor.
   - exact (map A A' AR n n' nR).
+  - exact (map_in_R A A' AR n n' nR).
   - exact (R_in_map A A' AR n n' nR).
+  - exact (R_in_mapK A A' AR n n' nR).
 Defined.
 
-Definition Param02b :
-  forall (A A' : Type) (AR : Param02b.Rel A A') (n n' : nat) (nR : natR n n'),
-    Param02b.Rel (t A n) (t A' n').
+Definition Param44 :
+  forall (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n'),
+    Param44.Rel (t A n) (t A' n').
 Proof.
   intros A A' AR n n' nR.
   unshelve econstructor.
   - exact (@tR A A' AR n n' nR).
-  - constructor.
-  - Check @eq_Map2b.
-    (* (sym_rel (tR A A' AR n n' nR)) (tR A A' AR n n' nR) e Map2b). *)
-
-  (* Map2b.Has (sym_rel (tR A A' AR n n' nR)) *)
-    cheat.
+  - exact (Map4 A A' AR n n' nR).
+  - unshelve eapply
+      (@eq_Map4 _ _
+        (sym_rel (tR A A' AR n n' nR))
+        (tR A' A (sym_rel AR) n' n (Param_nat_sym nR))).
+    + exact (tR_sym A A' AR n n' nR).
+    + exact (Map4 A' A (Param44_sym A A' AR) n' n (Param_nat_sym nR)).
 Defined.
 
 End Vector.
@@ -185,10 +219,8 @@ Definition tuple_to_vector : forall (A : Type) (n : nat), tuple A n -> Vector.t 
         end
       end.
 
-Definition tuple_vectorR
-  (A A' : Type) (AR : A -> A' -> Type) (n n' : nat) (nR : natR n n') :
-    tuple A n -> Vector.t A' n' -> Type :=
-      fun t v => Vector.tR A A' AR n n' nR (tuple_to_vector A n t) v.
+Definition tuple_vectorR (A : Type) (n : nat) : tuple A n -> Vector.t A n -> Type :=
+  fun t v => tuple_to_vector A n t = v.
 
 (* Definition vector_to_tuple
   (A A' : Type) (map : A -> A') (n : nat) : Vector.t A n -> tuple A' n.
@@ -198,17 +230,55 @@ Proof.
   - simpl. exact (IHv, map a).
 Defined. *)
 
-Definition Param02b_tuple_vector
-  (A A' : Type) (AR : Param00.Rel A A') (n n' : nat) (nR : natR n n') :
-    Param02b.Rel (tuple A n) (Vector.t A' n').
+Definition map_in_R_tv (A : Type) (n : nat) :
+  forall (t : tuple A n) (v : Vector.t A n), tuple_to_vector A n t = v -> tuple_vectorR A n t v.
+Proof.
+  cheat.
+Defined.
+
+Definition R_in_map_tv (A : Type) (n : nat) :
+  forall (t : tuple A n) (v : Vector.t A n), tuple_vectorR A n t v -> tuple_to_vector A n t = v.
+Proof.
+  cheat.
+Defined.
+
+Definition R_in_mapK_tv (A : Type) (n : nat) :
+  forall (t : tuple A n) (v : Vector.t A n) (r : tuple_vectorR A n t v),
+    map_in_R_tv A n t v (R_in_map_tv A n t v r) = r.
+Proof.
+  cheat.
+Defined.
+
+Definition Map4_tuple_vector_d (A : Type) (n : nat) : Map4.Has (tuple_vectorR A n).
 Proof.
   unshelve econstructor.
-  - apply (tuple_vectorR A A' AR n n' nR).
-  - constructor.
-  - unshelve econstructor.
-    + cheat.
-    + cheat.
+  - exact (tuple_to_vector A n).
+  - exact (map_in_R_tv A n).
+  - exact (R_in_map_tv A n).
+  - exact (R_in_mapK_tv A n).
 Defined.
+
+Definition Param44_tuple_vector_d (A : Type) (n : nat) : Param44.Rel (tuple A n) (Vector.t A n).
+Proof.
+  unshelve econstructor.
+  - exact (tuple_vectorR A n).
+  - exact (Map4_tuple_vector_d A n).
+  - cheat.
+Defined.
+
+Definition Param44_tuple_vector
+  (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n') :
+    Param44.Rel (tuple A n) (Vector.t A' n').
+Proof.
+  unshelve eapply (@Param44_trans _ (Vector.t A n)).
+  - exact (Param44_tuple_vector_d A n).
+  - exact (Vector.Param44 A A' AR n n' nR).
+Defined.
+
+Definition Param02b_tuple_vector :
+  forall (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n'),
+    Param02b.Rel (tuple A n) (Vector.t A' n') :=
+      Param44_tuple_vector.
 
 Definition Param_append :
   forall
