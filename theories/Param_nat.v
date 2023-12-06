@@ -51,36 +51,35 @@ Proof.
   intros n n' nR.
   induction nR.
   - simpl. reflexivity.
-  - simpl. unfold map_in_R_nat.
+  - simpl.
     elim IHnR.
     elim (R_in_map_nat nR).
     cheat.
 Defined.
 
+Definition Param_nat_sym {n n' : nat} : natR n n' -> natR n' n.
+Proof.
+  intro nR. induction nR as [|m m' _ IH].
+  - exact OR.
+  - exact (SR m' m IH).
+Defined.
+
+Definition Param_nat_sym_inv {n n' : nat} :
+  forall (nR : natR n n'), Param_nat_sym (Param_nat_sym nR) = nR.
+Proof.
+  intro nR. induction nR; simpl.
+  - reflexivity.
+  - rewrite IHnR. reflexivity.
+Defined.
+
 Definition natR_sym : forall (n n' : nat), sym_rel natR n n' <~> natR n n'.
 Proof.
   intros n n'.
-  unshelve econstructor.
-  - intros nR. unfold sym_rel in nR.
-    induction nR.
-    + exact OR.
-    + exact (SR n' n IHnR).
-  - unshelve econstructor.
-    + intros nR. unfold sym_rel.
-      induction nR.
-      * exact OR.
-      * exact (SR n' n IHnR).
-    + intros nR. induction nR.
-      * simpl. reflexivity.
-      * simpl. apply ap. apply IHnR.
-    + intros nR. unfold sym_rel in nR.
-      induction nR.
-      * simpl. reflexivity.
-      * simpl. apply ap. apply IHnR.
-    + simpl. intros nR. unfold sym_rel in nR.
-      induction nR.
-      * simpl. reflexivity.
-      * simpl. cheat.
+  unshelve eapply equiv_adjointify.
+  - apply Param_nat_sym.
+  - apply Param_nat_sym.
+  - intro nR. apply Param_nat_sym_inv.
+  - intro nR. apply Param_nat_sym_inv.
 Defined.
 
 Definition Map4_nat : Map4.Has natR.
@@ -112,11 +111,4 @@ Proof.
   induction n1R as [|n1 n1' n1R IHn1R].
   - simpl. exact n2R.
   - simpl. apply SR. exact IHn1R.
-Defined.
-
-Definition Param_nat_sym {n n' : nat} : natR n n' -> natR n' n.
-Proof.
-  intro nR. induction nR as [|m m' _ IH].
-  - exact OR.
-  - exact (SR m' m IH).
 Defined.
