@@ -113,3 +113,10 @@ Proof.
   - simpl. exact n2R.
   - simpl. apply SR. exact IHn1R.
 Defined.
+
+Definition Param_nat_sym {n n' : nat} : natR n n' -> natR n' n.
+Proof.
+  intro nR. induction nR as [|m m' _ IH].
+  - exact OR.
+  - exact (SR m' m IH).
+Defined.
