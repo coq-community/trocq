@@ -84,47 +84,6 @@ Definition append :
 
 (* ========================================================================== *)
 
-(* nat ~ nat *)
-
-Inductive natR : nat -> nat -> Type :=
-  | OR : natR O O
-  | SR : forall (n n' : nat), natR n n' -> natR (S n) (S n').
-
-Definition Param33_nat : Param33.Rel nat nat.
-Proof.
-  unshelve econstructor.
-  - exact natR.
-  - unshelve econstructor.
-    + exact id.
-    + intros n n' e. destruct e. induction n as [|n IHn].
-      * exact OR.
-      * apply SR, IHn.
-    + intros n n' nR. induction nR as [|n n' nR IHnR].
-      * reflexivity.
-      * unfold id. apply ap. exact IHnR.
-  - unshelve econstructor.
-    + exact id.
-    + intros n n' e. destruct e. induction n as [|n IHn].
-      * exact OR.
-      * apply SR, IHn.
-    + intros n n' nR. induction nR as [|n n' nR IHnR].
-      * reflexivity.
-      * unfold id. apply ap. exact IHnR.
-Defined.
-
-Definition Param00_nat : Param00.Rel nat nat := Param33_nat.
-Definition Param2a0_nat : Param2a0.Rel nat nat := Param33_nat.
-
-Definition Param_add :
-  forall (n1 n1' : nat) (n1R : natR n1 n1') (n2 n2' : nat) (n2R : natR n2 n2'),
-    natR (n1 + n2) (n1' + n2').
-Proof.
-  intros n1 n1' n1R n2 n2' n2R.
-  induction n1R as [|n1 n1' n1R IHn1R].
-  - simpl. exact n2R.
-  - simpl. apply SR. exact IHn1R.
-Defined.
-
 (* tuple ~ vector *)
 
 Inductive tuple_vectorR (A A' : Type) (AR : A -> A' -> Type) :
