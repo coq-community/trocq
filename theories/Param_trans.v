@@ -18,48 +18,39 @@ Require Import HoTT_additions Hierarchy Common.
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
-Axiom cheat : forall A, A.
-Ltac cheat := apply cheat.
-
 Definition R_trans {A B C : Type} (R1 : A -> B -> Type) (R2 : B -> C -> Type) : A -> C -> Type :=
   fun a c => {b : B & R1 a b * R2 b c}.
 
 Definition map_trans {A B C : Type} (R1 : Param10.Rel A B) (R2 : Param10.Rel B C) : A -> C :=
   map R2 o map R1.
 
-Definition map_in_R_trans {A B C : Type} (R1 : Param2a0.Rel A B) (R2 : Param2a3.Rel B C) :
+Definition map_in_R_trans {A B C : Type} (R1 : Param2a0.Rel A B) (R2 : Param2a0.Rel B C) :
   forall (a : A) (c : C), map_trans R1 R2 a = c -> R_trans R1 R2 a c.
 Proof.
-  intros a c e.
-  unfold R_trans.
-  exists (map R1 a).
-  split.
-  - apply (map_in_R R1). reflexivity.
-  - apply (comap_in_R R2). destruct e. unfold map_trans.
-    apply (SplitInj.sectionK (SplitInj.fromParam R2)).
+  intros a c e; exists (map R1 a); split.
+  - apply (map_in_R R1); reflexivity.
+  - apply (map_in_R R2); exact: e.
 Defined.
 
 Definition R_in_map_trans {A B C : Type} (R1 : Param2b0.Rel A B) (R2 : Param2b0.Rel B C) :
   forall (a : A) (c : C), R_trans R1 R2 a c -> map_trans R1 R2 a = c.
 Proof.
-  intros a c [b [r1 r2]].
-  unfold map_trans.
-  rewrite (R_in_map R1 a b r1).
-  exact (R_in_map R2 b c r2).
+  intros a c [b [r1 r2]]; apply R_in_map.
+  exact: (transport (fun x => R2 x c) (R_in_map R1 a b r1)^).
 Defined.
 
 Definition R_in_mapK_trans {A B C : Type} (R1 : Param44.Rel A B) (R2 : Param44.Rel B C) :
   forall (a : A) (c : C) (r : R_trans R1 R2 a c),
     map_in_R_trans R1 R2 a c (R_in_map_trans R1 R2 a c r) = r.
 Proof.
-  intros a c [b [r1 r2]].
+  intros a c [b [r1 r2]]; simpl.
   unfold map_in_R_trans, R_in_map_trans.
   unshelve eapply path_sigma.
   - exact (R_in_map R1 a b r1).
-  - cheat.
-    (* apply path_prod. *)
-    (* elim (R_in_map R1 a b r1). *)
-Defined.
+  - rewrite (R_in_mapK R2)/=.
+    rewrite -{3}(R_in_mapK R1 a b r1).
+    by elim: (R_in_map R1 a b r1) in r2 *.
+Qed.
 
 Definition Map4_trans {A B C : Type} (R1 : Param44.Rel A B) (R2 : Param44.Rel B C) :
   Map4.Has (R_trans R1 R2).
