@@ -29,6 +29,15 @@ Inductive t (A : Type) : nat -> Type :=
 Arguments nil {_}.
 Arguments cons {_ _}.
 
+Definition t_nat_param_rect {A : Type} (P : forall (n n' : nat), natR n n' -> t A n -> Type) :
+  P O O OR nil ->
+  (forall (n n' : nat) (nR : natR n n') (a : A) (v : t A n), P n n' nR v -> P (S n) (S n') (SR n n' nR) (cons a v)) ->
+  forall (n n' : nat) (nR : natR n n') (v : t A n), P n n' nR v.
+Proof.
+  intros P0 PS n n' nR v.
+  cheat.
+Defined.
+
 Definition hd : forall {A : Type} {n : nat}, t A (S n) -> A :=
   fun A n v =>
     match v in t _ m
@@ -94,14 +103,18 @@ Definition map :
 
 Definition map_in_R :
   forall
-    (A A' : Type) (AR : Param10.Rel A A') (n n' : nat) (nR : natR n n')
+    (A A' : Type) (AR : Param2a0.Rel A A') (n n' : nat) (nR : natR n n')
     (v : t A n) (v' : t A' n'),
       map A A' AR n n' nR v = v' -> tR A A' AR n n' nR v v'.
 Proof.
   intros A A' AR n n' nR v v' e.
   induction e.
-  (* induction nR/v *)
-  cheat.
+  apply (t_nat_param_rect (fun n n' nR v => tR A A' AR n n' nR v (map A A' AR n n' nR v))).
+  - apply nilR.
+  - intros m m' mR a v' r.
+    apply consR.
+    + exact (map_in_R AR a (Hierarchy.map AR a) idpath).
+    + exact r.
 Defined. 
   
 Definition R_in_map :
@@ -125,6 +138,7 @@ Definition R_in_mapK :
     (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v'),
       map_in_R A A' AR n n' nR v v' (R_in_map A A' AR n n' nR v v' vR) = vR.
 Proof.
+  intros A A' AR n n' nR v v' vR.
   cheat.
 Defined.
 
