@@ -208,62 +208,108 @@ Definition append :
 
 (* tuple ~ vector *)
 
-Definition tuple_to_vector : forall (A : Type) (n : nat), tuple A n -> Vector.t A n :=
-  fun A =>
-    fix F n : tuple A n -> Vector.t A n :=
-      match n with
-      | O => fun _ => Vector.nil
-      | S m => fun t =>
-        match t with
-        | (t', a) => Vector.cons a (F m t')
-        end
-      end.
+Definition tuple_to_vector {A : Type} : forall {n : nat}, tuple A n -> Vector.t A n :=
+  fix F n : tuple A n -> Vector.t A n :=
+    match n with
+    | O => fun _ => Vector.nil
+    | S m => fun t =>
+      match t with
+      | (t', a) => Vector.cons a (F m t')
+      end
+    end.
 
-Definition tuple_vectorR (A : Type) (n : nat) : tuple A n -> Vector.t A n -> Type :=
-  fun t v => tuple_to_vector A n t = v.
+Definition tuple_vectorR {A : Type} {n : nat} : tuple A n -> Vector.t A n -> Type :=
+  fun t v => tuple_to_vector t = v.
 
-(* Definition vector_to_tuple
-  (A A' : Type) (map : A -> A') (n : nat) : Vector.t A n -> tuple A' n.
-Proof.
-  intro v. induction v.
-  - exact tt.
-  - simpl. exact (IHv, map a).
-Defined. *)
+Definition map_in_R_tv {A : Type} {n : nat} (t : tuple A n) (v : Vector.t A n) :
+  tuple_to_vector t = v -> tuple_vectorR t v := id.
 
-Definition map_in_R_tv (A : Type) (n : nat) :
-  forall (t : tuple A n) (v : Vector.t A n), tuple_to_vector A n t = v -> tuple_vectorR A n t v.
-Proof.
-  cheat.
-Defined.
+Definition R_in_map_tv {A : Type} {n : nat} (t : tuple A n) (v : Vector.t A n) :
+  tuple_vectorR t v -> tuple_to_vector t = v := id.
 
-Definition R_in_map_tv (A : Type) (n : nat) :
-  forall (t : tuple A n) (v : Vector.t A n), tuple_vectorR A n t v -> tuple_to_vector A n t = v.
-Proof.
-  cheat.
-Defined.
+Definition R_in_mapK_tv
+  {A : Type} {n : nat} (t : tuple A n) (v : Vector.t A n) (r : tuple_vectorR t v) :
+    map_in_R_tv t v (R_in_map_tv t v r) = r := idpath.
 
-Definition R_in_mapK_tv (A : Type) (n : nat) :
-  forall (t : tuple A n) (v : Vector.t A n) (r : tuple_vectorR A n t v),
-    map_in_R_tv A n t v (R_in_map_tv A n t v r) = r.
-Proof.
-  cheat.
-Defined.
-
-Definition Map4_tuple_vector_d (A : Type) (n : nat) : Map4.Has (tuple_vectorR A n).
+Definition Map4_tuple_vector_d (A : Type) (n : nat) : Map4.Has (@tuple_vectorR A n).
 Proof.
   unshelve econstructor.
-  - exact (tuple_to_vector A n).
-  - exact (map_in_R_tv A n).
-  - exact (R_in_map_tv A n).
-  - exact (R_in_mapK_tv A n).
+  - exact (@tuple_to_vector A n).
+  - exact (@map_in_R_tv A n).
+  - exact (@R_in_map_tv A n).
+  - exact (@R_in_mapK_tv A n).
+Defined.
+
+Definition vector_to_tuple {A : Type} : forall {n : nat}, Vector.t A n -> tuple A n :=
+  fix F n : Vector.t A n -> tuple A n :=
+    match n with
+    | O => fun _ => tt
+    | S m => fun v => (F m (Vector.tail v), Vector.hd v)
+    end.
+
+Definition vector_to_tupleK {A : Type} {n : nat} :
+  forall (v : Vector.t A n), tuple_to_vector (vector_to_tuple v) = v.
+Proof.
+  induction v as [|n a v IHv]; simpl.
+  - reflexivity.
+  - apply ap. apply IHv.
+Defined.
+
+Definition tuple_to_vectorK {A : Type} :
+  forall {n : nat} (t : tuple A n), vector_to_tuple (tuple_to_vector t) = t.
+Proof.
+  induction n.
+  - simpl. intro t. destruct t. reflexivity.
+  - intro t. simpl in t.
+    destruct t as [t' a].
+    simpl.
+    apply path_prod; simpl.
+    + apply IHn.
+    + reflexivity.
+Defined.
+    
+Definition map_in_R_vt {A : Type} {n : nat} (v : Vector.t A n) (t : tuple A n) :
+  vector_to_tuple v = t -> tuple_vectorR t v.
+Proof.
+  unfold tuple_vectorR.
+  intro e. rewrite <- e.
+  apply vector_to_tupleK.
+Defined.
+
+Definition R_in_map_vt {A : Type} {n : nat} (v : Vector.t A n) (t : tuple A n) :
+  tuple_vectorR t v -> vector_to_tuple v = t.
+Proof.
+  unfold tuple_vectorR.
+  intro e. rewrite <- e.
+  apply tuple_to_vectorK.
+Defined.
+
+Definition R_in_mapK_vt
+  {A : Type} {n : nat} (v : Vector.t A n) (t : tuple A n) (r : tuple_vectorR t v) :
+    map_in_R_vt v t (R_in_map_vt v t r) = r.
+Proof.
+  unfold tuple_vectorR in r.
+  unfold map_in_R_vt, R_in_map_vt.
+  elim r.
+  simpl.
+  cheat.
+Defined.
+
+Definition Map4_vector_tuple_d (A : Type) (n : nat) : Map4.Has (sym_rel (@tuple_vectorR A n)).
+Proof.
+  unshelve econstructor.
+  - exact (@vector_to_tuple A n).
+  - exact (@map_in_R_vt A n).
+  - exact (@R_in_map_vt A n).
+  - exact (@R_in_mapK_vt A n).
 Defined.
 
 Definition Param44_tuple_vector_d (A : Type) (n : nat) : Param44.Rel (tuple A n) (Vector.t A n).
 Proof.
   unshelve econstructor.
-  - exact (tuple_vectorR A n).
+  - exact (@tuple_vectorR A n).
   - exact (Map4_tuple_vector_d A n).
-  - cheat.
+  - exact (Map4_vector_tuple_d A n).
 Defined.
 
 Definition Param44_tuple_vector
