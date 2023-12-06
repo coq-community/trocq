@@ -247,32 +247,39 @@ Definition vector_to_tuple {A : Type} : forall {n : nat}, Vector.t A n -> tuple 
     | S m => fun v => (F m (Vector.tail v), Vector.hd v)
     end.
 
-Definition vector_to_tupleK {A : Type} {n : nat} :
-  forall (v : Vector.t A n), tuple_to_vector (vector_to_tuple v) = v.
-Proof.
-  induction v as [|n a v IHv]; simpl.
-  - reflexivity.
-  - apply ap. apply IHv.
-Defined.
+Definition vector_to_tupleK {A : Type} :
+  forall {n : nat} (v : Vector.t A n), tuple_to_vector (vector_to_tuple v) = v :=
+    fix F n v :=
+      match v with
+      | Vector.nil => idpath
+      | Vector.cons m a v' => ap (Vector.cons a) (F m v')
+      end.
 
 Definition tuple_to_vectorK {A : Type} :
   forall {n : nat} (t : tuple A n), vector_to_tuple (tuple_to_vector t) = t.
 Proof.
-  induction n.
-  - simpl. intro t. destruct t. reflexivity.
-  - intro t. simpl in t.
-    destruct t as [t' a].
-    simpl.
-    apply path_prod; simpl.
-    + apply IHn.
-    + reflexivity.
+  refine (
+    fix F n : forall (t : tuple A n), vector_to_tuple (tuple_to_vector t) = t :=
+      match n as k
+      return forall (t : tuple A k), vector_to_tuple (tuple_to_vector t) = t
+      with
+      | O => fun t => match t with tt => idpath end
+      | S m => _
+      (* fun t => match t with (t', a) => path_prod _ _ _ _ end *)
+      end
+  ).
+  intros [t' a].
+  apply path_prod; simpl.
+  - exact (F m t').
+  - apply idpath.
 Defined.
     
 Definition map_in_R_vt {A : Type} {n : nat} (v : Vector.t A n) (t : tuple A n) :
   vector_to_tuple v = t -> tuple_vectorR t v.
 Proof.
   unfold tuple_vectorR.
-  intro e. rewrite <- e.
+  intro e.
+  apply (transport (fun x => tuple_to_vector x = v) e).
   apply vector_to_tupleK.
 Defined.
 
@@ -280,19 +287,18 @@ Definition R_in_map_vt {A : Type} {n : nat} (v : Vector.t A n) (t : tuple A n) :
   tuple_vectorR t v -> vector_to_tuple v = t.
 Proof.
   unfold tuple_vectorR.
-  intro e. rewrite <- e.
+  intro e.
+  apply (transport (fun x => vector_to_tuple x = t) e).
   apply tuple_to_vectorK.
 Defined.
 
-Definition R_in_mapK_vt
-  {A : Type} {n : nat} (v : Vector.t A n) (t : tuple A n) (r : tuple_vectorR t v) :
+Definition R_in_mapK_vt {A : Type} :
+  forall {n : nat} (v : Vector.t A n) (t : tuple A n) (r : tuple_vectorR t v),
     map_in_R_vt v t (R_in_map_vt v t r) = r.
 Proof.
-  unfold tuple_vectorR in r.
-  unfold map_in_R_vt, R_in_map_vt.
-  elim r.
-  simpl.
-  cheat.
+  induction n.
+  - simpl. intros v t r. destruct r. simpl. cheat.
+  - simpl. intros v [t' a] []. simpl. cheat.
 Defined.
 
 Definition Map4_vector_tuple_d (A : Type) (n : nat) : Map4.Has (sym_rel (@tuple_vectorR A n)).
