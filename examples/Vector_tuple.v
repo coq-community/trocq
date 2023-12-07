@@ -512,15 +512,69 @@ Proof.
       apply n_lt_Sn.
 Defined.
   
-Definition R_bv_bnat {k : nat} (b : bitvector k) (bn : bounded_nat k) :=
-  bv_to_bnat b = bn.
+Definition R_bv_bnat {k : nat} (bv : bitvector k) (bn : bounded_nat k) :=
+  bv_to_bnat bv = bn.
+
+Definition map_in_R_bv_bnat {k : nat} {bv : bitvector k} {bn : bounded_nat k} :
+  bv_to_bnat bv = bn -> R_bv_bnat bv bn.
+Proof. intro e. unfold R_bv_bnat. exact e. Defined.
+
+Definition R_in_map_bv_bnat {k : nat} {bv : bitvector k} {bn : bounded_nat k} :
+  R_bv_bnat bv bn -> bv_to_bnat bv = bn.
+Proof. intro e. unfold R_bv_bnat. exact e. Defined.
+
+Definition R_in_mapK_bv_bnat
+  {k : nat} {bv : bitvector k} {bn : bounded_nat k} (r : R_bv_bnat bv bn) :
+    map_in_R_bv_bnat (R_in_map_bv_bnat r) = r.
+Proof. unfold map_in_R_bv_bnat, R_in_map_bv_bnat. reflexivity. Defined.
   
-Definition Map4_bitvector_bnat {k : nat} : Map4.Has (@R_bv_bnat k).
+Definition Map4_bv_bnat {k : nat} : Map4.Has (@R_bv_bnat k).
+Proof.
+  unshelve econstructor.
+  - exact (@bv_to_bnat k).
+  - exact (@map_in_R_bv_bnat k).
+  - exact (@R_in_map_bv_bnat k).
+  - exact (@R_in_mapK_bv_bnat k).
+Defined.
+
+Definition bnat_to_bv {k : nat} (bn : bounded_nat k) : bitvector k.
 Proof.
   cheat.
 Defined.
 
-Definition Param44_bitvector_bnat {k : nat} :
-  Param44.Rel (bitvector k) {n : nat & n <= pow 2 k}%nat.
+Definition map_in_R_bnat_bv {k : nat} {bn : bounded_nat k} {bv : bitvector k} :
+  bnat_to_bv bn = bv -> R_bv_bnat bv bn.
 Proof.
-  intros k.
+  cheat.
+Defined.
+
+Definition R_in_map_bnat_bv {k : nat} {bn : bounded_nat k} {bv : bitvector k} :
+  R_bv_bnat bv bn -> bnat_to_bv bn = bv.
+Proof.
+  cheat.
+Defined.
+
+Definition R_in_mapK_bnat_bv
+  {k : nat} {bn : bounded_nat k} {bv : bitvector k} (r : R_bv_bnat bv bn) :
+    map_in_R_bnat_bv (R_in_map_bnat_bv r) = r.
+Proof.
+  cheat.
+Defined.
+
+Definition Map4_bnat_bv {k : nat} : Map4.Has (sym_rel (@R_bv_bnat k)).
+Proof.
+  unshelve econstructor.
+  - exact (@bnat_to_bv k).
+  - exact (@map_in_R_bnat_bv k).
+  - exact (@R_in_map_bnat_bv k).
+  - exact (@R_in_mapK_bnat_bv k).
+Defined.
+
+Definition Param44_bitvector_bnat {k : nat} :
+  Param44.Rel (bitvector k) (bounded_nat k).
+Proof.
+  unshelve econstructor.
+  - exact (@R_bv_bnat k).
+  - exact (@Map4_bv_bnat k).
+  - exact (@Map4_bnat_bv k).
+Defined.
