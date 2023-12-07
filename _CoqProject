@@ -15,6 +15,7 @@ theories/Database.v
 theories/Param.v
 theories/Trocq.v
 theories/Vernac.v
+theories/Param_bool.v
 theories/Param_nat.v
 theories/Param_paths.v
 theories/Param_sigma.v
