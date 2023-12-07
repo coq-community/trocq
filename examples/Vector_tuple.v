@@ -70,6 +70,12 @@ Proof.
   - simpl. apply ap. assumption.
 Qed.
 
+Lemma append_comm_cons {A : Type} {n1 n2 : nat} (v1 : t A n1) (v2 : t A n2) (a : A) :
+  cons a (append v1 v2) = append (cons a v1) v2.
+Proof.
+  simpl. reflexivity.
+Defined.
+
 Inductive tR (A A' : Type) (AR : A -> A' -> Type) :
   forall (n n' : nat) (nR : natR n n'), t A n -> t A' n' -> Type :=
   | nilR : tR A A' AR O O OR nil nil
@@ -441,6 +447,35 @@ Proof.
   trocq. exact @Vector.append_const.
 Qed.
 
+Definition cons {A : Type} {n : nat} (a : A) (t : tuple A n) : tuple A (S n) := (t, a).
+
+Definition Param_cons
+  (A A' : Type) (AR : Param00.Rel A A') (n n' : nat) (nR : natR n n')
+  (a : A) (a' : A') (aR : AR a a')
+  (t : tuple A n) (v' : Vector.t A' n') :
+    R_trans (@tuple_vectorR A n) (Vector.tR A A' AR n n' nR) t v' ->
+    R_trans
+      (@tuple_vectorR A (S n)) (Vector.tR A A' AR (S n) (S n') (SR n n' nR))
+      (cons a t) (Vector.cons a' v').
+Proof.
+  intros [v [tvR vv'R]].
+  unfold R_trans, tuple_vectorR in *.
+  exists (Vector.cons a v).
+  split.
+  - simpl in *. unfold graph in *. simpl. apply ap. exact tvR.
+  - apply Vector.consR.
+    + exact aR.
+    + exact vv'R.
+Defined.
+
+Trocq Use Param_cons.
+
+Lemma append_comm_cons {A : Type} {n1 n2 : nat} (v1 : tuple A n1) (v2 : tuple A n2) (a : A) :
+  cons a (append v1 v2) = append (cons a v1) v2.
+Proof.
+  (* apply Vector.append_comm_cons. *)
+Defined.
+
 Axiom cheat : forall A, A.
 Ltac cheat := apply cheat.
 
@@ -482,7 +517,12 @@ Proof.
     apply ap.
     do 2 rewrite <- add_n_O.
     rewrite S_add1.
-    cheat.
+    unshelve erewrite (nataddsub_comm _ 1 1 _).
+    1: { apply one_lt_pow2. }
+    rewrite <- nataddsub_assoc.
+    2: { apply leq_n. }
+    simpl. rewrite <- add_n_O.
+    reflexivity.
 Defined.
 
 Lemma bv_bound_ones {k : nat} (bv : bitvector k) :
@@ -548,6 +588,7 @@ Defined.
 
 Definition bnat_to_bv {k : nat} (bn : bounded_nat k) : bitvector k.
 Proof.
+  destruct bn as [n p].
   cheat.
 Defined.
 
