@@ -368,6 +368,14 @@ Definition Param02b_tuple_vector :
   forall (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n'),
     Param02b.Rel (tuple A n) (Vector.t A' n') :=
       Param44_tuple_vector.
+Definition Param2a0_tuple_vector :
+  forall (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n'),
+    Param2a0.Rel (tuple A n) (Vector.t A' n') :=
+      Param44_tuple_vector.
+Definition Param10_tuple_vector :
+  forall (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n'),
+    Param10.Rel (tuple A n) (Vector.t A' n') :=
+      Param44_tuple_vector.
 
 Definition tuple_vectorR {A : Type} {n : nat} := rel (Param44_tuple_vector_d A n).
 
@@ -468,15 +476,14 @@ Proof.
     + exact vv'R.
 Defined.
 
-Trocq Use Param_cons.
 Trocq Use SR.
-Trocq Use Param_add.
+Trocq Use Param_cons.
 
 Lemma append_comm_cons : forall {A : Type} {n1 n2 : nat}
     (v1 : tuple A n1) (v2 : tuple A n2) (a : A),
-  cons a (append v1 v2) = append (cons a v1) v2.
+  @paths (tuple A (S (n1 + n2))) (cons a (append v1 v2)) (append (cons a v1) v2).
 Proof.
-Fail trocq.
+Fail Timeout 1 trocq.
   (* apply Vector.append_comm_cons. *)
 Abort.
 

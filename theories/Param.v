@@ -155,7 +155,7 @@ Elpi Accumulate lp:{{
 }}.
 
 Elpi Accumulate lp:{{
-  solve InitialGoal NewGoals :- debug dbg.none => std.do! [
+  solve InitialGoal NewGoals :- debug dbg.full => std.do! [
     InitialGoal = goal _Context _ G _ [],
     util.when-debug dbg.full (coq.say "goal" G),
     translate-goal G (pc map0 map1) G' GR,

@@ -161,7 +161,7 @@ instantiate.aux ID Class (node.var (ct.gref GR T GR' GRR) IDs) G G' :-
       G1,
   annot.classes T TCs _,
   % find the output constant and proof, as well as the required classes Cs
-  trocq.db.gref GR Class Cs GR' GRR,
+  trocq.db.gref GR Class Cs GR' GRR, !,
   % make sure the classes are consistent
   instantiate.gref IDs TCs Cs G1 G'.
 pred instantiate.gref
