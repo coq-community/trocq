@@ -18,9 +18,6 @@ From Trocq Require Import Param_nat Param_trans.
 
 Set Universe Polymorphism.
 
-Axiom cheat : forall A, A.
-Ltac cheat := apply cheat.
-
 Module Vector.
 
 Inductive t (A : Type) : nat -> Type :=
@@ -309,28 +306,6 @@ Definition tuple_to_vector {A : Type} : forall {n : nat}, tuple A n -> Vector.t 
       end
     end.
 
-Definition tuple_vectorR {A : Type} {n : nat} : tuple A n -> Vector.t A n -> Type :=
-  fun t v => tuple_to_vector t = v.
-
-Definition map_in_R_tv {A : Type} {n : nat} (t : tuple A n) (v : Vector.t A n) :
-  tuple_to_vector t = v -> tuple_vectorR t v := id.
-
-Definition R_in_map_tv {A : Type} {n : nat} (t : tuple A n) (v : Vector.t A n) :
-  tuple_vectorR t v -> tuple_to_vector t = v := id.
-
-Definition R_in_mapK_tv
-  {A : Type} {n : nat} (t : tuple A n) (v : Vector.t A n) (r : tuple_vectorR t v) :
-    map_in_R_tv t v (R_in_map_tv t v r) = r := idpath.
-
-Definition Map4_tuple_vector_d (A : Type) (n : nat) : Map4.Has (@tuple_vectorR A n).
-Proof.
-  unshelve econstructor.
-  - exact (@tuple_to_vector A n).
-  - exact (@map_in_R_tv A n).
-  - exact (@R_in_map_tv A n).
-  - exact (@R_in_mapK_tv A n).
-Defined.
-
 Definition vector_to_tuple {A : Type} : forall {n : nat}, Vector.t A n -> tuple A n :=
   fix F n : Vector.t A n -> tuple A n :=
     match n with
@@ -365,60 +340,13 @@ Proof.
   - apply idpath.
 Defined.
 
-
-Definition Param44_tuple_vector
-  (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n') :
-    Param44.Rel (tuple A n) (Vector.t A' n').
-Proof.
-  unshelve eapply (@Param44_trans _ (Vector.t A n)).
-  - exact (Param44_tuple_vector_d A n).
-  - exact (Vector.Param44 A A' AR n n' nR).
-Defined.
-
-
-
-Definition map_in_R_vt {A : Type} {n : nat} (v : Vector.t A n) (t : tuple A n) :
-  vector_to_tuple v = t -> tuple_vectorR t v.
-Proof.
-  unfold tuple_vectorR.
-  intro e.
-  apply (transport (fun x => tuple_to_vector x = v) e).
-  apply vector_to_tupleK.
-Defined.
-
-Definition R_in_map_vt {A : Type} {n : nat} (v : Vector.t A n) (t : tuple A n) :
-  tuple_vectorR t v -> vector_to_tuple v = t.
-Proof.
-  unfold tuple_vectorR.
-  intro e.
-  apply (transport (fun x => vector_to_tuple x = t) e).
-  apply tuple_to_vectorK.
-Defined.
-
-Definition R_in_mapK_vt {A : Type} :
-  forall {n : nat} (v : Vector.t A n) (t : tuple A n) (r : tuple_vectorR t v),
-    map_in_R_vt v t (R_in_map_vt v t r) = r.
-Proof.
-  induction n.
-  - simpl. intros v t r. destruct r. simpl. cheat.
-  - simpl. intros v [t' a] []. simpl. cheat.
-Defined.
-
-Definition Map4_vector_tuple_d (A : Type) (n : nat) : Map4.Has (sym_rel (@tuple_vectorR A n)).
-Proof.
-  unshelve econstructor.
-  - exact (@vector_to_tuple A n).
-  - exact (@map_in_R_vt A n).
-  - exact (@R_in_map_vt A n).
-  - exact (@R_in_mapK_vt A n).
-Defined.
-
 Definition Param44_tuple_vector_d (A : Type) (n : nat) : Param44.Rel (tuple A n) (Vector.t A n).
 Proof.
-  unshelve econstructor.
-  - exact (@tuple_vectorR A n).
-  - exact (Map4_tuple_vector_d A n).
-  - exact (Map4_vector_tuple_d A n).
+apply Iso.toParam; unshelve econstructor.
+- exact: tuple_to_vector.
+- exact: vector_to_tuple.
+- exact: tuple_to_vectorK.
+- exact: vector_to_tupleK.
 Defined.
 
 Definition Param44_tuple_vector
@@ -435,6 +363,8 @@ Definition Param02b_tuple_vector :
     Param02b.Rel (tuple A n) (Vector.t A' n') :=
       Param44_tuple_vector.
 
+Definition tuple_vectorR {A : Type} {n : nat} := rel (Param44_tuple_vector_d A n).
+
 Definition Param_append_d
   {A : Type} {n1 n2 : nat}
   {t1 : tuple A n1} {v1 : Vector.t A n1} (tv1R : tuple_vectorR t1 v1)
@@ -445,6 +375,7 @@ Proof.
   induction n1.
   - simpl in t1. unfold append, tuple_to_vector at 2. simpl. reflexivity.
   - destruct t1 as [t' a]. simpl in tv1R. simpl.
+    rewrite /graph/=.
     apply ap.
     unshelve eapply IHn1.
     + exact (Vector.tail v1).
@@ -481,7 +412,7 @@ Proof.
   unfold tuple_vectorR.
   induction n; simpl.
   - reflexivity.
-  - apply ap. exact IHn.
+  - rewrite /graph; apply ap. exact IHn.
 Defined.
 
 Definition Param_const
