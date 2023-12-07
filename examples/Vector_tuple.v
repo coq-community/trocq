@@ -161,23 +161,52 @@ Proof.
   by elim: R_in_map.
 Defined.
 
-Definition tR_sym
-  (A A' : Type) (AR : A -> A' -> Type) (n n' : nat) (nR : natR n n')
-  (v' : t A' n') (v : t A n) :
+Definition Param_nat_symK m n (nR : natR m n) : nR = Param_nat_sym (Param_nat_sym nR).
+Proof. by elim: nR => //= {}m {}n mn emn; apply: ap. Defined.
+
+Definition tR_sym_f {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
+  {v : t A n} {v' : t A' n'} :
+      sym_rel (tR A A' AR n n' nR) v' v -> tR A' A (sym_rel AR) n' n (Param_nat_sym nR) v' v.
+Proof. by elim=> //=; constructor. Defined.
+
+Definition tR_sym_t {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
+   {v' : t A' n'} {v : t A n} :
+    tR A A' AR n n' (Param_nat_sym (Param_nat_sym nR)) v v' <~> tR A A' AR n n' nR v v'.
+Proof.
+unshelve eapply equiv_adjointify.
+- apply: (transport (fun nR => tR _ _ _ _ _ nR _ _)).
+  symmetry; exact: Param_nat_symK.
+- apply: (transport (fun nR => tR _ _ _ _ _ nR _ _)).
+  exact: Param_nat_symK.
+- by move=> vR; rewrite -transport_pp concat_pV.
+- by move=> vR; rewrite -transport_pp concat_Vp.
+Defined.
+
+Local Notation f := (tR_sym_f _ _).
+Local Notation g := (tR_sym_t _ _).
+
+Definition tR_sym_fK {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
+  (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v') :
+     g (f (f vR)) = vR.
+Proof.
+elim: vR => // {}n {}n' {}nR a a' aR {}v {}v' vR {2}<-/=.
+by elim: _ / Param_nat_symK (tR_sym_f _ _ _).
+Defined.
+
+Definition tR_sym_fE {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
+  (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v') :
+     f vR = g (f (g^-1 vR)).
+Proof. by rewrite -{2}[vR]tR_sym_fK eissect tR_sym_fK. Qed.
+
+Definition tR_sym  (A A' : Type) (AR : A -> A' -> Type) (n n' : nat) (nR : natR n n')
+   (v' : t A' n') (v : t A n) :
       sym_rel (tR A A' AR n n' nR) v' v <~> tR A' A (sym_rel AR) n' n (Param_nat_sym nR) v' v.
 Proof.
-  unfold sym_rel.
   unshelve eapply equiv_adjointify.
-  - intro vR. induction vR.
-    + simpl. apply Vector.nilR.
-    + simpl. apply Vector.consR.
-      * exact aR.
-      * exact IHvR.
-  - intro vR.
-    (* induction nR/vR *)
-    cheat.
-  - cheat.
-  - cheat.
+  - exact: tR_sym_f.
+  - move/tR_sym_f/tR_sym_t; exact.
+  - by move=> vR; rewrite [f (g _)]tR_sym_fE eissect tR_sym_fK.
+  - exact: tR_sym_fK.
 Defined.
 
 Definition Map4 (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n') :
@@ -335,6 +364,18 @@ Proof.
   - exact (F m t').
   - apply idpath.
 Defined.
+
+
+Definition Param44_tuple_vector
+  (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n') :
+    Param44.Rel (tuple A n) (Vector.t A' n').
+Proof.
+  unshelve eapply (@Param44_trans _ (Vector.t A n)).
+  - exact (Param44_tuple_vector_d A n).
+  - exact (Vector.Param44 A A' AR n n' nR).
+Defined.
+
+
 
 Definition map_in_R_vt {A : Type} {n : nat} (v : Vector.t A n) (t : tuple A n) :
   vector_to_tuple v = t -> tuple_vectorR t v.
