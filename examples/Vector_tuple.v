@@ -461,6 +461,15 @@ Proof.
   - simpl add. apply ap. exact IHn.
 Defined.
 
+Lemma one_lt_pow2 (k : nat) : (1 <= pow 2 k)%nat.
+Proof.
+  induction k.
+  - simpl. apply leq_n.
+  - apply (leq_trans IHk).
+    simpl.
+    apply n_leq_add_n_k.
+Defined.
+
 Lemma const1_pow2 : forall {k : nat},
   (bv_to_nat (Vector.const Datatypes.true k) = pow 2 k - 1)%nat.
 Proof.
@@ -469,7 +478,7 @@ Proof.
   - simpl. rewrite IHk.
     rewrite nat_add_n_Sm.
     rewrite <- nataddsub_comm.
-    2: { cheat. }
+    2: { apply one_lt_pow2. }
     apply ap.
     do 2 rewrite <- add_n_O.
     rewrite S_add1.
@@ -506,7 +515,7 @@ Proof.
   - apply (mixed_trans1 _ (pow 2 k - 1) _).
     * apply bv_bound.
     * apply natpmswap1.
-      1: { cheat. }
+      1: { apply one_lt_pow2. }
       rewrite nat_add_comm.
       rewrite <- (S_add1 (pow 2 k)).
       apply n_lt_Sn.
