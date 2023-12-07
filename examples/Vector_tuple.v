@@ -632,3 +632,40 @@ Proof.
   - exact (@Map4_bv_bnat k).
   - exact (@Map4_bnat_bv k).
 Defined.
+
+Definition setBit_bv {k : nat} (bv : bitvector k) (i : nat) (b : Datatypes.bool) : bitvector k :=
+  (fix F k bv :=
+    match bv with
+    | Vector.nil => Vector.nil
+    | Vector.cons k' b' bv' =>
+      match i with
+      | O => Vector.cons b bv'
+      | S i' => Vector.cons b' (F k' bv')
+      end
+    end) k bv.
+
+Definition setBit_bnat {k : nat} (bn : bounded_nat k) (i : nat) (b : Datatypes.bool) :
+  bounded_nat k.
+Proof.
+  cheat.
+Defined.
+
+Definition Param_setBit 
+
+Definition getBit {k : nat} (bv : bitvector k) (i : nat) : Datatypes.bool :=
+  (fix F k bv :=
+    match bv with
+    | Vector.nil => Datatypes.true
+    | Vector.cons k' b bv' =>
+      match i with
+      | O => b
+      | S i' => F k' bv'
+      end
+    end) k bv.
+
+Lemma setBitThenGetSame {k : nat} (bv : bitvector k) (i : nat) (b : Datatypes.bool) :
+  (i < k)%nat -> getBit (setBit bv i b) i = b.
+Proof.
+  cheat.
+Defined.
+
