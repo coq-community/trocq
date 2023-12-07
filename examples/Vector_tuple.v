@@ -440,3 +440,87 @@ Lemma append_const : forall {A : Type} (a : A) (n1 n2 : nat),
 Proof.
   trocq. exact @Vector.append_const.
 Qed.
+
+Axiom cheat : forall A, A.
+Ltac cheat := apply cheat.
+
+Definition bitvector (k : nat) := Vector.t Datatypes.bool k.
+Definition bounded_nat (k : nat) := {n : nat & n < pow 2 k}%nat.
+
+Definition bv_to_nat : forall {k : nat}, bitvector k -> nat :=
+  fix F k bv :=
+    match bv with
+    | Vector.nil => O
+    | Vector.cons k' b bv' => (if b then S else id) (2 * F k' bv')%nat
+    end.
+
+Lemma S_add1 : forall (n : nat), S n = (n + 1)%nat.
+Proof.
+  induction n.
+  - simpl. reflexivity.
+  - simpl add. apply ap. exact IHn.
+Defined.
+
+Lemma const1_pow2 : forall {k : nat},
+  (bv_to_nat (Vector.const Datatypes.true k) = pow 2 k - 1)%nat.
+Proof.
+  induction k.
+  - reflexivity.
+  - simpl. rewrite IHk.
+    rewrite nat_add_n_Sm.
+    rewrite <- nataddsub_comm.
+    2: { cheat. }
+    apply ap.
+    do 2 rewrite <- add_n_O.
+    rewrite S_add1.
+    cheat.
+Defined.
+
+Lemma bv_bound_ones {k : nat} (bv : bitvector k) :
+  (bv_to_nat bv <= bv_to_nat (Vector.const Datatypes.true k))%nat.
+Proof.
+  induction bv as [|k' b' bv IH].
+  - apply leq_0_n.
+  - simpl. destruct b'.
+    + simpl.
+      do 2 rewrite <- add_n_O.
+      apply leq_S_n'.
+      apply nat_add_bifunctor.
+      all: apply IH.
+    + simpl. unfold id.
+      apply leq_S.
+      do 2 rewrite <- add_n_O.
+      apply nat_add_bifunctor.
+      all: apply IH.
+Defined.
+
+Theorem bv_bound {k : nat} (bv : bitvector k) : (bv_to_nat bv <= pow 2 k - 1)%nat.
+Proof.
+  rewrite <- const1_pow2. apply bv_bound_ones.
+Defined.
+
+Definition bv_to_bnat {k : nat} (bv : bitvector k) : bounded_nat k.
+Proof.
+  unshelve econstructor.
+  - exact (bv_to_nat bv).
+  - apply (mixed_trans1 _ (pow 2 k - 1) _).
+    * apply bv_bound.
+    * apply natpmswap1.
+      1: { cheat. }
+      rewrite nat_add_comm.
+      rewrite <- (S_add1 (pow 2 k)).
+      apply n_lt_Sn.
+Defined.
+  
+Definition R_bv_bnat {k : nat} (b : bitvector k) (bn : bounded_nat k) :=
+  bv_to_bnat b = bn.
+  
+Definition Map4_bitvector_bnat {k : nat} : Map4.Has (@R_bv_bnat k).
+Proof.
+  cheat.
+Defined.
+
+Definition Param44_bitvector_bnat {k : nat} :
+  Param44.Rel (bitvector k) {n : nat & n <= pow 2 k}%nat.
+Proof.
+  intros k.
