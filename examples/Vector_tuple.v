@@ -469,12 +469,16 @@ Proof.
 Defined.
 
 Trocq Use Param_cons.
+Trocq Use SR.
+Trocq Use Param_add.
 
-Lemma append_comm_cons {A : Type} {n1 n2 : nat} (v1 : tuple A n1) (v2 : tuple A n2) (a : A) :
+Lemma append_comm_cons : forall {A : Type} {n1 n2 : nat}
+    (v1 : tuple A n1) (v2 : tuple A n2) (a : A),
   cons a (append v1 v2) = append (cons a v1) v2.
 Proof.
+Fail trocq.
   (* apply Vector.append_comm_cons. *)
-Defined.
+Abort.
 
 Axiom cheat : forall A, A.
 Ltac cheat := apply cheat.
