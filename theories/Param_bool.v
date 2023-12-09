@@ -18,19 +18,13 @@ Require Import HoTT_additions Hierarchy.
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
-Inductive bool : Type := false | true.
+Inductive BoolR : Bool -> Bool -> Type :=
+  | falseR : BoolR false false
+  | trueR : BoolR true true.
 
-(* Notation bool := Datatypes.bool.
-Notation false := Datatypes.false.
-Notation true := Datatypes.true. *)
+Definition map_Bool : Bool -> Bool := id.
 
-Inductive boolR : bool -> bool -> Type :=
-  | falseR : boolR false false
-  | trueR : boolR true true.
-
-Definition map_bool : bool -> bool := id.
-
-Definition map_in_R_bool {b b' : bool} (e : map_bool b = b') : boolR b b' :=
+Definition map_in_R_Bool {b b' : Bool} (e : map_Bool b = b') : BoolR b b' :=
   match e with
   | idpath =>
     match b with
@@ -39,56 +33,56 @@ Definition map_in_R_bool {b b' : bool} (e : map_bool b = b') : boolR b b' :=
     end
   end.
 
-Definition R_in_map_bool {b b' : bool} (bR : boolR b b') : map_bool b = b' :=
+Definition R_in_map_Bool {b b' : Bool} (bR : BoolR b b') : map_Bool b = b' :=
   match bR with
   | falseR => idpath
   | trueR => idpath
   end.
 
-Definition R_in_mapK_bool {b b' : bool} (bR : boolR b b') :
-  map_in_R_bool (R_in_map_bool bR) = bR :=
+Definition R_in_mapK_Bool {b b' : Bool} (bR : BoolR b b') :
+  map_in_R_Bool (R_in_map_Bool bR) = bR :=
     match bR with
     | falseR => idpath
     | trueR => idpath
     end.
 
-Definition Param_bool_sym {b b' : bool} (bR : boolR b b') : boolR b' b :=
+Definition Param_Bool_sym {b b' : Bool} (bR : BoolR b b') : BoolR b' b :=
   match bR with
   | falseR => falseR
   | trueR => trueR
   end.
 
-Definition Param_bool_sym_inv {b b' : bool} (bR : boolR b b') :
-  Param_bool_sym (Param_bool_sym bR) = bR :=
+Definition Param_Bool_sym_inv {b b' : Bool} (bR : BoolR b b') :
+  Param_Bool_sym (Param_Bool_sym bR) = bR :=
     match bR with
     | falseR => idpath
     | trueR => idpath
     end.
 
-Definition boolR_sym : forall (b b' : bool), sym_rel boolR b b' <~> boolR b b'.
+Definition BoolR_sym : forall (b b' : Bool), sym_rel BoolR b b' <~> BoolR b b'.
 Proof.
   intros b b'.
   unshelve eapply equiv_adjointify.
-  - apply Param_bool_sym.
-  - apply Param_bool_sym.
-  - intro bR. apply Param_bool_sym_inv.
-  - intro bR. apply Param_bool_sym_inv.
+  - apply Param_Bool_sym.
+  - apply Param_Bool_sym.
+  - intro bR. apply Param_Bool_sym_inv.
+  - intro bR. apply Param_Bool_sym_inv.
 Defined.
 
-Definition Map4_bool : Map4.Has boolR.
+Definition Map4_Bool : Map4.Has BoolR.
 Proof.
   unshelve econstructor.
-  - exact map_bool.
-  - exact @map_in_R_bool.
-  - exact @R_in_map_bool.
-  - exact @R_in_mapK_bool.
+  - exact map_Bool.
+  - exact @map_in_R_Bool.
+  - exact @R_in_map_Bool.
+  - exact @R_in_mapK_Bool.
 Defined.
 
-Definition Param44_bool : Param44.Rel bool bool.
+Definition Param44_Bool : Param44.Rel Bool Bool.
 Proof.
   unshelve econstructor.
-  - exact boolR.
-  - exact Map4_bool.
-  - apply (fun e => @eq_Map4 _ _ (sym_rel boolR) boolR e Map4_bool).
-    apply boolR_sym.
+  - exact BoolR.
+  - exact Map4_Bool.
+  - apply (fun e => @eq_Map4 _ _ (sym_rel BoolR) BoolR e Map4_Bool).
+    apply BoolR_sym.
 Defined.

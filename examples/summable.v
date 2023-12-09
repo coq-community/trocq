@@ -68,7 +68,7 @@ Notation "'Σ' ue" := (sum_xnnR ue) (at level 35) : xnnR_scope.
 Axiom sum_xnnR_add :
   forall u v : seq_xnnR, (Σ (u + v))%xnnR = (Σ u + Σ v)%xnnR.
 
-Definition isFin (re : xnnR) : bool :=
+Definition isFin (re : xnnR) : Bool :=
   match re with Fin _ => true | _ => false end.
 
 (* summability is defined in terms of infinite sums *)
