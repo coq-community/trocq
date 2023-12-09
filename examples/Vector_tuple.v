@@ -487,19 +487,13 @@ End AppendConst.
 
 (* head (tuple) ~ hd (vector) *)
 
-Axiom cheat : forall A, A.
-Ltac cheat := apply cheat.
-
-Definition Param_head
+Axiom Param_head : forall
   (A A' : Type) (AR : Param00.Rel A A') (n n' : nat) (nR : natR n n')
   (t : tuple A (S n)) (v' : Vector.t A' (S n'))
   (r : R_trans
         (@tuple_vectorR A (S n)) (Vector.tR A A' AR (S n) (S n') (SR n n' nR))
-        t v') :
+        t v'),
     AR (head t) (Vector.hd v').
-Proof.
-  cheat.
-Defined.
 
 (* composition with arithmetic parametricity as in int_to_Zp.v *)
 
