@@ -2,6 +2,8 @@
 
 0. We use the Opam package manager, please install it from the
    official Opam webpage: https://opam.ocaml.org/doc/Install.html
+   and add the Coq opam repository, with the following command:
+   `opam repo add coq-released https://coq.*/opam/released`
 
 1. Create a fresh Opam switch (development was done with
    OCaml 4.12.0, but anything newer should work). An existing switch may
