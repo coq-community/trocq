@@ -12,270 +12,10 @@
 (*****************************************************************************)
 
 From Coq Require Import ssreflect.
-From Coq Require Import Vectors.VectorDef.
 From Trocq Require Import Trocq.
-From Trocq Require Import Param_nat Param_trans Param_bool.
+From Trocq Require Import Param_nat Param_trans Param_bool Param_vector.
 
 Set Universe Polymorphism.
-
-Module Vector.
-
-(* the standard vector type *)
-
-Inductive t (A : Type) : nat -> Type :=
-  | nil : t A 0
-  | cons : forall (n : nat), A -> t A n -> t A (S n).
-Arguments nil {_}.
-Arguments cons {_ _}.
-
-Definition hd : forall {A : Type} {n : nat}, t A (S n) -> A :=
-  fun A n v =>
-    match v in t _ m
-    return match m with O => Unit | S _ => A end
-    with
-    | nil => tt
-    | cons _ a _ => a
-    end.
-
-Definition tail : forall {A : Type} {n : nat}, t A (S n) -> t A n :=
-  fun A n v =>
-    match v in t _ m
-    return match m with O => Unit | S k => t A k end
-    with
-    | nil => tt
-    | cons _ _ v' => v'
-    end.
-
-Definition const : forall {A : Type} (a : A) (n : nat), t A n :=
-  fun A a =>
-    fix F n :=
-      match n with
-      | O => nil
-      | S n' => cons a (F n')
-      end.
-
-Definition append :
-  forall {A : Type} {n1 n2 : nat} (v1 : t A n1) (v2 : t A n2),
-    t A (n1 + n2) :=
-  fun A n1 n2 v1 v2 =>
-    (fix F n (v : t A n) {struct v} : t A (n + n2) :=
-      match v with
-      | nil => v2
-      | @cons _ n a v => cons a (F n v)
-      end) n1 v1.
-
-Lemma append_const {A : Type} (a : A) (n1 n2 : nat) :
-  append (const a n1) (const a n2) = const a (n1 + n2).
-Proof.
-  induction n1.
-  - reflexivity.
-  - simpl. apply ap. assumption.
-Qed.
-
-Lemma append_comm_cons {A : Type} {n1 n2 : nat} (v1 : t A n1) (v2 : t A n2) (a : A) :
-  cons a (append v1 v2) = append (cons a v1) v2.
-Proof.
-  simpl. reflexivity.
-Defined.
-
-(* vector ~ vector *)
-
-Inductive tR (A A' : Type) (AR : A -> A' -> Type) :
-  forall (n n' : nat) (nR : natR n n'), t A n -> t A' n' -> Type :=
-  | nilR : tR A A' AR O O OR nil nil
-  | consR :
-    forall
-      (n n' : nat) (nR : natR n n') (a : A) (a' : A') (aR : AR a a')
-      (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v'),
-        tR A A' AR (S n) (S n') (SR n n' nR) (cons a v) (cons a' v').
-
-Definition map :
-  forall (A A' : Type) (AR : Param10.Rel A A') (n n' : nat) (nR : natR n n'),
-    t A n -> t A' n' :=
-  fun A A' AR =>
-    fix F n n' nR :=
-      match nR with
-      | OR => fun _ => nil
-      | SR m m' mR => fun v => cons (map AR (hd v)) (F m m' mR (tail v))
-      end.
-
-Definition t0 {A} (v : t A O) : v = nil := match v in t _ m return
-     (match m return t A m -> Type with
-       O => fun v => v = nil | S k => fun _ => Unit end) v
-   with nil => 1%path | cons _ _ _ => tt end.
-
-Definition tE {A n} (v : t A (S n)) : v = cons (hd v) (tail v) :=
- (match v in t _ m return
-     (match m return t A m -> Type with
-       O => fun _ => Unit | S k => fun v => v = (cons (hd v) (tail v))
-     end) v
-   with nil => tt | cons _ a w => 1%path end).
-
-Lemma path_prodE  {A B : Type} {x x' : A} {y y' : B} :
-  (x, y) = (x', y') -> x = x' /\ y = y'.
-Proof.
-move=> e; split; move: e.
-- by move=> /(ap fst).
-- by move=> /(ap snd).
-Defined.
-
-Definition t0P A P (v : t A O) : P nil -> P v := match v in t _ m return
-     (match m return t A m -> Type with
-       O => fun v => P nil -> P v | S k => fun _ => Unit end) v
-   with nil => id | cons _ _ _ => tt end.
-
-Definition tSP A n P : (forall a (v : t A n), P (cons a v)) -> forall v, P v.
-Proof. by move=> Pn v; apply (transport P (tE _)^); apply Pn. Defined.
-
-Definition map_in_R :
-  forall
-    (A A' : Type) (AR : Param2a0.Rel A A') (n n' : nat) (nR : natR n n')
-    (v : t A n) (v' : t A' n'),
-      map A A' AR n n' nR v = v' -> tR A A' AR n n' nR v v'.
-Proof.
-intros A A' AR n n'.
-elim=> [{n n'}|{n'}n n' nR IHn]/=.
-  - by elim/t0P; elim/t0P; constructor.
-  - elim/tSP => a v; elim/tSP => a' v' e.
-    constructor.
-    + by have /(ap hd)/(map_in_R AR) := e.
-    + by have /(ap tail)/IHn := e.
-Defined.
-
-Definition R_in_map :
-  forall
-    (A A' : Type) (AR : Param2b0.Rel A A') (n n' : nat) (nR : natR n n')
-    (v : t A n) (v' : t A' n'),
-      tR A A' AR n n' nR v v' -> map A A' AR n n' nR v = v'.
-Proof.
-  intros A A' AR n n' nR v v' vR.
-  elim: vR => [|{}n {}n' {}nR a a' aR {}v {}v' _ []].
-  - reflexivity.
-  - by elim (R_in_map AR a a' aR).
-Defined.
-
-Definition R_in_mapK :
-  forall
-    (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n')
-    (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v'),
-      map_in_R A A' AR n n' nR v v' (R_in_map A A' AR n n' nR v v' vR) = vR.
-Proof.
-  intros A A' AR n n' nR v v' vR.
-  elim: vR => {n n' nR v v'}[|n n' nR a a' aR v v' IHv r]//=.
-  elim: {2}aR / (R_in_mapK AR).
-  elim: (Hierarchy.R_in_map AR a a' aR)=> //=.
-  elim: {2}_ / r.
-  by elim: R_in_map.
-Defined.
-
-Definition Param_nat_symK m n (nR : natR m n) : nR = Param_nat_sym (Param_nat_sym nR).
-Proof. by elim: nR => //= {}m {}n mn emn; apply: ap. Defined.
-
-Definition tR_sym_f {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
-  {v : t A n} {v' : t A' n'} :
-      sym_rel (tR A A' AR n n' nR) v' v -> tR A' A (sym_rel AR) n' n (Param_nat_sym nR) v' v.
-Proof. by elim=> //=; constructor. Defined.
-
-Definition tR_sym_t {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
-   {v' : t A' n'} {v : t A n} :
-    tR A A' AR n n' (Param_nat_sym (Param_nat_sym nR)) v v' <~> tR A A' AR n n' nR v v'.
-Proof.
-unshelve eapply equiv_adjointify.
-- apply: (transport (fun nR => tR _ _ _ _ _ nR _ _)).
-  symmetry; exact: Param_nat_symK.
-- apply: (transport (fun nR => tR _ _ _ _ _ nR _ _)).
-  exact: Param_nat_symK.
-- by move=> vR; rewrite -transport_pp concat_pV.
-- by move=> vR; rewrite -transport_pp concat_Vp.
-Defined.
-
-Local Notation f := (tR_sym_f _ _).
-Local Notation g := (tR_sym_t _ _).
-
-Definition tR_sym_fK {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
-  (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v') :
-     g (f (f vR)) = vR.
-Proof.
-elim: vR => // {}n {}n' {}nR a a' aR {}v {}v' vR {2}<-/=.
-by elim: _ / Param_nat_symK (tR_sym_f _ _ _).
-Defined.
-
-Definition tR_sym_fE {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
-  (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v') :
-     f vR = g (f (g^-1 vR)).
-Proof. by rewrite -{2}[vR]tR_sym_fK eissect tR_sym_fK. Qed.
-
-Definition tR_sym  (A A' : Type) (AR : A -> A' -> Type) (n n' : nat) (nR : natR n n')
-   (v' : t A' n') (v : t A n) :
-      sym_rel (tR A A' AR n n' nR) v' v <~> tR A' A (sym_rel AR) n' n (Param_nat_sym nR) v' v.
-Proof.
-  unshelve eapply equiv_adjointify.
-  - exact: tR_sym_f.
-  - move/tR_sym_f/tR_sym_t; exact.
-  - by move=> vR; rewrite [f (g _)]tR_sym_fE eissect tR_sym_fK.
-  - exact: tR_sym_fK.
-Defined.
-
-Definition Map4 (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n') :
-  Map4.Has (tR A A' AR n n' nR).
-Proof.
-  unshelve econstructor.
-  - exact (map A A' AR n n' nR).
-  - exact (map_in_R A A' AR n n' nR).
-  - exact (R_in_map A A' AR n n' nR).
-  - exact (R_in_mapK A A' AR n n' nR).
-Defined.
-
-Definition Param44 :
-  forall (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n'),
-    Param44.Rel (t A n) (t A' n').
-Proof.
-  intros A A' AR n n' nR.
-  unshelve econstructor.
-  - exact (@tR A A' AR n n' nR).
-  - exact (Map4 A A' AR n n' nR).
-  - unshelve eapply
-      (@eq_Map4 _ _
-        (sym_rel (tR A A' AR n n' nR))
-        (tR A' A (sym_rel AR) n' n (Param_nat_sym nR))).
-    + exact (tR_sym A A' AR n n' nR).
-    + exact (Map4 A' A (Param44_sym A A' AR) n' n (Param_nat_sym nR)).
-Defined.
-
-(* append ~ append *)
-
-Definition Param_append
-  (A A' : Type) (AR : Param00.Rel A A')
-  (n1 n1' : nat) (n1R : natR n1 n1')
-  (n2 n2' : nat) (n2R : natR n2 n2')
-  (v1 : t A n1) (v1' : t A' n1') (v1R : tR A A' AR n1 n1' n1R v1 v1')
-  (v2 : t A n2) (v2' : t A' n2') (v2R : tR A A' AR n2 n2' n2R v2 v2') :
-    tR A A' AR (n1 + n2) (n1' + n2') (Param_add n1 n1' n1R n2 n2' n2R)
-      (append v1 v2) (append v1' v2').
-Proof.
-  induction v1R.
-  - simpl. exact v2R.
-  - simpl. apply consR.
-    + exact aR.
-    + exact IHv1R.
-Defined.
-
-(* const ~ const *)
-
-Definition Param_const
-  (A A' : Type) (AR : Param00.Rel A A')
-  (a : A) (a' : A') (aR : AR a a')
-  (n n' : nat) (nR : natR n n') :
-    tR A A' AR n n' nR (const a n) (const a' n').
-Proof.
-  induction nR; simpl.
-  - apply nilR.
-  - apply consR.
-    * exact aR.
-    * exact IHnR.
-Defined.
-
-End Vector.
 
 (* iterated tuple type *)
 
@@ -524,10 +264,6 @@ End HeadConst.
 
 
 
-
-
-
-
 (* bug *)
 
 Module bug.
@@ -566,22 +302,13 @@ Abort.
 
 End bug.
 
-
-
-
-
-
-
-
-
-
 (* bounded nat and bitvector *)
 (* NB: we can use transitivity to make the proofs here too *)
 
 Module BV.
 
 Definition bounded_nat (k : nat) := {n : nat & n < pow 2 k}%nat.
-Definition bitvector (k : nat) := Vector.t bool k.
+Definition bitvector (k : nat) := Vector.t Bool k.
 
 (* bounded_nat k ~ bitvector k' *)
 
@@ -686,7 +413,7 @@ Definition Param44_bnat_bv (k k' : nat) (kR : natR k k') :
 Proof.
   unshelve eapply (@Param44_trans _ (bitvector k) _).
   - exact Param44_bnat_bv_d.
-  - exact (Vector.Param44 bool bool Param44_bool k k' kR).
+  - exact (Vector.Param44 Bool Bool Param44_Bool k k' kR).
 Defined.
 
 Definition Param2a0_bnat_bv (k k' : nat) (kR : natR k k') :
@@ -695,10 +422,10 @@ Definition Param2a0_bnat_bv (k k' : nat) (kR : natR k k') :
 
 (* operations to get and set bits *)
 
-Axiom setBit_bv : forall {k : nat}, bitvector k -> nat -> bool -> bitvector k.
-Axiom setBit_bnat : forall {k : nat}, bounded_nat k -> nat -> bool -> bounded_nat k.
-Axiom getBit_bv : forall {k : nat}, bitvector k -> nat -> bool.
-Axiom getBit_bnat : forall {k : nat}, bounded_nat k -> nat -> bool.
+Axiom setBit_bv : forall {k : nat}, bitvector k -> nat -> Bool -> bitvector k.
+Axiom setBit_bnat : forall {k : nat}, bounded_nat k -> nat -> Bool -> bounded_nat k.
+Axiom getBit_bv : forall {k : nat}, bitvector k -> nat -> Bool.
+Axiom getBit_bnat : forall {k : nat}, bounded_nat k -> nat -> Bool.
 
 (* setBit_bnat ~ setBit_bv *)
 
@@ -707,10 +434,10 @@ Axiom setBitR :
     (k k' : nat) (kR : natR k k')
     (bn : bounded_nat k) (bv' : bitvector k') 
     (r : R_trans
-          (@R_bnat_bv k) (Vector.Param44 bool bool Param44_bool k k' kR) bn bv')
+          (@R_bnat_bv k) (Vector.Param44 Bool Bool Param44_Bool k k' kR) bn bv')
     (n n' : nat) (nR : natR n n')
-    (b b' : bool) (bR : boolR b b'),
-      R_trans (@R_bnat_bv k) (Vector.Param44 bool bool Param44_bool k k' kR)
+    (b b' : Bool) (bR : BoolR b b'),
+      R_trans (@R_bnat_bv k) (Vector.Param44 Bool Bool Param44_Bool k k' kR)
         (setBit_bnat bn n b) (setBit_bv bv' n' b').
 
 (* getBit_bnat ~ getBit_bv *)
@@ -720,9 +447,9 @@ Axiom getBitR :
     (k k' : nat) (kR : natR k k')
     (bn : bounded_nat k) (bv' : bitvector k') 
     (r : R_trans
-          (@R_bnat_bv k) (Vector.Param44 bool bool Param44_bool k k' kR) bn bv')
+          (@R_bnat_bv k) (Vector.Param44 Bool Bool Param44_Bool k k' kR) bn bv')
     (n n' : nat) (nR : natR n n'),
-      boolR (getBit_bnat bn n) (getBit_bv bv' n').
+      BoolR (getBit_bnat bn n) (getBit_bv bv' n').
 
 (* lt ~ lt *)
 Axiom Param10_lt :
@@ -740,16 +467,16 @@ Trocq Use Param_const.
 Trocq Use Param01_paths. *)
 
 Axiom setBitThenGetSame :
-  forall {k : nat} (bv : bitvector k) (i : nat) (b : bool),
+  forall {k : nat} (bv : bitvector k) (i : nat) (b : Bool),
     (i < k)%nat -> getBit_bv (setBit_bv bv i b) i = b.
 
-Definition Param2a0_bool : Param2a0.Rel bool bool := Param44_bool.
-Definition Param02b_bool : Param02b.Rel bool bool := Param44_bool.
+Definition Param2a0_Bool : Param2a0.Rel Bool Bool := Param44_Bool.
+Definition Param02b_Bool : Param02b.Rel Bool Bool := Param44_Bool.
 
 Trocq Use Param00_nat.
 Trocq Use Param2a0_nat.
-Trocq Use Param2a0_bool.
-Trocq Use Param02b_bool.
+Trocq Use Param2a0_Bool.
+Trocq Use Param02b_Bool.
 Trocq Use Param2a0_bnat_bv.
 Trocq Use getBitR.
 Trocq Use setBitR.
@@ -757,8 +484,10 @@ Trocq Use Param01_paths.
 Trocq Use Param10_lt.
 
 Lemma setBitThenGetSame' :
-  forall {k : nat} (bn : bounded_nat k) (i : nat) (b : bool),
+  forall {k : nat} (bn : bounded_nat k) (i : nat) (b : Bool),
     (i < k)%nat -> getBit_bnat (setBit_bnat bn i b) i = b.
 Proof.
-  trocq. intros k bv i b H. apply setBitThenGetSame. exact H.
+  trocq. exact @setBitThenGetSame.
 Qed.
+
+End BV.
