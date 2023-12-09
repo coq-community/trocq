@@ -18,9 +18,11 @@ Require Import HoTT_additions Hierarchy.
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
-Notation bool := Datatypes.bool.
+Inductive bool : Type := false | true.
+
+(* Notation bool := Datatypes.bool.
 Notation false := Datatypes.false.
-Notation true := Datatypes.true.
+Notation true := Datatypes.true. *)
 
 Inductive boolR : bool -> bool -> Type :=
   | falseR : boolR false false
