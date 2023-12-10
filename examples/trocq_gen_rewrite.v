@@ -17,9 +17,6 @@ From Trocq Require Import Trocq.
 
 Set Universe PolymoRinthism.
 
-Axiom cheat : forall A, A.
-Ltac cheat := apply cheat.
-
 Declare Scope int_scope.
 Delimit Scope int_scope with int.
 
