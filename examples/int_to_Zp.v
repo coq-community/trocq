@@ -16,27 +16,25 @@ From Trocq Require Import Trocq.
 
 Set Universe Polymorphism.
 
-Axiom cheat : forall A, A.
-Ltac cheat := apply cheat.
-
-(* what it can do *)
-(* Section Test. *)
 Declare Scope int_scope.
 Delimit Scope int_scope with int.
 Declare Scope Zp_scope.
 Delimit Scope Zp_scope with Zp.
 
+(***
+We setup an axiomatic context in order not to develop
+arithmetic modulo in Coq/HoTT.
+**)
 Axiom (int@{i} : Type@{i}) (zero : int) (add : int -> int -> int).
+Axiom (addC : forall m n, add m n = add n m).
 Axiom (eqmodp : int -> int -> Type).
 Axiom (Zp : Type) (zerop : Zp) (addp : Zp -> Zp -> Zp).
 
-Context (eqp_refl : Reflexive eqmodp).
-Context (eqp_sym : Symmetric eqmodp).
-Context (eqp_trans : Transitive eqmodp).
-(* Existing Instance eqp_refl. *)
-(* Existing Instance eqp_trans. *)
+Axiom (eqp_refl : Reflexive eqmodp).
+Axiom (eqp_sym : Symmetric eqmodp).
+Axiom (eqp_trans : Transitive eqmodp).
 
-Context (pmap : Zp -> int) (pcomap : int -> Zp)
+Axiom (pmap : Zp -> int) (pcomap : int -> Zp)
   (pmapK : forall x, pcomap (pmap x) = x).
 Definition Rp x n := pmap x = n.
 
@@ -94,12 +92,12 @@ Trocq Register Funext f.
 Goal (forall x y, x + y = y + x)%Zp.
 Proof.
   trocq.
-Abort.
+  exact addC.
+Qed.
 
-Goal (forall x y, x + y = y + x)%int ->
-  (forall x y z, x + y + z = y + x + z)%Zp.
+Goal (forall x y z, x + y + z = y + x + z)%Zp.
 Proof.
-  intros addC x y z.
+  intros x y z.
   suff addpC: forall x y, (x + y = y + x)%Zp. {
     by rewrite (addpC x y). }
   trocq.
