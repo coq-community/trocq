@@ -26,10 +26,10 @@ term->annot-term (sort (typ U)) (app [pglobal (const PType) UI, M, N]) :- trocq.
   coq.univ-instance UI [{coq.univ.variable U}],
   cstr.univ-link _ M N.
 term->annot-term (fun N T F) (fun N T' F') :- !,
-  term->annot-term T T',
+  term->annot-term T T', !,
   pi x\ term->annot-term (F x) (F' x).
 term->annot-term (prod N T F) (prod N T' F') :- !,
-  term->annot-term T T',
+  term->annot-term T T', !,
   pi x\ term->annot-term (F x) (F' x).
 term->annot-term (app L) (app L') :- !,
   std.map L term->annot-term L'.
@@ -62,19 +62,20 @@ sub-type (app [pglobal (const PType) _, M1, N1]) (app [pglobal (const PType) _, 
   cstr.geq C1 C2.
 % SubPi
 sub-type (prod N T F) (prod _ T' F') :- !,
-  sub-type T' T,
+  sub-type T' T, !,
   @annot-pi-decl N T' x\ sub-type (F x) (F' x).
 % SubLam
 sub-type (fun N T F) (fun _ T F') :- !,
   @annot-pi-decl N T x\ sub-type (F x) (F' x).
 % SubApp
 sub-type (app [F|Xs]) (app [F'|Xs']) :-
-  sub-type F F', !,
+  sub-type F F',
   std.forall2 Xs Xs' eq.
 % SubConv
 sub-type X X :- (name X ; X = global _ ; X = pglobal _ _), !.
-sub-type X Y :- whd1 X X', !, sub-type X' Y.
-sub-type X Y :- whd1 Y Y', !, sub-type X Y'.
+sub-type X Y :- coq.unify-eq X Y _.
+% TODO: perform controlled reduction
+% and extend implementation to fix, match, etc.
 sub-type X Y :- coq.error "annot.sub-type:" X "vs" Y.
 
 % syntactic term equality, taking care of adding annotation equalities in the constraint graph
@@ -85,10 +86,10 @@ eq (app [pglobal (const PType) UI, M1, N1]) (app [pglobal (const PType) UI, M2, 
   cstr.univ-link C2 M2 N2,
   cstr.eq C1 C2.
 eq (prod _ T F) (prod _ T' F') :- !,
-  eq T T',
+  eq T T', !,
   pi x\ eq (F x) (F' x).
 eq (fun _ T F) (fun _ T' F') :- !,
-  eq T T',
+  eq T T', !,
   pi x\ eq (F x) (F' x).
 eq (app L) (app L') :- !,
   std.forall2 L L' eq.

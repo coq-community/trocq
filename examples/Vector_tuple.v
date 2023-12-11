@@ -258,7 +258,7 @@ Trocq Use Param_const.
 Trocq Use Param01_paths.
 
 Lemma head_const' : forall {n : nat} (z : Zp), head (const z (S n)) = z.
-Proof. trocq; exact: @head_const. Qed.
+Proof. trocq. exact @head_const. Qed.
 
 End HeadConst.
 
@@ -285,6 +285,16 @@ Defined.
 
 Trocq Use SR.
 Trocq Use Param_cons.
+Trocq Use Param_add.
+Trocq Use Param_append.
+Trocq Use Param01_paths.
+Trocq Use Param2a0_tuple_vector.
+Trocq Use Param02b_tuple_vector.
+Trocq Use Param2a0_nat.
+Lemma append_comm_cons : forall {A : Type} {n1 n2 : nat}
+    (v1 : tuple A n1) (v2 : tuple A n2) (a : A),
+  @paths (tuple A (S (n1 + n2))) (cons a (append v1 v2)) (append (cons a v1) v2).
+Proof. by trocq. Qed.
 
 (* bounded nat and bitvector *)
 (* NB: we can use transitivity to make the proofs here too *)
