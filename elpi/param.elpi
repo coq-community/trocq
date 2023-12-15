@@ -66,9 +66,9 @@ param (pglobal GR UI) T' (pglobal GR' UI) GrefR :- !,
 % ParamSub + ParamVar
 param X T' X' (W XR) :- name X, !,
   util.when-debug dbg.steps (coq.say "param/var" X "@" T'),
-  param.store X T X' XR,
+  param.store X T X' XR, !,
   util.when-debug dbg.steps (coq.say "param/var: found" X "@" T "~" X' "by" XR),
-  annot.sub-type T T',
+  annot.sub-type T T', !,
   weakening T T' (wfun W).
 
 % ParamUniv
@@ -106,7 +106,7 @@ param (fun N T F) FunTy (fun N' T' F') FunR :- !,
   coq.name-suffix N "'" N',
   coq.name-suffix N "R" NR,
   map-class->term map0 Map0,
-  param T (app [pglobal (const {trocq.db.ptype}) _, Map0, Map0]) T' TR,
+  param T (app [pglobal (const {trocq.db.ptype}) _, Map0, Map0]) T' TR, !,
   util.when-debug dbg.full (coq.say "param/fun:" T "@ 0,0 ~" T' "by" TR),
   @annot-pi-decl N T x\ pi x' xR\ param.store x T x' xR => (
     util.when-debug dbg.full (coq.say "param/fun: introducing" x "@" T "~" x' "by" xR),
@@ -124,20 +124,20 @@ param
   (prod `_` A' (_\ B')) (app [pglobal (const ParamArrow) UI|Args]) :-
     trocq.db.ptype PType, !, std.do! [
       util.when-debug dbg.steps (coq.say "param/arrow" A "->" B "@" M N),
-      cstr.univ-link C M N,
+      cstr.univ-link C M N, !,
       util.when-debug dbg.full (coq.say "param/arrow:" M N "is linked to" C),
-      cstr.dep-arrow C CA CB,
+      cstr.dep-arrow C CA CB, !,
       util.when-debug dbg.full (coq.say "param/arrow: added dep-arrow from" C "to" CA "and" CB),
-      cstr.univ-link CA MA NA,
+      cstr.univ-link CA MA NA, !,
       util.when-debug dbg.full (coq.say "param/arrow:" MA NA "is linked to" CA),
-      param A (app [pglobal (const PType) _, MA, NA]) A' AR,
-      cstr.univ-link CB MB NB,
+      param A (app [pglobal (const PType) _, MA, NA]) A' AR, !,
+      cstr.univ-link CB MB NB, !,
       util.when-debug dbg.full (coq.say "param/arrow:" MB NB "is linked to" CB),
-      param B (app [pglobal (const PType) _, MB, NB]) B' BR,
+      param B (app [pglobal (const PType) _, MB, NB]) B' BR, !,
       util.when-debug dbg.full (coq.say "param/arrow:" B "@" MB NB "~" B' "by" BR),
-      coq.say "before db param-arrow" C,
-      trocq.db.param-arrow C ParamArrow,
-      coq.say UI,
+      util.when-debug dbg.full (coq.say "before db param-arrow" C),
+      trocq.db.param-arrow C ParamArrow, !,
+      util.when-debug dbg.full (coq.say UI),
       prune UI [],
       util.when-debug dbg.full (coq.say "param/arrow: suspending proof on" C),
       util.if-suspend C (param-class.requires-axiom C) (
@@ -157,21 +157,22 @@ param
     util.when-debug dbg.steps (coq.say "param/forall" N ":" A "," B "@" M1 M2),
     coq.name-suffix N "'" N',
     coq.name-suffix N "R" NR,
-    cstr.univ-link C M1 M2,
+    cstr.univ-link C M1 M2, !,
     util.when-debug dbg.full (coq.say "param/forall:" M1 M2 "is linked to" C),
-    cstr.dep-pi C CA CB,
+    cstr.dep-pi C CA CB, !,
     util.when-debug dbg.full (coq.say "param/forall: added dep-pi from" C "to" CA "and" CB),
-    cstr.univ-link CA M1A M2A,
+    cstr.univ-link CA M1A M2A, !,
     util.when-debug dbg.full (coq.say "param/forall:" M1A M2A "is linked to" CA),
     param A (app [pglobal (const PType) _, M1A, M2A]) A' AR,
-    cstr.univ-link CB M1B M2B,
+    cstr.univ-link CB M1B M2B, !,
     util.when-debug dbg.full (coq.say "param/forall:" M1B M2B "is linked to" CB),
     @annot-pi-decl N A a\ pi a' aR\ param.store a A a' aR => (
       util.when-debug dbg.full (coq.say "param/forall: introducing" a "@" A "~" a' "by" aR),
-      param (B a) (app [pglobal (const PType) _, M1B, M2B]) (B' a') (BR a a' aR),
+      param (B a) (app [pglobal (const PType) _, M1B, M2B]) (B' a') (BR a a' aR), !,
       util.when-debug dbg.full (coq.say "param/forall:" (B a) "@" M1B M2B "~" (B' a') "by" (BR a a' aR))
     ),
-    trocq.db.r CA RA,
+    trocq.db.r CA RA, !,
+    util.when-debug dbg.full (coq.say "param/forall db CA RA"), !,
     prune UIA [],
     Args =
       [ A, A', AR, fun N A B, fun N' A' B',
@@ -190,22 +191,22 @@ param
     ).
 
 % ParamSub for F (argument B in param.args) + ParamApp
-param (app [F|Xs]) B (app [F'|Xs']) (W AppR) :- !,
+param (app [F|Xs]) B (app [F'|Xs']) (W AppR) :- std.do! [
   util.when-debug dbg.steps (coq.say "param/app" F Xs "@" B),
   annot.typecheck F FTy,
   fresh-type => param F FTy F' FR,
   util.when-debug dbg.full (coq.say "param/app:" F "@" FTy "~" F' "by" FR),
   param.args FTy B Xs Xs' XsR W,
-  coq.subst-fun XsR FR AppR.
+  coq.subst-fun XsR FR AppR].
 
 pred param.args i:term, i:term, i:list term, o:list term, o:list term, o:term -> term.
-param.args T B [] [] [] W :- !,
+param.args T B [] [] [] W :- std.do! [
   annot.sub-type T B,
-  weakening T B (wfun W).
-param.args FunTy B [X|Xs] [X'|Xs'] [X, X', XR|XsR] W :-
+  weakening T B (wfun W)].
+param.args FunTy B [X|Xs] [X'|Xs'] [X, X', XR|XsR] W :- !,
   std.assert-ok! (coq.unify-eq FunTy (prod _ T TF)) {std.string.concat " "
-    ["type not convertible to Π:", {coq.term->string FunTy}]},
-  param X T X' XR,
+    ["type not convertible to Π:", {coq.term->string FunTy}]}, !,
+  param X T X' XR, !,
   param.args (TF X) B Xs Xs' XsR W.
 
 param X T _ _ :-

@@ -205,7 +205,7 @@ union (pc M1 N1) (pc M2 N2) (pc M N) :-
   map-class.union N1 N2 N.
 
 pred inter i:param-class, i:param-class, o:param-class.
-inter C C' _ :- coq.say C C', fail.
+inter C C' _ :- util.when-debug dbg.full (coq.say C C'), fail.
 inter (pc M1 N1) (pc M2 N2) (pc M N) :-
   map-class.inter M1 M2 M,
   map-class.inter N1 N2 N.

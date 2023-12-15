@@ -74,7 +74,7 @@ dep-gref GR T GR' GRR :-
     std.map TCs internal.link? IDs,
     declare_constraint (internal.c.dep-gref ID GR T GR' GRR IDs) [_]
   ) (
-    trocq.db.gref GR Out Cs GR' GRR,
+    trocq.db.gref GR Out Cs GR' GRR, !,
     std.forall2 TCs Cs eq
   ).
 

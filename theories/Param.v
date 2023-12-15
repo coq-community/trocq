@@ -34,6 +34,7 @@ Inductive map_class : Set := map0 | map1 | map2a | map2b | map3 | map4.
 (* PType and weaken *)
 
 Elpi Command genpparam.
+Elpi Accumulate File util.
 Elpi Accumulate File param_class.
 Elpi Accumulate Db trocq.db.
 
@@ -53,6 +54,7 @@ Elpi Query lp:{{
 *)
 
 Elpi Command genpparamtype.
+Elpi Accumulate File util.
 Elpi Accumulate File param_class.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate lp:{{
@@ -155,12 +157,13 @@ Elpi Accumulate lp:{{
 }}.
 
 Elpi Accumulate lp:{{
-  solve InitialGoal NewGoals :- debug dbg.full => std.do! [
+  solve InitialGoal NewGoals :- debug dbg.none => std.do! [
     InitialGoal = goal _Context _ G _ [],
-    coq.say "goal" G,
+    util.when-debug dbg.full (coq.say "goal" G),
     translate-goal G (pc map0 map1) G' GR,
+    util.when-debug dbg.full (coq.say "trocq:" G "~" G' "by" GR),
     FinalProof = {{ @comap lp:G lp:G' lp:GR (_ : lp:G') }},
-    coq.say FinalProof,
+    util.when-debug dbg.full (coq.say FinalProof),
 
     std.assert-ok! (coq.elaborate-skeleton FinalProof G EFinalProof) "proof elaboration error",
     std.assert-ok! (coq.typecheck EFinalProof G2) "proof typechecking error",

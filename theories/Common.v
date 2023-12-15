@@ -18,6 +18,8 @@ From Trocq Require Export
   HoTT_additions Hierarchy Param_Type Param_forall Param_arrow Database Param
   Param_paths Vernac.
 
+Local Open Scope param_scope.
+
 Definition graph@{i} {A B : Type@{i}} (f : A -> B) := paths o f.
 
 Module Fun.
@@ -127,3 +129,58 @@ Definition fromParam@{i} {A B : Type@{i}} (R : Param33.Rel@{i} A B) :
   |}.
 
 End Equiv.
+
+Module Iso.
+Section Iso.
+Universe i.
+Context {A B : Type@{i}}.
+Record type@{} := {
+  map :> A -> B;
+  comap : B -> A;
+  mapK : forall x, comap (map x) = x;
+  comapK : forall x, map (comap x) = x
+}.
+
+Section to.
+Variable (f : type).
+
+Let mapK' x : comap f (f x) = x :=
+  ap (comap f) (ap f (mapK f x)^) @ ap (comap f) (comapK f _) @ mapK f x.
+
+Let comap_in_map b a (e : comap f b = a) : f a = b :=
+  ap f e^ @ comapK f b.
+
+Let map_in_comap b a (e : f a = b) : comap f b = a :=
+  ap (comap f) e^ @ mapK' a.
+
+Let map_in_comapK b a (e : f a = b) :
+  comap_in_map b a (map_in_comap b a e) = e.
+Proof.
+rewrite /map_in_comap /comap_in_map /mapK' /=.
+elim: e => /=; rewrite concat_1p.
+rewrite ?inv_pp -?ap_V ?inv_pp ?inv_V ?ap_pp ?concat_p_pp.
+rewrite -!ap_compose concat_pp_p.
+have := concat_A1p (comapK f) (ap f (mapK f a)).
+rewrite -!ap_compose; move=> ->.
+rewrite ap_V concat_pp_p; apply: moveR_Vp; rewrite concat_p1.
+rewrite !concat_p_pp; apply: moveR_pM; rewrite concat_pV.
+rewrite (concat_A1p (fun x => (comapK f x))).
+by rewrite concat_pV.
+Qed.
+
+Definition toParam@{} : Param44.Rel@{i} A B :=
+  @Param44.BuildRel A B (graph f)
+     (@Map4.BuildHas@{i} _ _ _ _ (fun _ _ => id) (fun _ _ => id)
+        (fun _ _ _ => 1%path))
+     (@Map4.BuildHas@{i} _ _ _ _ comap_in_map map_in_comap map_in_comapK).
+
+Definition toParamSym@{} : Param44.Rel@{i} B A :=
+  @Param44.BuildRel B A (sym_rel (graph f))
+     (@Map4.BuildHas@{i} _ _ _ _ comap_in_map map_in_comap map_in_comapK)
+     (@Map4.BuildHas@{i} _ _ _ _ (fun _ _ => id) (fun _ _ => id)
+        (fun _ _ _ => 1%path)).
+
+End to.
+
+End Iso.
+End Iso.
