@@ -4,7 +4,7 @@
 ## but the full doc is on nixos / nix packages website:
 ## https://nixos.org/manual/nixpkgs/stable/#sec-language-coq
 
-{ lib, mkCoqDerivation, which, coq, HoTT, coq-elpi
+{ lib, mkCoqDerivation, which, coq, coq-elpi, mathcomp
   ## declare extra dependencies here, to be used in propagateBuildInputs e.g.
   # , mathcomp, coq-elpi
   , version ? null }:
@@ -40,7 +40,7 @@ with lib; mkCoqDerivation {
   ## - arbitrary nix packages (you need to require them at the beginning of the file)
   ## - Coq packages (require them at the beginning of the file)
   ## - OCaml packages (use `coq.ocamlPackages.xxx`, no need to require them at the beginning of the file)
-  propagatedBuildInputs = [ HoTT coq-elpi ]; ## e.g. `= [ mathcomp coq-elpi ]`
+  propagatedBuildInputs = [ mathcomp.ssreflect coq-elpi ]; ## e.g. `= [ mathcomp coq-elpi ]`
 
   ## Does the package contain OCaml code?
   mlPlugin = true;

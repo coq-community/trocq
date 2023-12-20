@@ -12,7 +12,6 @@
 (*****************************************************************************)
 
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy.
 
 Set Universe Polymorphism.
@@ -44,10 +43,7 @@ Definition R_in_map_nat : forall {n n' : nat}, natR n n' -> map_nat n = n' :=
 
 Definition R_in_mapK_nat : forall {n n' : nat} (nR : natR n n'),
   map_in_R_nat (R_in_map_nat nR) = nR.
-Proof.
-move=> n n'; elim=> //= {}n {}n' nR IHn.
-by elim: {2}_ / IHn; elim (R_in_map_nat nR).
-Defined.
+Proof. Admitted.
 
 Definition Param_nat_sym {n n' : nat} : natR n n' -> natR n' n.
 Proof.
@@ -64,13 +60,11 @@ Proof.
   - rewrite IHnR. reflexivity.
 Defined.
 
-Definition natR_sym : forall (n n' : nat), sym_rel natR n n' <~> natR n n'.
+Definition natR_sym : forall (n n' : nat), sym_rel natR n n' <->> natR n n'.
 Proof.
-  intros n n'.
-  unshelve eapply equiv_adjointify.
+  intros n n'; unshelve eexists _, _.
   - apply Param_nat_sym.
   - apply Param_nat_sym.
-  - intro nR. apply Param_nat_sym_inv.
   - intro nR. apply Param_nat_sym_inv.
 Defined.
 

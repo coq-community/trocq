@@ -1,4 +1,3 @@
--arg -noinit
 -arg -indices-matter
 
 -R theories/ Trocq
