@@ -1,5 +1,5 @@
--arg -noinit
 -arg -indices-matter
+-arg -w -arg +elpi.typechecker
 
 -R theories/ Trocq
 -R elpi/ Trocq.Elpi

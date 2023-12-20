@@ -12,11 +12,11 @@
 (*****************************************************************************)
 
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy.
 
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
+Set Asymmetric Patterns.
 
 Inductive listR (A A' : Type) (AR : A -> A' -> Type) : list A -> list A' -> Type :=
   | nilR : listR A A' AR (@nil A) (@nil A')
@@ -118,21 +118,14 @@ Definition listR_flipK (A A' : Type) (AR : A -> A' -> Type) :
 
 Definition listR_sym (A A' : Type) (AR : A -> A' -> Type) :
   forall (l' : list A') (l : list A),
-    listR A A' AR l l' <~> listR A' A (sym_rel AR) l' l.
+    listR A A' AR l l' <->> listR A' A (sym_rel AR) l' l.
 Proof.
   intros l' l.
   unshelve econstructor.
   - exact (listR_flip A A' AR l l').
   - unshelve econstructor.
     + exact (listR_flip A' A (sym_rel AR) l' l).
-    + exact (listR_flipK A' A (sym_rel AR) l' l).
     + exact (listR_flipK A A' AR l l').
-    + intros lR.
-      induction lR as [|a a' aR l l' lR IHlR]; simpl.
-      * reflexivity.
-      * rewrite IHlR.
-        elim (listR_flipK A A' AR l l' lR).
-        simpl. reflexivity.
 Defined.
 
 Definition Param00_list (A A' : Type) (AR : Param00.Rel A A') : Param00.Rel (list A) (list A').

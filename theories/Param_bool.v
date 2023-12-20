@@ -12,11 +12,12 @@
 (*****************************************************************************)
 
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy.
 
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
+
+Notation Bool := bool.
 
 Inductive BoolR : Bool -> Bool -> Type :=
   | falseR : BoolR false false
@@ -59,13 +60,11 @@ Definition Param_Bool_sym_inv {b b' : Bool} (bR : BoolR b b') :
     | trueR => idpath
     end.
 
-Definition BoolR_sym : forall (b b' : Bool), sym_rel BoolR b b' <~> BoolR b b'.
+Definition BoolR_sym : forall (b b' : Bool), sym_rel BoolR b b' <->> BoolR b b'.
 Proof.
-  intros b b'.
-  unshelve eapply equiv_adjointify.
+  intros b b'; unshelve eexists _,_ .
   - apply Param_Bool_sym.
   - apply Param_Bool_sym.
-  - intro bR. apply Param_Bool_sym_inv.
   - intro bR. apply Param_Bool_sym_inv.
 Defined.
 

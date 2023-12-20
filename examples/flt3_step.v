@@ -71,7 +71,7 @@ Notation "x ≡ y" := (eqmodp x%int y%int)
   (format "x  ≡  y", at level 70) : int_scope.
 Notation "x ≢ y" := (not (eqmodp x%int y%int))
   (format "x  ≢  y", at level 70) : int_scope.
-Notation "x ≠ y" := (not (x = y)).
+Notation "x ≠ y" := (not (x = y)) (at level 70).
 Notation "ℤ/9ℤ" := Zmod9.
 Notation ℤ := int.
 
@@ -88,7 +88,9 @@ Variable Reqmodp01 : forall (m : int) (x : Zmod9), Rp m x ->
 
 
 Trocq Use Rp Rmul Rzero Rone Radd Rmod3 Param10_paths Reqmodp01.
-Trocq Use Param01_sum Param01_Empty Param10_Empty.
+Trocq Use Param01_sum.
+Trocq Use Param01_Empty.
+Trocq Use Param10_Empty.
 
 Lemma flt3_step : forall (m n p : ℤ),
   m * n * p % 3 ≢ 0 -> (m³ + n³)%ℤ  ≠ p³%ℤ.

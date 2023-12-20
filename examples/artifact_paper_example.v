@@ -12,7 +12,6 @@
 (*****************************************************************************)
 
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 From Trocq Require Import Trocq.
 From Trocq_examples Require Import N.
 
@@ -29,7 +28,7 @@ Trocq Use RN. (* registering related types *)
   which we show relates the respective zero and successor constants of these
   types: *)
 Definition RN0 : RN 0%N 0%nat. Proof. done. Defined.
-Definition RNS m n : RN m n -> RN (N.succ m) (S n). Proof. by case. Defined.
+Definition RNS m n : RN m n -> RN (N.succ m) (S n). Proof. by case: _ /. Defined.
 Trocq Use RN0 RNS. (* registering related constants *)
 
 (** We can now make use of the tactic to prove an induction principle on `N` *)

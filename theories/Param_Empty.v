@@ -1,9 +1,10 @@
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy.
 
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
+
+Notation Empty := False.
 
 Inductive EmptyR : Empty -> Empty -> Type := .
 
