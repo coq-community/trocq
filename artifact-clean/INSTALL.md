@@ -1,4 +1,4 @@
-# Trocq
+# Install instructions
 
 0. We use the Opam package manager, please install it from the
    official Opam webpage: https://opam.ocaml.org/doc/Install.html
@@ -30,3 +30,12 @@
    - CoqIDE (available in your switch via `opam install coqide`)
    - VSCode or VSCodium with the **VSCoq Legacy** extension.
    - emacs together with proof-general
+
+# Success indicators
+
+As the `_CoqProject` file in Trocq contains the example files, successfully installing Trocq, *i.e.*, seeing the following lines in your console, means that the code works as intended:
+```
+* installed trocq.dev
+Done.
+```
+Another way to be sure it works is to execute step by step the `Example.v` file and see that the displayed goal after running the tactic features `PType <n> <k>` instead of `Type`, meaning the universes in the source goal were annotated with inferred parametricity classes.
