@@ -29,7 +29,7 @@ Definition binop_param {X X'} RX {Y Y'} RY {Z Z'} RZ
 We setup an axiomatic context in order not to develop
 arithmetic modulo in Coq/HoTT.
 **)
-Axiom (int@{i} : Type@{i}) (zero : int) (add : int -> int -> int)
+Axiom (int : Type) (zero : int) (add : int -> int -> int)
       (mul : int -> int -> int).
 Axiom (addC : forall m n, add m n = add n m).
 Axiom (Zmodp : Type) (zerop : Zmodp) (addp : Zmodp -> Zmodp -> Zmodp)

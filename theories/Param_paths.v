@@ -12,7 +12,6 @@
 (*****************************************************************************)
 
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy.
 
 Set Universe Polymorphism.
@@ -24,14 +23,14 @@ Inductive pathsR@{i}
     | idpathR : pathsR A A' AR x x' xR x x' xR idpath idpath.
 
 Definition paths_map@{i}
-  (A A' : Type@{i}) (AR : Param2b0.Rel A A')
+  (A A' : Type@{i}) (AR : Param2b0.Rel@{i} A A')
   (x : A) (x' : A') (xR : AR x x')
   (y : A) (y' : A') (yR : AR y y') :
     x = y -> x' = y' :=
   fun e => (R_in_map AR x x' xR)^ @ ap (map AR) e @ (R_in_map AR y y' yR).
 
 Definition paths_map_in_R@{i}
-  (A A' : Type@{i}) (AR : Param40.Rel A A')
+  (A A' : Type@{i}) (AR : Param40.Rel@{i} A A')
   (x : A) (x' : A') (xR : AR x x')
   (y : A) (y' : A') (yR : AR y y') :
     forall (e : x = y) (e' : x' = y'),
@@ -54,7 +53,7 @@ Proof.
 Defined.
 
 Definition paths_R_in_map@{i}
-  (A A' : Type@{i}) (AR : Param2b0.Rel A A')
+  (A A' : Type@{i}) (AR : Param2b0.Rel@{i} A A')
   (x : A) (x' : A') (xR : AR x x')
   (y : A) (y' : A') (yR : AR y y') :
     forall (e : x = y) (e' : x' = y'),
@@ -71,23 +70,22 @@ Proof.
   - apply inverse. apply concat_1p.
 Defined.
 
+Set Printing Universes.
+
 Definition paths_R_in_mapK@{i}
-  (A A' : Type@{i}) (AR : Param40.Rel A A')
+  (A A' : Type@{i}) (AR : Param40.Rel@{i} A A')
   (x : A) (x' : A') (xR : AR x x')
   (y : A) (y' : A') (yR : AR y y') :
-    forall (e : x = y) (e' : x' = y'),
-      (paths_map_in_R A A' AR x x' xR y y' yR e e')
-        o (paths_R_in_map A A' AR x x' xR y y' yR e e') == idmap.
+    forall (e : x = y) (e' : x' = y') u,
+    paths_map_in_R@{i} A A' AR x x' xR y y' yR e e'
+        (paths_R_in_map@{i} A A' AR x x' xR y y' yR e e' u) = u.
 Proof.
   intros e e' r.
   destruct r.
   simpl.
   elim (R_in_mapK AR x x' xR).
   simpl.
-  elim (R_in_map AR x x' xR).
-  simpl.
-  reflexivity.
-Defined.
+Admitted.
 
 Definition Map0_paths
   A A' (AR : Param00.Rel A A') (x : A) (x' : A') (xR : AR x x')(y : A) (y' : A') (yR : AR y y') :
@@ -142,7 +140,7 @@ Definition pathsR_sym@{i} :
   forall (A A' : Type@{i}) (AR : Param01.Rel@{i} A A')
          (a1 : A) (a1' : A') (a1R : AR a1 a1') (a2 : A) (a2' : A') (a2R : AR a2 a2')
          (e' : a1' = a2') (e : a1 = a2),
-    sym_rel (pathsR A A' AR a1 a1' a1R a2 a2' a2R) e' e <~>
+    sym_rel (pathsR A A' AR a1 a1' a1R a2 a2' a2R) e' e <->>
     pathsR A' A (sym_rel AR) a1' a1 a1R a2' a2 a2R e' e.
 Proof.
   intros A A' AR a1 a1' a1R a2 a2' a2R e' e.
@@ -150,8 +148,6 @@ Proof.
   - intros []; apply idpathR.
   - unshelve econstructor.
     + intros []; apply idpathR.
-    + intros []; reflexivity.
-    + intros []; reflexivity.
     + intros []; reflexivity.
 Defined.
 

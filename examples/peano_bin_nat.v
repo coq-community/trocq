@@ -11,8 +11,7 @@
 (*                            * see LICENSE file for the text of the license *)
 (*****************************************************************************)
 
-From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
+From mathcomp Require Import all_ssreflect.
 From Trocq Require Import Trocq.
 
 Set Universe Polymorphism.
@@ -58,6 +57,7 @@ Fixpoint add (x y : positive) : positive :=
   | p~1, q~1 => succ (add p q)~1
   end.
 Infix "+" := add : positive_scope.
+
 Notation "p .+1" := (succ p) : positive_scope.
 
 Lemma addpp x : x + x = x~0. Proof. by elim: x => //= ? ->. Qed.
@@ -107,18 +107,18 @@ Definition Nmap (n : N) : nat :=
 Fixpoint Ncomap (n : nat) : N :=
   match n with O => 0 | S n => Nsucc (Ncomap n) end.
 
-Definition RN@{} := sym_rel@{Set} (graph@{Set} Ncomap).
+Definition RN@{} := sym_rel@{Set} (graph Ncomap).
 
 Lemma Naddpp p : (Npos p + Npos p)%N = Npos p~0.
 Proof. by elim: p => //= p IHp; rewrite Pos.addpp. Qed.
 
 Lemma NcomapD i j : Ncomap (i + j) = (Ncomap i + Ncomap j)%N.
 Proof.
-elim: i j => [|i IHi] [|j]//=; first by rewrite -nat_add_n_O//.
-rewrite -nat_add_n_Sm/= IHi.
+elim: i j => [|i IHi] [|j]//; first by rewrite addn0.
+rewrite addnS addSn /= IHi.
 case: (Ncomap i) => // p; case: (Ncomap j) => //=.
-- by rewrite /Nsucc/= Pos.addp1.
-- by move=> q; rewrite /Nsucc/= Pos.addpS Pos.addSp.
+  by rewrite Pos.addp1.
+by move=> q; rewrite Pos.addpS Pos.addSp.
 Qed.
 
 Let NcomapNpos p k : Ncomap k = Npos p -> Ncomap (k + k) = Npos p~0.
@@ -129,7 +129,7 @@ Proof. by case: n => //= ; elim=> //= p /NcomapNpos/= ->. Qed.
 
 (* the best we can do to link these types is (4,4), but
 we only need (2a,3) which is morally that Nmap is a split injection *)
-Definition RN2a3 : Param2a3.Rel@{Set} N nat := SplitSurj.toParamSym@{Set} {|
+Definition RN2a3 : Param2a4.Rel@{Set} N nat := SplitSurj.toParamSym {|
    SplitSurj.retract := Ncomap;
    SplitSurj.section := Nmap;
    SplitSurj.sectionK := NmapK |}.

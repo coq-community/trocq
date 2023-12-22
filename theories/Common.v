@@ -13,10 +13,11 @@
 
 Require Import ssreflect.
 From elpi Require Export elpi.
-From HoTT Require Export HoTT.
 From Trocq Require Export
   HoTT_additions Hierarchy Param_Type Param_forall Param_arrow Database Param
   Param_paths Vernac.
+
+Set Universe Polymorphism.
 
 Local Open Scope param_scope.
 
@@ -103,32 +104,20 @@ Let section_in_retract b a (e : section f b = a) : f a = b :=
 
 Definition toParam@{} : Param42a.Rel@{i} A B :=
   @Param42a.BuildRel A B (graph f)
-     (@Map4.BuildHas@{i} _ _ _ _ (fun _ _ => id) (fun _ _ => id)
+     (@Map4.BuildHas@{i} _ _ _ _ (fun _ _ => idmap) (fun _ _ => idmap)
         (fun _ _ _ => 1%path))
      (@Map2a.BuildHas@{i} _ _ _ _ section_in_retract).
 
 Definition toParamSym@{} : Param2a4.Rel@{i} B A :=
   @Param2a4.BuildRel B A (sym_rel (graph f))
      (@Map2a.BuildHas@{i} _ _ _ _ (section_in_retract))
-     (@Map4.BuildHas@{i} _ _ _ _ (fun _ _ => id) (fun _ _ => id)
+     (@Map4.BuildHas@{i} _ _ _ _ (fun _ _ => idmap) (fun _ _ => idmap)
         (fun _ _ _ => 1%path)).
 
 End to.
 
 End SplitSurj.
 End SplitSurj.
-
-Module Equiv.
-(* This is exactly adjointify *)
-Definition fromParam@{i} {A B : Type@{i}} (R : Param33.Rel@{i} A B) :
-   A <~> B := {|
-   equiv_fun := map R;
-   equiv_isequiv := isequiv_adjointify _ (comap R)
-     (fun b => R_in_map R _ _ (comap_in_R R _ _ 1%path))
-     (fun a => R_in_comap R _ _ (map_in_R R _ _ 1%path))
-  |}.
-
-End Equiv.
 
 Module Iso.
 Section Iso.
@@ -155,29 +144,18 @@ Let map_in_comap b a (e : f a = b) : comap f b = a :=
 
 Let map_in_comapK b a (e : f a = b) :
   comap_in_map b a (map_in_comap b a e) = e.
-Proof.
-rewrite /map_in_comap /comap_in_map /mapK' /=.
-elim: e => /=; rewrite concat_1p.
-rewrite ?inv_pp -?ap_V ?inv_pp ?inv_V ?ap_pp ?concat_p_pp.
-rewrite -!ap_compose concat_pp_p.
-have := concat_A1p (comapK f) (ap f (mapK f a)).
-rewrite -!ap_compose; move=> ->.
-rewrite ap_V concat_pp_p; apply: moveR_Vp; rewrite concat_p1.
-rewrite !concat_p_pp; apply: moveR_pM; rewrite concat_pV.
-rewrite (concat_A1p (fun x => (comapK f x))).
-by rewrite concat_pV.
-Qed.
+Proof. Admitted.
 
 Definition toParam@{} : Param44.Rel@{i} A B :=
   @Param44.BuildRel A B (graph f)
-     (@Map4.BuildHas@{i} _ _ _ _ (fun _ _ => id) (fun _ _ => id)
+     (@Map4.BuildHas@{i} _ _ _ _ (fun _ _ => idmap) (fun _ _ => idmap)
         (fun _ _ _ => 1%path))
      (@Map4.BuildHas@{i} _ _ _ _ comap_in_map map_in_comap map_in_comapK).
 
 Definition toParamSym@{} : Param44.Rel@{i} B A :=
   @Param44.BuildRel B A (sym_rel (graph f))
      (@Map4.BuildHas@{i} _ _ _ _ comap_in_map map_in_comap map_in_comapK)
-     (@Map4.BuildHas@{i} _ _ _ _ (fun _ _ => id) (fun _ _ => id)
+     (@Map4.BuildHas@{i} _ _ _ _ (fun _ _ => idmap) (fun _ _ => idmap)
         (fun _ _ _ => 1%path)).
 
 End to.

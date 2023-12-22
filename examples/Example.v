@@ -13,7 +13,6 @@
 
 From elpi Require Import elpi.
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 From Trocq Require Import Trocq.
 
 Set Universe Polymorphism.
@@ -22,20 +21,17 @@ Set Universe Polymorphism.
 (* Feel free to comment commands adding the axioms to the Trocq database,
    in order to see which goals can be pre-processed without them, and which ones cannot *)
 
-Axiom u : Univalence.
-Axiom f : Funext.
-
-Trocq Register Univalence u.
-Trocq Register Funext f.
+Section test.
+Universe i.
 
 Goal
   (* Type@{i}. *)
   (* Type@{i} -> Type@{i}. *)
   (* forall (A : Type@{i}), A. *)
-  (* forall (A : Type@{i}), A -> A. *)
+  forall (A : Type@{i}), A -> A.
   (* forall (A B : Type@{i}), A -> B. *)
   (* forall (F : Type@{i} -> Type@{i}) (A : Type@{i}), F A. *)
-  forall (F : Type@{i} -> Type@{i}) (A B : Type@{i}), F A -> F B.
+  (* forall (F : Type@{i} -> Type@{i}) (A B : Type@{i}), F A -> F B. *)
   (* forall (F : Type@{i} -> Type@{i} -> Type@{i}) (A B : Type@{i}), F A B. *)
   (* forall (F : Type@{i} -> Type@{i} -> Type@{i}) (A B : Type@{i}), F A B -> F B A. *)
   (* forall (F : Type@{i} -> Type@{i}) (A : Type@{i}), F A -> forall (B : Type@{i}), F B. *)
@@ -53,3 +49,4 @@ Goal
 Proof.
   param.
 Abort.
+End test.

@@ -13,7 +13,6 @@
 
 From elpi Require Import elpi.
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy Database.
 From Trocq.Elpi Extra Dependency "param-class.elpi" as param_class.
 
@@ -48,7 +47,7 @@ Elpi Accumulate lp:{{
     coq.locate {calc ("id_Param" ^ {param-class->string RClass})} IdParam,
     MapInR =
       (fun `A` Type a\ fun `B` Type b\
-        fun `e` (app [pglobal Paths UI1, Type, a, b]) e\
+        fun `e` (app [global Paths, Type, a, b]) e\
           app [pglobal Transport UI11, Type, RF a, a, b,
             e, app [pglobal IdParam UI, a]]).
 
@@ -75,9 +74,9 @@ Elpi Accumulate lp:{{
     % these typechecks are very important: they add L < L1 to the constraint graph
     coq.typecheck Decl _ ok,
     coq.typecheck DeclSym _ ok,
-    @udecl! [L, L1] ff [lt L L1] ff =>
+    @udecl! [L, L1] ff [lt L L1] tt =>
       coq.env.add-const MapType Decl _ @transparent! _,
-    @udecl! [L, L1] ff [lt L L1] ff =>
+    @udecl! [L, L1] ff [lt L L1] tt =>
       coq.env.add-const MapTypeSym DeclSym _ @transparent! _.
 }}.
 Elpi Typecheck.
@@ -97,73 +96,6 @@ Elpi Query lp:{{
     )
   ).
 }}.
-
-(* Check Map0_Type01.
-Check Map1_Type_sym32b.
-Check Map2a_Type44. *)
-
-(* now R is always Param44.Rel *)
-
-Definition Map2b_Type44@{i j | i < j} `{Univalence} :
-  @Map2b.Has@{j} Type@{i} Type@{i} Param44.Rel@{i}.
-Proof.
-  unshelve econstructor.
-  - exact idmap.
-  - move=> A B /uparam_equiv. apply: path_universe_uncurried.
-Defined.
-
-Definition Map2b_Type_sym44@{i j | i < j} `{Univalence} :
-  @Map2b.Has@{j} Type@{i} Type@{i} (sym_rel@{j} Param44.Rel@{i}).
-Proof.
-  unshelve econstructor.
-  - exact idmap.
-  - move=> A B /uparam_equiv /path_universe_uncurried /inverse. exact.
-Defined.
-
-Definition Map3_Type44@{i j | i < j} `{Univalence} :
-  @Map3.Has@{j} Type@{i} Type@{i} Param44.Rel@{i}.
-Proof.
-  unshelve econstructor.
-  - exact idmap.
-  - exact (fun A B e => e # id_Param44 A).
-  - move=> A B /uparam_equiv. apply: path_universe_uncurried.
-Defined.
-
-Definition Map3_Type_sym44@{i j | i < j} `{Univalence} :
-  @Map3.Has@{j} Type@{i} Type@{i} (sym_rel@{j} Param44.Rel@{i}).
-Proof.
-  unshelve econstructor.
-  - exact idmap.
-  - exact (fun A B e => e # id_Param44 A).
-  - move=> A B /uparam_equiv /path_universe_uncurried /inverse. exact.
-Defined.
-
-Definition Map4_Type44@{i j | i < j} `{Univalence} :
-  @Map4.Has@{j} Type@{i} Type@{i} Param44.Rel@{i}.
-Proof.
-  unshelve econstructor.
-  - exact idmap.
-  - exact (fun A B e => e # id_Param44 A).
-  - move=> A B /uparam_equiv. apply: path_universe_uncurried.
-  - move=> A B; elim/uparam_induction.
-    by rewrite uparam_equiv_id /= [path_universe_uncurried _] path_universe_1.
-Defined.
-
-Definition Map4_Type_sym44@{i j | i < j} `{Univalence} :
-  @Map4.Has@{j} Type@{i} Type@{i} (sym_rel@{j} Param44.Rel@{i}).
-Proof.
-  unshelve econstructor.
-  - exact idmap.
-  - exact (fun A B e => e # id_Param44 A).
-  - move=> A B /uparam_equiv /path_universe_uncurried /inverse. exact.
-  - move=> A B; elim/uparam_induction.
-    by rewrite uparam_equiv_id /= [path_universe_uncurried _] path_universe_1.
-Defined.
-
-(* generate ParamMN_TypePQ@{i} :
-    ParamMN.Rel Type@{i} Type@{i},
-  for all M N, having ParamPQ.Rel as the R field
-  (for M or N in [2b, 3, 4] PQ is always 44) *)
 
 Elpi Command genparamtype.
 Elpi Accumulate Db trocq.db.
@@ -216,7 +148,7 @@ Elpi Accumulate lp:{{
     ParamType is "Param" ^ MStr ^ NStr ^ "_Type" ^ {param-class->string RClass},
     % this typecheck is very important: it adds L < L1 to the constraint graph
     coq.typecheck Decl _ ok,
-    @udecl! [L, L1] ff [lt L L1] ff =>
+    @udecl! [L, L1] ff [lt L L1] tt =>
       coq.env.add-const ParamType Decl _ @transparent! Const,
     coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.param-type Class RClass Const)).
 }}.
@@ -230,7 +162,6 @@ Elpi Query lp:{{
   coq.univ.variable U1 L1,
   AllClasses = [map0, map1, map2a, map2b, map3, map4],
   Classes__ = [map0, map1, map2a],
-  Classes44 = [map2b, map3, map4],
   std.forall Classes__ (m\
     std.forall Classes__ (n\
       std.forall AllClasses (p\
@@ -238,14 +169,6 @@ Elpi Query lp:{{
           generate-param-type (pc m n) (pc p q) U L L1
         )
       )
-    ),
-    std.forall Classes44 (n\
-      generate-param-type (pc m n) (pc map4 map4) U L L1
-    )
-  ),
-  std.forall Classes44 (m\
-    std.forall AllClasses (n\
-      generate-param-type (pc m n) (pc map4 map4) U L L1
     )
   ).
 }}.

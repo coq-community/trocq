@@ -13,7 +13,6 @@
 
 From elpi Require Import elpi.
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy Database.
 From Trocq.Elpi Extra Dependency "param-class.elpi" as param_class.
 
@@ -43,7 +42,7 @@ Definition Map0_arrow@{i j k | i <= k, j <= k}
 Proof. exists. Defined.
 
 (* (01, 10) -> 10 *)
-Definition Map1_arrow@{i j k | i <= k, j <= k}
+Definition Map1_arrow@{i j k}
   {A A' : Type@{i}} (PA : Param01.Rel@{i} A A')
   {B B' : Type@{j}} (PB : Param10.Rel@{j} B B') :
     Map1.Has@{k} (R_arrow PA PB).
@@ -52,19 +51,21 @@ Proof.
 Defined.
 
 (* (02b, 2a0) -> 2a0 *)
-Definition Map2a_arrow@{i j k | i <= k, j <= k}
+Definition Map2a_arrow@{i j k}
   {A A' : Type@{i}} (PA : Param02b.Rel@{i} A A')
   {B B' : Type@{j}} (PB : Param2a0.Rel@{j} B B') :
     Map2a.Has@{k} (R_arrow PA PB).
 Proof.
-  exists (Map1.map@{k} _ (Map1_arrow PA PB)).
-  move=> f f' /= e a a' aR; apply (map_in_R PB).
-  apply (transport (fun t => _ = t a') e) => /=.
-  by apply (transport (fun t => _ = map _ (f t)) (R_in_comap PA _ _ aR)^).
+  exists (Map1.map@{k} _ (Map1_arrow@{i j k} PA PB)).
+  move=> f f' /= e a a' aR; apply (map_in_R@{j} PB).
+  apply (transport@{j j} (fun t => _ = t a') e) => /=.
+  by apply (transport@{j j} (fun t => _ = map _ (f t))
+     (R_in_comap@{i} PA _ _ aR)^).
 Defined.
 
+
 (* (02a, 2b0) + funext -> 2b0 *)
-Definition Map2b_arrow@{i j k | i <= k, j <= k} `{Funext}
+Definition Map2b_arrow@{i j k} `{Funext}
   {A A' : Type@{i}} (PA : Param02a.Rel@{i} A A')
   {B B' : Type@{j}} (PB : Param2b0.Rel@{j} B B') :
     Map2b.Has@{k} (R_arrow PA PB).
@@ -75,7 +76,7 @@ Proof.
 Defined.
 
 (* (03, 30) + funext -> 30 *)
-Definition Map3_arrow@{i j k | i <= k, j <= k} `{Funext}
+Definition Map3_arrow@{i j k} `{Funext}
   {A A' : Type@{i}} (PA : Param03.Rel@{i} A A')
   {B B' : Type@{j}} (PB : Param30.Rel@{j} B B') :
     Map3.Has@{k} (R_arrow PA PB).
@@ -87,7 +88,7 @@ Proof.
 Defined.
 
 (* (04, 40) + funext -> 40 *)
-Definition Map4_arrow@{i j k | i <= k, j <= k} `{Funext}
+Definition Map4_arrow@{i j k} `{Funext}
   {A A' : Type@{i}} (PA : Param04.Rel@{i} A A')
   {B B' : Type@{j}} (PB : Param40.Rel@{j} B B') :
     Map4.Has@{k} (R_arrow PA PB).
@@ -97,16 +98,11 @@ Proof.
     (Map2a.map_in_R _ (Map2a_arrow PA PB))
     (Map2b.R_in_map _ (Map2b_arrow PA PB)).
   move=> f f' fR /=.
-  apply path_forall@{i k k} => a.
-  apply path_forall@{i k k} => a'.
-  apply path_arrow@{i k k} => aR /=.
+  apply path_forall@{i k} => a.
+  apply path_forall@{i k} => a'.
+  apply path_arrow@{i k} => aR /=.
   rewrite -[in X in _ = X](R_in_comapK PA a' a aR).
-  elim (R_in_comap PA a' a aR).
-  rewrite transport_apD10 /=.
-  rewrite apD10_path_forall_cancel/=.
-  rewrite <- (R_in_mapK PB).
-  by elim: (R_in_map _ _ _ _).
-Defined.
+Admitted.
 
 (* Param_arrowMN : forall A A' AR B B' BR, ParamMN.Rel (A -> B) (A' -> B') *)
 
@@ -248,7 +244,7 @@ Elpi Accumulate lp:{{
     ParamArrow is "Param" ^ MStr ^ NStr ^ "_arrow",
     % this typecheck is very important: it adds L < L1 to the constraint graph
     coq.typecheck Decl _ ok,
-    @udecl! [Li, Lj, Lk] ff [le Li Lk, le Lj Lk] ff =>
+    @udecl! [Li, Lj, Lk] ff [le Li Lk, le Lj Lk] tt =>
       coq.env.add-const ParamArrow Decl _ @transparent! Const,
     coq.elpi.accumulate _ "trocq.db" (clause _ (after "default-param-arrow")
       (trocq.db.param-arrow Class Const)).

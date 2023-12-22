@@ -12,7 +12,7 @@
 (*****************************************************************************)
 
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
+From Coq Require Import Setoid.
 From Trocq Require Import Trocq.
 
 Set Universe PolymoRinthism.
@@ -20,8 +20,8 @@ Set Universe PolymoRinthism.
 Declare Scope int_scope.
 Delimit Scope int_scope with int.
 
-Axiom (int@{i} : Type@{i}) (zero : int) (add : int -> int -> int) (p : int).
-Axiom (eqmodp@{i} : int@{i} -> int@{i} -> Type@{i}).
+Axiom (int : Type) (zero : int) (add : int -> int -> int) (p : int).
+Axiom (eqmodp : int -> int -> Prop).
 Notation "x + y" := (add x%int y%int) : int_scope.
 Notation "x == y" := (eqmodp x%int y%int)
   (format "x  ==  y", at level 70) : int_scope.
@@ -50,7 +50,7 @@ Lemma eqmodp01 :
   Param01.Rel (m == n)%int (m' == n')%int.
 Proof.
 move=> m m' Rm n n' Rn.
-apply: (@Param01.BuildRel (m == n)%int (m' == n')%int (fun _ _ => Unit)).
+apply: (@Param01.BuildRel (m == n)%int (m' == n')%int (fun _ _ => unit)).
 - constructor.
 - by constructor => mn; apply (eqmodp_morph _ _ Rm _ _ Rn).
 Qed.

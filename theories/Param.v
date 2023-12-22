@@ -13,7 +13,6 @@
 
 From elpi Require Import elpi.
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 Require Export Database.
 Require Import HoTT_additions Hierarchy.
 Require Export Param_Type Param_arrow Param_forall.
@@ -47,11 +46,6 @@ Elpi Query lp:{{
   coq.locate "weaken" (const Weaken),
   coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.weaken Weaken)).
 }}.
-
-(* generate
-  PParamMN_Type P Q := ParamMN_TypePQ for all M N under 2b
-  PParamMN_Type P Q := ParamMN_Type44 for all M N containing 2b+
-*)
 
 Elpi Command genpparamtype.
 Elpi Accumulate File util.
@@ -94,23 +88,10 @@ Elpi Accumulate lp:{{
     % this typecheck is very important: it adds L < L1 to the constraint graph
     coq.typecheck Decl _ ok,
     PParamType is "PParam" ^ {param-class->string Class} ^ "_Type",
-    @udecl! [L, L1] ff [lt L L1] ff =>
+    @udecl! [L, L1] ff [lt L L1] tt =>
       coq.env.add-const PParamType Decl _ @transparent! Const,
     coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.pparam-type Class Const)).
-  
-  pred generate-pparam-type44
-    i:univ.variable, i:univ.variable, i:param-class.
-  generate-pparam-type44 L L1 Class :-
-    coq.univ-instance UI2 [L, L1],
-    coq.locate {calc ("Param" ^ {param-class->string Class} ^ "_Type44")} ParamType,
-    Decl = (fun `_` {{ map_class }} _\ fun `_` {{ map_class }} _\ pglobal ParamType UI2),
-    % this typecheck is very important: it adds L < L1 to the constraint graph
-    coq.typecheck Decl _ ok,
-    PParamType is "PParam" ^ {param-class->string Class} ^ "_Type",
-    @udecl! [L, L1] ff [lt L L1] ff =>
-      coq.env.add-const PParamType Decl _ @transparent! Const,
-    coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.pparam-type Class Const)).
-}}.
+  }}.
 Elpi Typecheck.
 
 Elpi Query lp:{{
@@ -119,23 +100,11 @@ Elpi Query lp:{{
   coq.univ.super U U1,
   coq.univ.variable U1 L1,
   Classes1 = [map0, map1, map2a],
-  Classes2 = [map2b, map3, map4],
   Classes = [map0, map1, map2a, map2b, map3, map4],
   % first the ones where the arguments matter
   std.forall Classes1 (m\
     std.forall Classes1 (n\
       generate-pparam-type L L1 (pc m n)
-    )
-  ),
-  % then the ones where the (4,4) relation is always returned
-  std.forall Classes (m\
-    std.forall Classes2 (n\
-      generate-pparam-type44 L L1 (pc m n)
-    )
-  ),
-  std.forall Classes2 (m\
-    std.forall Classes1 (n\
-      generate-pparam-type44 L L1 (pc m n)
     )
   ).
 }}.
@@ -157,7 +126,7 @@ Elpi Accumulate lp:{{
 }}.
 
 Elpi Accumulate lp:{{
-  solve InitialGoal NewGoals :- debug dbg.none => std.do! [
+  solve InitialGoal NewGoals :- debug dbg.full => std.do! [
     InitialGoal = goal _Context _ G _ [],
     util.when-debug dbg.full (coq.say "goal" G),
     translate-goal G (pc map0 map1) G' GR,

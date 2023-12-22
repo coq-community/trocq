@@ -12,11 +12,13 @@
 (*****************************************************************************)
 
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy Param_nat.
+Set Asymmetric Patterns.
 
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
+
+Notation Unit := unit.
 
 Module Vector.
 
@@ -151,7 +153,7 @@ Proof.
   intros A A' AR n n' nR v v' vR.
   elim: vR => [|{}n {}n' {}nR a a' aR {}v {}v' _ []].
   - reflexivity.
-  - by elim (R_in_map AR a a' aR).
+  - by case: _ / (R_in_map AR a a' aR) => <-.
 Defined.
 
 Definition R_in_mapK :
@@ -159,14 +161,7 @@ Definition R_in_mapK :
     (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n')
     (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v'),
       map_in_R A A' AR n n' nR v v' (R_in_map A A' AR n n' nR v v' vR) = vR.
-Proof.
-  intros A A' AR n n' nR v v' vR.
-  elim: vR => {n n' nR v v'}[|n n' nR a a' aR v v' IHv r]//=.
-  elim: {2}aR / (R_in_mapK AR).
-  elim: (Hierarchy.R_in_map AR a a' aR)=> //=.
-  elim: {2}_ / r.
-  by elim: R_in_map.
-Defined.
+Proof. Admitted.
 
 Definition Param_nat_symK m n (nR : natR m n) : nR = Param_nat_sym (Param_nat_sym nR).
 Proof. by elim: nR => //= {}m {}n mn emn; apply: ap. Defined.
@@ -178,42 +173,54 @@ Proof. by elim=> //=; constructor. Defined.
 
 Definition tR_sym_t {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
    {v' : t A' n'} {v : t A n} :
-    tR A A' AR n n' (Param_nat_sym (Param_nat_sym nR)) v v' <~> tR A A' AR n n' nR v v'.
+    tR A A' AR n n' (Param_nat_sym (Param_nat_sym nR)) v v' -> tR A A' AR n n' nR v v'.
 Proof.
-unshelve eapply equiv_adjointify.
-- apply: (transport (fun nR => tR _ _ _ _ _ nR _ _)).
+apply: (transport (fun nR => tR _ _ _ _ _ nR _ _)).
   symmetry; exact: Param_nat_symK.
-- apply: (transport (fun nR => tR _ _ _ _ _ nR _ _)).
-  exact: Param_nat_symK.
-- by move=> vR; rewrite -transport_pp concat_pV.
-- by move=> vR; rewrite -transport_pp concat_Vp.
+Defined.
+
+Definition tR_sym_tV {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
+   {v' : t A' n'} {v : t A n} :
+    tR A A' AR n n' nR v v' -> tR A A' AR n n' (Param_nat_sym (Param_nat_sym nR)) v v'.
+Proof.
+apply: (transport (fun nR => tR _ _ _ _ _ nR _ _)).
+exact: Param_nat_symK.
+Defined.
+
+(* Definition tR_symK  *)
+Lemma tR_sym_tK A A' AR n n' nR v v' (vR : tR A A' AR n n'
+   (Param_nat_sym (Param_nat_sym nR)) v v') :
+      tR_sym_tV AR nR (tR_sym_t AR nR vR) = vR.
+Proof.
+by rewrite /tR_sym_t /tR_sym_tV -transport_pp concat_Vp.
 Defined.
 
 Local Notation f := (tR_sym_f _ _).
 Local Notation g := (tR_sym_t _ _).
+Local Notation h := (tR_sym_tV _ _).
 
 Definition tR_sym_fK {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
   (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v') :
      g (f (f vR)) = vR.
 Proof.
 elim: vR => // {}n {}n' {}nR a a' aR {}v {}v' vR {2}<-/=.
-by elim: _ / Param_nat_symK (tR_sym_f _ _ _).
-Defined.
+Fail by case: _ / Param_nat_symK (f _).
+admit.
+Admitted.
 
 Definition tR_sym_fE {A A' : Type} (AR : A -> A' -> Type) {n n' : nat} (nR : natR n n')
   (v : t A n) (v' : t A' n') (vR : tR A A' AR n n' nR v v') :
-     f vR = g (f (g^-1 vR)).
-Proof. by rewrite -{2}[vR]tR_sym_fK eissect tR_sym_fK. Qed.
+     f vR = g (f (h vR)).
+Proof. by rewrite -{2}[vR]tR_sym_fK tR_sym_tK tR_sym_fK. Qed.
 
 Definition tR_sym  (A A' : Type) (AR : A -> A' -> Type) (n n' : nat) (nR : natR n n')
    (v' : t A' n') (v : t A n) :
-      sym_rel (tR A A' AR n n' nR) v' v <~> tR A' A (sym_rel AR) n' n (Param_nat_sym nR) v' v.
+      sym_rel (tR A A' AR n n' nR) v' v <->> tR A' A (sym_rel AR) n' n (Param_nat_sym nR) v' v.
 Proof.
-  unshelve eapply equiv_adjointify.
+  unshelve eexists _, _.
   - exact: tR_sym_f.
   - move/tR_sym_f/tR_sym_t; exact.
-  - by move=> vR; rewrite [f (g _)]tR_sym_fE eissect tR_sym_fK.
-  - exact: tR_sym_fK.
+  - by move=> vR /=; rewrite tR_sym_fK.
 Defined.
 
 Definition Map4 (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n') :

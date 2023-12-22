@@ -13,7 +13,6 @@
 
 From Coq Require Import ssreflect.
 From elpi Require Export elpi.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions.
 
 Set Universe Polymorphism.
