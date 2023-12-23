@@ -265,7 +265,7 @@ Elpi Query lp:{{
   coq.univ.max Ui Uj Uk,
   % cannot have only 2 binders in the declaration because this line creates a fresh level:
   coq.univ.variable Uk Lk,
-  Classes = [map0, map1, map2a, map2b, map3, map4],
+  map-classes all Classes,
   std.forall Classes (m\
     std.forall Classes (n\
       generate-param-arrow (pc m n) Ui Uj Li Lj Lk

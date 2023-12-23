@@ -91,8 +91,9 @@ Elpi Query lp:{{
   coq.univ.super U U1,
   % cannot have only one binder in the declaration because this line creates a fresh level:
   coq.univ.variable U1 L1,
-  Classes = [map0, map1, map2a, map2b, map3, map4],
-  std.forall [map0, map1, map2a] (m\
+  map-classes all Classes,
+  map-classes low LowClasses,
+  std.forall LowClasses (m\
     std.forall Classes (n\
       std.forall Classes (p\
         generate-map-type m (pc n p) U L L1
@@ -232,9 +233,9 @@ Elpi Query lp:{{
   coq.univ.super U U1,
   % cannot have only one binder in the declaration because this line creates a fresh level:
   coq.univ.variable U1 L1,
-  AllClasses = [map0, map1, map2a, map2b, map3, map4],
-  Classes__ = [map0, map1, map2a],
-  Classes44 = [map2b, map3, map4],
+  map-classes all AllClasses,
+  map-classes low Classes__,
+  map-classes high Classes44,
   std.forall Classes__ (m\
     std.forall Classes__ (n\
       std.forall AllClasses (p\

@@ -24,6 +24,17 @@ Unset Universe Minimization ToSet.
 
 Set Polymorphic Inductive Cumulativity.
 
+Inductive map_class : Set := map0 | map1 | map2a | map2b | map3 | map4.
+
+Register map0 as trocq.indc_map0.
+Register map1 as trocq.indc_map1.
+Register map2a as trocq.indc_map2a.
+Register map2b as trocq.indc_map2b.
+Register map3 as trocq.indc_map3.
+Register map4 as trocq.indc_map4.
+Register sym_rel as trocq.sym_rel.
+Register paths as trocq.paths.
+
 (*************************)
 (* Parametricity Classes *)
 (*************************)
@@ -71,14 +82,37 @@ Record Has@{i} {A B : Type@{i}} (R : A -> B -> Type@{i}) := BuildHas {
 }.
 End Map4.
 
-(********************)
-(* Record Hierarchy *)
-(********************)
+Register Map0.Has as trocq.map0.
+Register Map1.Has as trocq.map1.
+Register Map2a.Has as trocq.map2a.
+Register Map2b.Has as trocq.map2b.
+Register Map3.Has as trocq.map3.
+Register Map4.Has as trocq.map4.
+Register sym_rel as trocq.sym_rel.
+
+Definition PType@{i} (m n : map_class) (* : Type@{i+1} *) := Type@{i}.
+Definition weaken@{i} (m n m' n' : map_class) {A : Type@{i}} (a : A) : A := a.
+Register PType as trocq.ptype.
+Register weaken as trocq.weaken.
 
 Elpi Command genhierarchy.
 Elpi Accumulate File util.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File param_class.
+Elpi Accumulate File util.
+
+Elpi Query lp:{{
+  {{:gref lib:trocq.ptype}} = const PType,
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.ptype PType)),
+  {{:gref lib:trocq.weaken}} = const Weaken,
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.weaken Weaken)).
+}}.
+Elpi Typecheck.
+
+(********************)
+(* Record Hierarchy *)
+(********************)
+
 Elpi Accumulate lp:{{
   % generate a module with a record type containing:
   % - a relation R : A -> B -> Type;
@@ -87,56 +121,60 @@ Elpi Accumulate lp:{{
   % (projections are generated so that all fields are accessible from the top record)
   pred generate-module i:param-class, i:univ, i:univ.variable.
   generate-module (pc M N as Class) U L :-
-    map-class->string M MStr,
-    map-class->string N NStr,
     % open module
-    coq.env.begin-module {calc ("Param" ^ MStr ^ NStr)} none,
+    coq.env.begin-module {param-class->add-suffix Class "Param"} none,
     % generate record
     coq.univ-instance UI [L],
-    coq.locate {calc ("Map" ^ MStr ^ ".Has")} CovariantSubRecord,
-    coq.locate {calc ("Map" ^ NStr ^ ".Has")} ContravariantSubRecord,
-    coq.locate "sym_rel" SymRel,
+    map->class M CovariantSubRecord,
+    map->class N ContravariantSubRecord,
+    SymRel = {sym-rel},
+    TypeU = sort (typ U),
     RelDecl =
-      parameter "A" _ (sort (typ U)) (a\
-        parameter "B" _ (sort (typ U)) (b\
+      parameter "A" _ TypeU (a\
+        parameter "B" _ TypeU (b\
           record "Rel" (sort (typ {coq.univ.super U})) "BuildRel" (
-            field [] "R" {{ lp:a -> lp:b -> lp:{{ sort (typ U) }} }} (r\
-            field [] "covariant" (app [pglobal CovariantSubRecord UI, a, b, r]) (_\
+            field [] "R" {{ lp:a -> lp:b -> lp:{{ sort (typ U) }} }} r\
+            field [] "covariant" (app [pglobal CovariantSubRecord UI, a, b, r]) _\
             field [] "contravariant"
               (app [pglobal ContravariantSubRecord UI, b, a, app [pglobal SymRel UI, a, b, r]]) (_\
-          end-record)))))),
-    @primitive! => @udecl! [L] ff [] ff => coq.env.add-indt RelDecl TrocqInd,
-    coq.locate "Rel" Rel,
-    coq.locate "R" R,
+          end-record)))),
+    @primitive! => @udecl! [L] ff [] ff => coq.env.add-indt RelDecl TrocqInd,coq.env.indt TrocqInd _ _ _ _ [TrocqBuild] _,
+    Rel = indt TrocqInd,
+    coq.env.projections TrocqInd
+      [some CR, some CovariantProj, some ContravariantProj],
     % add R to database for later use
     R = const CR,
     coq.elpi.accumulate _ "trocq.db"
       (clause _ (after "default-r") (trocq.db.r Class CR)),
     coq.elpi.accumulate execution-site "trocq.db"
       (clause _ _ (trocq.db.gref->class (indt TrocqInd) Class)),
+    coq.elpi.accumulate execution-site "trocq.db"
+      (clause _ _ (trocq.db.rel Class (indt TrocqInd) (indc TrocqBuild)
+        (const CR) (const CovariantProj) (const ContravariantProj))),
     % generate projections on the covariant subrecord
     map-class->fields M MFields,
-    coq.locate "covariant" Covariant,
-    std.forall MFields (field\ sigma FieldName Field Decl\
-      FieldName is "Map" ^ MStr ^ "." ^ field,
-      coq.locate FieldName Field,
+    CovariantSubRecord = indt CovariantSubRecordIndt,
+    coq.env.projections CovariantSubRecordIndt MSomeProjs,
+    Covariant = const CovariantProj,
+    std.forall2 MFields MSomeProjs (field-name\ some-pr\ sigma Decl Pr\
+      some-pr = some Pr,
       Decl =
         (fun `A` (sort (typ U)) a\ fun `B` (sort (typ U)) b\ fun `P` (app [pglobal Rel UI, a, b]) p\
-          app [pglobal Field UI, a, b,
+          app [pglobal (const Pr) UI, a, b,
             app [pglobal R UI, a, b, p], app [pglobal Covariant UI, a, b, p]]),
-      @udecl! [L] ff [] ff => coq.env.add-const field Decl _ @transparent! _
+      @udecl! [L] ff [] ff => coq.env.add-const field-name Decl _ @transparent! _
     ),
     % generate projections on the contravariant subrecord
-    map-class->fields N NFields,
     map-class->cofields N NCoFields,
-    coq.locate "contravariant" Contravariant,
-    std.forall2 NFields NCoFields (field\ field-name\ sigma FieldName Field Decl\
-      FieldName is "Map" ^ NStr ^ "." ^ field,
-      coq.locate FieldName Field,
+    Contravariant = const ContravariantProj,
+    ContravariantSubRecord = indt ContravariantSubRecordIndt,
+    coq.env.projections ContravariantSubRecordIndt NSomeProjs,
+    std.forall2 NCoFields NSomeProjs (field-name\ some-pr\ sigma Decl Pr\
+      some-pr = some Pr,
       Decl =
         (fun `A` (sort (typ U)) a\ fun `B` (sort (typ U)) b\
           fun `P` (app [pglobal Rel UI, a, b]) p\
-            app [pglobal Field UI, b, a,
+            app [pglobal (const Pr) UI, b, a,
               app [pglobal SymRel UI, a, b, app [pglobal R UI, a, b, p]],
               app [pglobal Contravariant UI, a, b, p]]),
       @udecl! [L] ff [] ff => coq.env.add-const field-name Decl _ @transparent! _
@@ -150,27 +188,27 @@ Elpi Typecheck.
 (* Record Weakening *)
 (********************)
 
-Definition forgetMap43@{i}
+Coercion forgetMap43@{i}
   {A B : Type@{i}} {R : A -> B -> Type@{i}} (m : Map4.Has@{i} R) : Map3.Has@{i} R :=
     @Map3.BuildHas A B R (@Map4.map A B R m) (@Map4.map_in_R A B R m) (@Map4.R_in_map A B R m).
 
-Definition forgetMap32a@{i}
+Coercion forgetMap32a@{i}
   {A B : Type@{i}} {R : A -> B -> Type@{i}} (m : Map3.Has@{i} R) : Map2a.Has@{i} R :=
     @Map2a.BuildHas A B R (@Map3.map A B R m) (@Map3.map_in_R A B R m).
 
-Definition forgetMap32b@{i}
+Coercion forgetMap32b@{i}
   {A B : Type@{i}} {R : A -> B -> Type@{i}} (m : Map3.Has@{i} R) : Map2b.Has@{i} R :=
     @Map2b.BuildHas A B R (@Map3.map A B R m) (@Map3.R_in_map A B R m).
 
-Definition forgetMap2a1@{i}
+Coercion forgetMap2a1@{i}
   {A B : Type@{i}} {R : A -> B -> Type@{i}} (m : Map2a.Has@{i} R) : Map1.Has@{i} R :=
     @Map1.BuildHas A B R (@Map2a.map A B R m).
 
-Definition forgetMap2b1@{i}
+Coercion forgetMap2b1@{i}
   {A B : Type@{i}} {R : A -> B -> Type@{i}} (m : Map2b.Has@{i} R) : Map1.Has@{i} R :=
     @Map1.BuildHas A B R (@Map2b.map A B R m).
 
-Definition forgetMap10@{i}
+Coercion forgetMap10@{i}
   {A B : Type@{i}} {R : A -> B -> Type@{i}} (m : Map1.Has@{i} R) : Map0.Has@{i} R :=
     @Map0.BuildHas A B R.
 
@@ -178,25 +216,18 @@ Elpi Accumulate lp:{{
   % generate 2 functions of weakening per possible weakening:
   % one on the left and one on the right, if possible
   pred generate-forget i:param-class, i:univ, i:univ.variable.
-  generate-forget (pc M N) U L :-
+  generate-forget (pc M N as Class) U L :-
     coq.univ-instance UI [L],
-    map-class->string M MStr,
-    map-class->string N NStr,
-    ModuleNameMN is "Param" ^ MStr ^ NStr,
-    coq.locate {calc (ModuleNameMN ^ ".Rel")} RelMN,
-    coq.locate {calc (ModuleNameMN ^ ".R")} RMN,
-    coq.locate {calc (ModuleNameMN ^ ".covariant")} CovariantMN,
-    coq.locate {calc (ModuleNameMN ^ ".contravariant")} ContravariantMN,
+    map->class M MGR,
+    map->class N NGR,
+    trocq.db.rel Class RelMN _ RMN CovariantMN ContravariantMN,
     % covariant weakening
     std.forall {map-class.weakenings-from M} (m1\
-      sigma M1Str ModuleNameM1N BuildRelName BuildRelM1N ForgetMapName
-            ForgetMapM Decl ForgetName Forget RelName RelM1N\ std.do! [
-        map-class->string m1 M1Str,
-        ModuleNameM1N is "Param" ^ M1Str ^ NStr,
-        BuildRelName is ModuleNameM1N ^ ".BuildRel",
-        coq.locate BuildRelName BuildRelM1N,
-        ForgetMapName is "forgetMap" ^ MStr ^ M1Str,
-        coq.locate ForgetMapName ForgetMapM,
+      sigma BuildRelM1N ForgetMapM Decl ForgetName ForgetCst M1GR RelM1N\
+      std.do! [
+        map->class m1 M1GR,
+        trocq.db.rel (pc m1 N) RelM1N BuildRelM1N _ _ _,
+        coq.coercion.db-for (grefclass MGR) (grefclass M1GR) [pr ForgetMapM _],
         Decl =
           (fun `A` (sort (typ U)) a\ fun `B` (sort (typ U)) b\
             fun `P` (app [pglobal RelMN UI, a, b]) p\
@@ -204,25 +235,20 @@ Elpi Accumulate lp:{{
                 app [pglobal ForgetMapM UI, a, b, app [pglobal RMN UI, a, b, p],
                   app [pglobal CovariantMN UI, a, b, p]],
                 app [pglobal ContravariantMN UI, a, b, p]]),
-        ForgetName is "forget_" ^ MStr ^ NStr ^ "_" ^ M1Str ^ NStr,
+        param-class->add-2-suffix "_" Class (pc m1 N) "forget_" ForgetName,
         @udecl! [L] ff [] ff =>
-          coq.env.add-const ForgetName Decl _ @transparent! _,
-        coq.locate ForgetName Forget,
-        RelName is ModuleNameM1N ^ ".Rel",
-        coq.locate RelName RelM1N,
-        @global! => coq.coercion.declare (coercion Forget 2 RelMN (grefclass RelM1N))
+          coq.env.add-const ForgetName Decl _ @transparent! ForgetCst,
+        @global! => coq.coercion.declare
+          (coercion (const ForgetCst) 2 RelMN (grefclass RelM1N))
     ]),
     % contravariant weakening
-    coq.locate "sym_rel" SymRel,
+    SymRel = {sym-rel},
     std.forall {map-class.weakenings-from N} (n1\
-      sigma N1Str ModuleNameMN1 BuildRelName BuildRelMN1 ForgetMapName
-            ForgetMapN Decl ForgetName Forget RelName RelMN1\ std.do! [
-        map-class->string n1 N1Str,
-        ModuleNameMN1 is "Param" ^ MStr ^ N1Str,
-        BuildRelName is ModuleNameMN1 ^ ".BuildRel",
-        coq.locate BuildRelName BuildRelMN1,
-        ForgetMapName is "forgetMap" ^ NStr ^ N1Str,
-        coq.locate ForgetMapName ForgetMapN,
+      sigma BuildRelMN1 ForgetMapN Decl ForgetName ForgetCst N1GR RelMN1\
+      std.do! [
+        map->class n1 N1GR,
+        trocq.db.rel (pc M n1) RelMN1 BuildRelMN1 _ _ _,
+        coq.coercion.db-for (grefclass NGR) (grefclass N1GR) [pr ForgetMapN _],
         Decl =
           (fun `A` (sort (typ U)) a\ fun `B` (sort (typ U)) b\
             fun `P` (app [pglobal RelMN UI, a, b]) p\
@@ -231,13 +257,11 @@ Elpi Accumulate lp:{{
                 app [pglobal ForgetMapN UI, b, a,
                   app [pglobal SymRel UI, a, b, app [pglobal RMN UI, a, b, p]],
                   app [pglobal ContravariantMN UI, a, b, p]]]),
-        ForgetName is "forget_" ^ MStr ^ NStr ^ "_" ^ MStr ^ N1Str,
+        param-class->add-2-suffix "_" Class (pc M n1) "forget_" ForgetName,
         @udecl! [L] ff [] ff =>
-          coq.env.add-const ForgetName Decl _ @transparent! _,
-        coq.locate ForgetName Forget,
-        RelName is ModuleNameMN1 ^ ".Rel",
-        coq.locate RelName RelMN1,
-        @global! => coq.coercion.declare (coercion Forget 2 RelMN (grefclass RelMN1))
+          coq.env.add-const ForgetName Decl _ @transparent! ForgetCst,
+        @global! => coq.coercion.declare
+          (coercion (const ForgetCst) 2 RelMN (grefclass RelMN1))
     ]).
 }}.
 Elpi Typecheck.
@@ -246,15 +270,24 @@ Elpi Typecheck.
 Elpi Query lp:{{
   coq.univ.new U,
   coq.univ.variable U L,
-  Classes = [map0, map1, map2a, map2b, map3, map4],
+  map-classes all Classes,
   std.forall Classes (m\
     std.forall Classes (n\
-      generate-module (pc m n) U L,
-      generate-forget (pc m n) U L
+      generate-module (pc m n) U L
     )
   ).
 }}.
 
+Elpi Query lp:{{
+  coq.univ.new U,
+  coq.univ.variable U L,
+  map-classes all Classes,
+  std.forall Classes (m\
+    std.forall Classes (n\
+      generate-forget (pc m n) U L
+    )
+  ).
+}}.
 (* Set Printing Universes. Print Module Param2a3. *)
 (* Set Printing Universes. Print forget_42b_41. *)
 (* Check forall (p : Param44.Rel nat nat), @paths (Param12a.Rel nat nat) p p. *)
@@ -578,14 +611,15 @@ Defined.
 
 (* generate id_ParamMN : forall A, ParamMN.Rel A A for all M N *)
 
+
 Elpi Accumulate lp:{{
   pred generate-id-param i:param-class, i:univ, i:univ.variable.
-  generate-id-param (pc M N) U L :-
+  generate-id-param (pc M N as Class) U L :-
     map-class->string M MStr,
     map-class->string N NStr,
     coq.univ-instance UI [L],
-    coq.locate {calc ("Param" ^ MStr ^ NStr ^ ".BuildRel")} BuildRel,
-    coq.locate "paths" Paths,
+    trocq.db.rel Class _ BuildRel _ _ _,
+    Paths = {paths},
     coq.locate {calc ("id_Map" ^ MStr)} IdMap,
     coq.locate {calc ("id_Map" ^ NStr ^ "_sym")} IdMapSym,
     Decl =
@@ -601,7 +635,7 @@ Elpi Typecheck.
 Elpi Query lp:{{
   coq.univ.new U,
   coq.univ.variable U L,
-  Classes = [map0, map1, map2a, map2b, map3, map4],
+  map-classes all Classes,
   std.forall Classes (m\
     std.forall Classes (n\
       generate-id-param (pc m n) U L
@@ -616,17 +650,13 @@ Elpi Query lp:{{
 
 Elpi Accumulate lp:{{
   pred generate-param-sym i:param-class, i:univ, i:univ.variable.
-  generate-param-sym (pc M N) U L :-
+  generate-param-sym (pc M N as Class) U L :-
     map-class->string M MStr,
     map-class->string N NStr,
     coq.univ-instance UI [L],
-    coq.locate {calc ("Param" ^ MStr ^ NStr ^ ".Rel")} RelMN,
-    coq.locate {calc ("Param" ^ NStr ^ MStr ^ ".BuildRel")} BuildRelNM,
-    coq.locate "sym_rel" SymRel,
-    coq.locate {calc ("Param" ^ MStr ^ NStr ^ ".R")} RMN,
-    coq.locate {calc ("Param" ^ MStr ^ NStr ^ ".covariant")} CovariantMN,
-    coq.locate
-      {calc ("Param" ^ MStr ^ NStr ^ ".contravariant")} ContravariantMN,
+    trocq.db.rel Class RelMN _ RMN CovariantMN ContravariantMN,
+    trocq.db.rel (pc N M) _ BuildRelNM _ _ _,
+    SymRel = {sym-rel},
     Decl =
       (fun `A` (sort (typ U)) a\ fun `B` (sort (typ U)) b\
         fun `P` (app [pglobal RelMN UI, a, b]) p\
@@ -643,7 +673,7 @@ Elpi Typecheck.
 Elpi Query lp:{{
   coq.univ.new U,
   coq.univ.variable U L,
-  Classes = [map0, map1, map2a, map2b, map3, map4],
+  map-classes all Classes,
   std.forall Classes (m\
     std.forall Classes (n\
       generate-param-sym (pc m n) U L
