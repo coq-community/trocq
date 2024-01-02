@@ -51,5 +51,5 @@ Goal
   (* forall (X : forall (A : Type@{i}), A -> Type@{i}) (A : Type@{i}) (a : A), A -> X A a -> A. *)
   (* forall (T : (Type@{i} -> Type@{j})) (F : ((Type@{i} -> Type@{j}) -> Type@{k})), F T. *)
 Proof.
-  param.
+  trocq.
 Abort.
