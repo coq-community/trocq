@@ -1,6 +1,6 @@
 (*****************************************************************************)
 (*                            *                    Trocq                     *)
-(*  _______                   *           Copyright (C) 2023 MERCE           *)
+(*  _______                   *       Copyright (C) 2023 Inria & MERCE       *)
 (* |__   __|                  *    (Mitsubishi Electric R&D Centre Europe)   *)
 (*    | |_ __ ___   ___ __ _  *       Cyril Cohen <cyril.cohen@inria.fr>     *)
 (*    | | '__/ _ \ / __/ _` | *       Enzo Crance <enzo.crance@inria.fr>     *)
