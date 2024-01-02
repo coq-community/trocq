@@ -140,7 +140,7 @@ Elpi Query lp:{{
   ).
 }}.
 
-Elpi Tactic param.
+Elpi Tactic trocq.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File annot.
 Elpi Accumulate File util.
@@ -201,5 +201,4 @@ Elpi Accumulate lp:{{
 }}.
 Elpi Typecheck.
 
-Tactic Notation "param" := elpi param.
-Tactic Notation "trocq" := elpi param.
+Tactic Notation "trocq" := elpi trocq.
