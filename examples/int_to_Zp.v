@@ -52,8 +52,7 @@ Notation "x * y" := (mulp x%Zmodp y%Zmodp) : Zmodp_scope.
 
 Module IntToZmodp.
 
-Definition Rp := SplitSurj.toParam
-  (SplitSurj.Build_type modp reprp reprpK).
+Definition Rp := SplitSurj.toParam (SplitSurj.Build reprpK).
 
 Axiom Rzero' : Rp zero zerop.
 Variable Radd' : binop_param Rp Rp Rp add addp.
@@ -88,25 +87,13 @@ End IntToZmodp.
 
 Module ZmodpToInt.
 
-Definition Rp x n := eqmodp (reprp x) n.
-
-Definition Rp2a2b@{i} : Param2a2b.Rel Zmodp@{i} int@{i}.
-Proof.
-unshelve econstructor.
-- exact Rp.
-- unshelve econstructor.
-  + exact reprp.
-  + move=> a b; move=> /(ap modp); exact.
-- unshelve econstructor.
-  + exact modp.
-  + by move=> a b; rewrite /Rp/sym_rel/eqmodp reprpK => <-.
-Defined.
+Definition Rp := SplitSurj.toParamSym (SplitSurj.Build reprpK).
 
 Axiom Rzero : Rp zerop zero.
 Variable Radd : binop_param Rp Rp Rp addp add.
 Variable paths_to_eqmodp : binop_param Rp Rp iff paths eqmodp.
 
-Trocq Use Rp2a2b.
+Trocq Use Rp.
 Trocq Use Param01_paths.
 Trocq Use Param10_paths.
 Trocq Use Radd.
