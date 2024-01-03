@@ -32,7 +32,7 @@ Proof. by move: m n => _ + <-; case=> //=. Defined.
 Trocq Use RN0. Trocq Use RNS.
 Trocq Use RN44.
 
-(* We can now make use of the tactic to prove a recurrence principle on N *)
+(* We can now make use of the tactic to prove an induction principle on N *)
 Lemma N_Srec : forall (P : N -> Type), P N0 ->
  (forall n, P n -> P (Nsucc n)) -> forall n, P n.
 Proof. trocq. (* N replaces nat in the goal *) exact nat_rect. Defined.
