@@ -83,18 +83,18 @@ Definition option_map_in_R :
         | Some a' =>
           fun e =>
             someR A A' AR a a' (map_in_R AR a a' (some_inj1 A' (map AR a) a' e))
-        | none =>
+        | None =>
           fun e =>
             exfalso_option_some_none (optionR A A' AR (Some a) (None))
               A' (map AR a) e
         end
-      | none =>
+      | None =>
         match oa' with
         | Some a' =>
           fun e =>
             exfalso_option_none_some (optionR A A' AR (None) (Some a'))
               A' a' e
-        | none => fun e => noneR A A' AR
+        | None => fun e => noneR A A' AR
         end
       end.
 

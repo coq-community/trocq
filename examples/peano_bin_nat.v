@@ -141,10 +141,6 @@ Definition RN2a3 : Param2a3.Rel@{Set} N nat := SplitSurj.toParamSym@{Set} {|
    that do not need this field, so that it is not imported before forgetting, and the lower
    instances can be declared without the axiom *)
 
-Definition RN02b : Param02b.Rel N nat := RN2a3.
-Definition RN02a : Param02a.Rel N nat := RN2a3.
-Definition RN2a0 : Param2a0.Rel N nat := RN2a3.
-
 (* as 0 and Nsucc appear in the goal, we need to link them with nat constructors *)
 (* NB: as these are not type formers, only class (0,0) is required, so these proofs amount to what
    would be done in the context of raw parametricity *)
@@ -153,9 +149,7 @@ Definition RN0 : RN N0 0. Proof. done. Qed.
 Definition RNS : forall m n, RN m n -> RN (Nsucc m) (S n).
 Proof. by move=> _ + <-; case=> //=. Qed.
 
-Trocq Use RN02b.
-Trocq Use RN02a.
-Trocq Use RN2a0.
+Trocq Use RN2a3.
 Trocq Use RN0.
 Trocq Use RNS.
 

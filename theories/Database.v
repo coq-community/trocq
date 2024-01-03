@@ -64,5 +64,6 @@ Elpi Db trocq.db lp:{{
 
   pred trocq.db.gref o:gref, o:param-class, o:list param-class, o:gref, o:gref.
   :name "default-gref"
+  trocq.db.gref _ _ _ _ _ :- do-not-fail, !, false.
   trocq.db.gref GR Out _ _ _ :- coq.error "cannot find" GR "at out class" Out.
 }}.

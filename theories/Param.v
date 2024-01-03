@@ -35,8 +35,8 @@ Inductive map_class : Set := map0 | map1 | map2a | map2b | map3 | map4.
 
 Elpi Command genpparam.
 Elpi Accumulate File util.
-Elpi Accumulate File param_class.
 Elpi Accumulate Db trocq.db.
+Elpi Accumulate File param_class.
 
 Definition PType@{i} (m n : map_class) (* : Type@{i+1} *) := Type@{i}.
 Definition weaken@{i} (m n m' n' : map_class) {A : Type@{i}} (a : A) : A := a.
@@ -55,8 +55,8 @@ Elpi Query lp:{{
 
 Elpi Command genpparamtype.
 Elpi Accumulate File util.
-Elpi Accumulate File param_class.
 Elpi Accumulate Db trocq.db.
+Elpi Accumulate File param_class.
 Elpi Accumulate lp:{{
   pred generate-branch i:univ-instance, i:param-class, i:param-class, o:term.
   generate-branch UI2 Class RClass (pglobal ParamType UI2) :-
@@ -141,9 +141,9 @@ Elpi Query lp:{{
 }}.
 
 Elpi Tactic trocq.
+Elpi Accumulate File util.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File annot.
-Elpi Accumulate File util.
 Elpi Accumulate File param_class.
 Elpi Accumulate File simple_graph.
 Elpi Accumulate File constraint_graph.

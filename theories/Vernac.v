@@ -27,8 +27,8 @@ From Trocq.Elpi Extra Dependency "util.elpi" as util.
 From Trocq.Elpi Extra Dependency "param-class.elpi" as param_class.
 
 Elpi Command Trocq.
-Elpi Accumulate Db trocq.db.
 Elpi Accumulate File util.
+Elpi Accumulate Db trocq.db.
 Elpi Accumulate File annot.
 Elpi Accumulate File param_class.
 Elpi Accumulate File simple_graph.
@@ -86,7 +86,22 @@ Elpi Accumulate lp:{{
     coq.say "accumultating" GR "@" Class "(" CList ") ~" GR' ":." GRR,
     coq.elpi.accumulate _ "trocq.db"
       (clause _ (before "default-gref")
-        (trocq.db.gref GR Class CList GR' GRR))
+        (trocq.db.gref GR Class CList GR' GRR)),
+    std.forall {param-class.all-weakenings-from Class} subclass\
+        sigma WTRR BaseName Suffix WName WCRR \
+      if (do-not-fail => trocq.db.gref GR subclass _ _ _) true (std.do! [
+        param-class.weaken-out subclass GRR WTRR,
+        coq.gref->id GRR BaseName,
+        param-class.to-string subclass Suffix,
+        WName is BaseName ^ "_weakened_to_" ^ Suffix,
+        @udecl! [] tt [] tt =>
+          coq.env.add-const WName WTRR _ @transparent! WCRR,
+        coq.elpi.accumulate _ "trocq.db"
+          (clause _ (before "default-gref")
+            (trocq.db.gref GR subclass CList GR' (const WCRR))),
+        coq.say "accumultating" GR "@" subclass "(" CList ") ~" GR'
+          ":." (const WCRR),
+    ])
   ].
   % coq.elpi.accumulate _ "trocq.db"
   %   (clause _ (before "default-gref")
