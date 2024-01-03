@@ -50,6 +50,42 @@ Notation "x + y" := (addp x%Zmodp y%Zmodp) : Zmodp_scope.
 Notation "x * y" := (mul x%int y%int) : int_scope.
 Notation "x * y" := (mulp x%Zmodp y%Zmodp) : Zmodp_scope.
 
+Module IntToZmodp.
+
+Definition Rp := SplitSurj.toParam
+  (SplitSurj.Build_type modp reprp reprpK).
+
+Axiom Rzero' : Rp zero zerop.
+Variable Radd' : binop_param Rp Rp Rp add addp.
+Variable Rmul' : binop_param Rp Rp Rp mul mulp.
+
+Trocq Use Rmul'.
+Trocq Use Rzero'.
+Trocq Use Param10_paths.
+Trocq Use Rp.
+
+Definition eq_Zmodp (x y : Zmodp) := (x = y).
+(* Bug if we inline the previous def in the following axiom *)
+Axiom Reqmodp01 : forall (m : int) (x : Zmodp), Rp m x ->
+  forall n y, Rp n y -> Param01.Rel (eqmodp m n) (eq_Zmodp x y).
+Trocq Use Reqmodp01.
+Arguments eq_Zmodp /.
+
+Hypothesis RedZmodpEq0 :
+  (forall (m n p : Zmodp), (m = n * n)%Zmodp -> m = (p * p * p)%Zmodp ->
+    m = zerop).
+
+Lemma IntRedModZp : forall (m n p : int),
+  (m = n * n)%int -> m = (p * p * p)%int -> eqmodp m zero.
+Proof.
+trocq; simpl.
+exact @RedZmodpEq0.
+Qed.
+
+(* Print Assumptions IntRedModZp. (* No Univalence *) *)
+
+End IntToZmodp.
+
 Module ZmodpToInt.
 
 Definition Rp x n := eqmodp (reprp x) n.
@@ -65,12 +101,6 @@ unshelve econstructor.
   + exact modp.
   + by move=> a b; rewrite /Rp/sym_rel/eqmodp reprpK => <-.
 Defined.
-
-Definition Rp00 : Param00.Rel Zmodp int := Rp2a2b.
-Definition Rp01 : Param01.Rel Zmodp int := Rp2a2b.
-Definition Rp10 : Param10.Rel Zmodp int := Rp2a2b.
-Definition Rp02b : Param02b.Rel Zmodp int := Rp2a2b.
-Definition Rp2a0 : Param2a0.Rel Zmodp int := Rp2a2b.
 
 Axiom Rzero : Rp zerop zero.
 Variable Radd : binop_param Rp Rp Rp addp add.
@@ -98,40 +128,3 @@ Proof.
 Qed.
 
 End ZmodpToInt.
-
-Module IntToZmodp.
-
-Definition Rp n x := modp n = x.
-Definition Rp42a@{i} : Param42a.Rel int@{i} Zmodp@{i} :=
-  SplitSurj.toParam (SplitSurj.Build_type modp reprp reprpK).
-
-Axiom Rzero' : Rp zero zerop.
-Variable Radd' : binop_param Rp Rp Rp add addp.
-Variable Rmul' : binop_param Rp Rp Rp mul mulp.
-
-Trocq Use Rmul'.
-Trocq Use Rzero'.
-Trocq Use Param10_paths.
-Trocq Use Rp42a.
-
-Definition eq_Zmodp (x y : Zmodp) := (x = y).
-(* Bug if we inline the previous def in the following axiom *)
-Axiom Reqmodp01 : forall (m : int) (x : Zmodp), Rp m x ->
-  forall n y, Rp n y -> Param01.Rel (eqmodp m n) (eq_Zmodp x y).
-Trocq Use Reqmodp01.
-Arguments eq_Zmodp /.
-
-Hypothesis RedZmodpEq0 :
-  (forall (m n p : Zmodp), (m = n * n)%Zmodp -> m = (p * p * p)%Zmodp ->
-    m = zerop).
-
-Lemma IntRedModZp : forall (m n p : int),
-  (m = n * n)%int -> m = (p * p * p)%int -> eqmodp m zero.
-Proof.
-trocq; simpl.
-exact @RedZmodpEq0.
-Qed.
-
-(* Print Assumptions IntRedModZp. (* No Univalence *) *)
-
-End IntToZmodp.

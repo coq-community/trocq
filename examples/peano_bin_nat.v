@@ -107,8 +107,6 @@ Definition Nmap (n : N) : nat :=
 Fixpoint Ncomap (n : nat) : N :=
   match n with O => 0 | S n => Nsucc (Ncomap n) end.
 
-Definition RN@{} := sym_rel@{Set} (graph@{Set} Ncomap).
-
 Lemma Naddpp p : (Npos p + Npos p)%N = Npos p~0.
 Proof. by elim: p => //= p IHp; rewrite Pos.addpp. Qed.
 
@@ -129,7 +127,7 @@ Proof. by case: n => //= ; elim=> //= p /NcomapNpos/= ->. Qed.
 
 (* the best we can do to link these types is (4,4), but
 we only need (2a,3) which is morally that Nmap is a split injection *)
-Definition RN2a3 : Param2a3.Rel@{Set} N nat := SplitSurj.toParamSym@{Set} {|
+Definition RN := SplitSurj.toParamSym@{Set} {|
    SplitSurj.retract := Ncomap;
    SplitSurj.section := Nmap;
    SplitSurj.sectionK := NmapK |}.
@@ -145,11 +143,11 @@ Definition RN2a3 : Param2a3.Rel@{Set} N nat := SplitSurj.toParamSym@{Set} {|
 (* NB: as these are not type formers, only class (0,0) is required, so these proofs amount to what
    would be done in the context of raw parametricity *)
 
-Definition RN0 : RN N0 0. Proof. done. Qed.
+Definition RN0 : RN N0 0%nat. Proof. done. Qed.
 Definition RNS : forall m n, RN m n -> RN (Nsucc m) (S n).
 Proof. by move=> _ + <-; case=> //=. Qed.
 
-Trocq Use RN2a3.
+Trocq Use RN.
 Trocq Use RN0.
 Trocq Use RNS.
 
