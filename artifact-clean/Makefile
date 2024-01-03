@@ -1,8 +1,8 @@
 .PHONY: all
 
 all:
-	opam install ./coq-elpi
-	opam install ./trocq
+	opam install -y ./coq-elpi
+	opam install -y ./trocq
 
 clean:
 	opam uninstall coq-elpi coq-trocq
