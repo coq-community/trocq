@@ -3,6 +3,7 @@
 
 -R theories/ Trocq
 -R elpi/ Trocq.Elpi
+-R examples/ Trocq_examples
 
 theories/HoTT_additions.v
 theories/Hierarchy.v
@@ -23,10 +24,12 @@ theories/Param_prod.v
 theories/Param_option.v
 theories/Param_vector.v
 
-examples/Example.v
+examples/artifact_paper_example.v
+examples/N.v
 examples/int_to_Zp.v
 examples/peano_bin_nat.v
 examples/setoid_rewrite.v
 examples/summable.v
 examples/trocq_setoid_rewrite.v
 examples/Vector_tuple.v
+examples/misc.v

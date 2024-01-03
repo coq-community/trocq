@@ -209,7 +209,6 @@ Defined.
 
 Module AppendConst.
 
-Trocq Use Param00_nat.
 Trocq Use Param2a0_nat.
 Trocq Use Param_add.
 Trocq Use Param02b_tuple_vector.
@@ -240,19 +239,14 @@ Axiom Param_head : forall
 Module HeadConst.
 
 Axiom (int : Type) (Zp : Type) (Rp42b : Param42b.Rel Zp int).
-Definition Rp00 : Param00.Rel Zp int := Rp42b.
-Definition Rp2a0 : Param2a0.Rel Zp int := Rp42b.
-Definition Rp02b : Param02b.Rel Zp int := Rp42b.
+Definition Rp2a2b : Param2a2b.Rel Zp int := Rp42b.
 
 Lemma head_const {n : nat} : forall (i : int), Vector.hd (Vector.const i (S n)) = i.
 Proof. destruct n; simpl; reflexivity. Qed.
 
-Trocq Use Param00_nat.
 Trocq Use Param2a0_nat.
 Trocq Use SR.
-Trocq Use Rp00.
-Trocq Use Rp2a0.
-Trocq Use Rp02b.
+Trocq Use Rp2a2b.
 Trocq Use Param_head.
 Trocq Use Param_const.
 Trocq Use Param01_paths.
@@ -464,13 +458,9 @@ Axiom setBitThenGetSame :
   forall {k : nat} (bv : bitvector k) (i : nat) (b : Bool),
     (i < k)%nat -> getBit_bv (setBit_bv bv i b) i = b.
 
-Definition Param2a0_Bool : Param2a0.Rel Bool Bool := Param44_Bool.
-Definition Param02b_Bool : Param02b.Rel Bool Bool := Param44_Bool.
 
-Trocq Use Param00_nat.
 Trocq Use Param2a0_nat.
-Trocq Use Param2a0_Bool.
-Trocq Use Param02b_Bool.
+Trocq Use Param44_Bool.
 Trocq Use Param2a0_bnat_bv.
 Trocq Use getBitR.
 Trocq Use setBitR.

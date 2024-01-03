@@ -50,72 +50,9 @@ Notation "x + y" := (addp x%Zmodp y%Zmodp) : Zmodp_scope.
 Notation "x * y" := (mul x%int y%int) : int_scope.
 Notation "x * y" := (mulp x%Zmodp y%Zmodp) : Zmodp_scope.
 
-Module ZmodpToInt.
-
-Definition Rp x n := eqmodp (reprp x) n.
-
-Definition Rp2a2b@{i} : Param2a2b.Rel Zmodp@{i} int@{i}.
-Proof.
-unshelve econstructor.
-- exact Rp.
-- unshelve econstructor.
-  + exact reprp.
-  + move=> a b; move=> /(ap modp); exact.
-- unshelve econstructor.
-  + exact modp.
-  + by move=> a b; rewrite /Rp/sym_rel/eqmodp reprpK => <-.
-Defined.
-
-Definition Rp00 : Param00.Rel Zmodp int := Rp2a2b.
-Definition Rp01 : Param01.Rel Zmodp int := Rp2a2b.
-Definition Rp10 : Param10.Rel Zmodp int := Rp2a2b.
-Definition Rp02b : Param02b.Rel Zmodp int := Rp2a2b.
-Definition Rp2a0 : Param2a0.Rel Zmodp int := Rp2a2b.
-
-Axiom Rzero : Rp zerop zero.
-Variable Radd : binop_param Rp Rp Rp addp add.
-Variable paths_to_eqmodp : binop_param Rp Rp iff paths eqmodp.
-
-Trocq Use Rp00.
-Trocq Use Rp01.
-Trocq Use Rp10.
-Trocq Use Rp02b.
-Trocq Use Rp2a0.
-
-Trocq Use Param01_paths.
-Trocq Use Param10_paths.
-Trocq Use Radd.
-Trocq Use Rzero.
-
-Goal (forall x y, x + y = y + x)%Zmodp.
-Proof.
-  trocq.
-  exact addC.
-Qed.
-
-Goal (forall x y z, x + y + z = y + x + z)%Zmodp.
-Proof.
-  intros x y z.
-  suff addpC: forall x y, (x + y = y + x)%Zmodp. {
-    by rewrite (addpC x y). }
-  trocq.
-  exact addC.
-Qed.
-
-End ZmodpToInt.
-
 Module IntToZmodp.
 
-Definition Rp n x := modp n = x.
-Definition Rp42a@{i} : Param42a.Rel int@{i} Zmodp@{i} :=
-  SplitSurj.toParam (SplitSurj.Build_type modp reprp reprpK).
-Definition Rp00 : Param00.Rel int Zmodp :=   Rp42a.
-Definition Rp01 : Param01.Rel int Zmodp :=   Rp42a.
-Definition Rp40 : Param40.Rel int Zmodp :=   Rp42a.
-Definition Rp10 : Param10.Rel int Zmodp :=   Rp42a.
-Definition Rp02a : Param02a.Rel int Zmodp := Rp42a.
-Definition Rp2a0 : Param2a0.Rel int Zmodp := Rp42a.
-Definition Rp2b0 : Param2b0.Rel int Zmodp := Rp42a.
+Definition Rp := SplitSurj.toParam (SplitSurj.Build reprpK).
 
 Axiom Rzero' : Rp zero zerop.
 Variable Radd' : binop_param Rp Rp Rp add addp.
@@ -124,8 +61,7 @@ Variable Rmul' : binop_param Rp Rp Rp mul mulp.
 Trocq Use Rmul'.
 Trocq Use Rzero'.
 Trocq Use Param10_paths.
-Trocq Use Rp2a0.
-Trocq Use Rp2b0.
+Trocq Use Rp.
 
 Definition eq_Zmodp (x y : Zmodp) := (x = y).
 (* Bug if we inline the previous def in the following axiom *)
@@ -148,3 +84,34 @@ Qed.
 (* Print Assumptions IntRedModZp. (* No Univalence *) *)
 
 End IntToZmodp.
+
+Module ZmodpToInt.
+
+Definition Rp := SplitSurj.toParamSym (SplitSurj.Build reprpK).
+
+Axiom Rzero : Rp zerop zero.
+Variable Radd : binop_param Rp Rp Rp addp add.
+Variable paths_to_eqmodp : binop_param Rp Rp iff paths eqmodp.
+
+Trocq Use Rp.
+Trocq Use Param01_paths.
+Trocq Use Param10_paths.
+Trocq Use Radd.
+Trocq Use Rzero.
+
+Goal (forall x y, x + y = y + x)%Zmodp.
+Proof.
+  trocq.
+  exact addC.
+Qed.
+
+Goal (forall x y z, x + y + z = y + x + z)%Zmodp.
+Proof.
+  intros x y z.
+  suff addpC: forall x y, (x + y = y + x)%Zmodp. {
+    by rewrite (addpC x y). }
+  trocq.
+  exact addC.
+Qed.
+
+End ZmodpToInt.

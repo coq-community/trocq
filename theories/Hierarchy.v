@@ -17,6 +17,7 @@ Require Import HoTT_additions Database.
 From elpi Require Import elpi.
 
 From Trocq.Elpi Extra Dependency "param-class.elpi" as param_class.
+From Trocq.Elpi Extra Dependency "util.elpi" as util.
 
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
@@ -75,6 +76,7 @@ End Map4.
 (********************)
 
 Elpi Command genhierarchy.
+Elpi Accumulate File util.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File param_class.
 Elpi Accumulate lp:{{

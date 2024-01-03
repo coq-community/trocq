@@ -15,6 +15,7 @@ From elpi Require Import elpi.
 From Coq Require Import ssreflect.
 From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy Database.
+From Trocq.Elpi Extra Dependency "util.elpi" as util.
 From Trocq.Elpi Extra Dependency "param-class.elpi" as param_class.
 
 Set Universe Polymorphism.
@@ -23,6 +24,7 @@ Unset Universe Minimization ToSet.
 Local Open Scope param_scope.
 
 Elpi Command genparamarrow.
+Elpi Accumulate File util.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File param_class.
 

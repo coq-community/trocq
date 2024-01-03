@@ -15,6 +15,7 @@ From elpi Require Import elpi.
 From Coq Require Import ssreflect.
 From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy Database.
+From Trocq.Elpi Extra Dependency "util.elpi" as util.
 From Trocq.Elpi Extra Dependency "param-class.elpi" as param_class.
 
 Set Universe Polymorphism.
@@ -28,6 +29,8 @@ Local Open Scope param_scope.
   + symmetry MapM_Type_symNP *)
 
 Elpi Command genmaptype.
+Elpi Accumulate File util.
+Elpi Accumulate Db trocq.db.
 Elpi Accumulate File param_class.
 Elpi Accumulate lp:{{
   pred generate-fields
@@ -166,6 +169,7 @@ Defined.
   (for M or N in [2b, 3, 4] PQ is always 44) *)
 
 Elpi Command genparamtype.
+Elpi Accumulate File util.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File param_class.
 Elpi Accumulate lp:{{

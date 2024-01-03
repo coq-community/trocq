@@ -44,7 +44,7 @@ Module SplitInj.
 Section SplitInj.
 Universe i.
 Context {A B : Type@{i}}.
-Record type@{} := {
+Record type@{} := Build {
   section :> A -> B;
   retract : B -> A;
   sectionK : forall x, retract (section x) = x
@@ -78,12 +78,13 @@ End to.
 
 End SplitInj.
 End SplitInj.
+Arguments SplitInj.Build {A B section retract}.
 
 Module SplitSurj.
 Section SplitSurj.
 Universe i.
 Context {A B : Type@{i}}.
-Record type := {
+Record type := Build {
   retract :> A -> B;
   section : B -> A;
   sectionK : forall x, retract (section x) = x
@@ -117,6 +118,7 @@ End to.
 
 End SplitSurj.
 End SplitSurj.
+Arguments SplitSurj.Build {A B retract section}.
 
 Module Equiv.
 (* This is exactly adjointify *)
@@ -134,7 +136,7 @@ Module Iso.
 Section Iso.
 Universe i.
 Context {A B : Type@{i}}.
-Record type@{} := {
+Record type@{} := Build {
   map :> A -> B;
   comap : B -> A;
   mapK : forall x, comap (map x) = x;
@@ -184,3 +186,4 @@ End to.
 
 End Iso.
 End Iso.
+Arguments Iso.Build {A B map comap}.

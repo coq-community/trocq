@@ -14,6 +14,10 @@
 % utility predicates
 % -----------------------------------------------------------------------------
 
+pred do-not-fail.
+:before "term->gref:fail"
+coq.term->gref _ _ :- do-not-fail, !, false.
+
 kind or type -> type -> type.
 type inl A -> or A B.
 type inr B -> or A B.
@@ -78,5 +82,12 @@ pred delete i:A, i:list A, o:list A.
 delete A [A|Xs] Xs :- !.
 delete A [X|Xs] [X|Xs'] :- delete A Xs Xs'.
 delete _ [] [].
+
+% subst-gref T GR' T'
+% substitutes GR for GR' in T if T = (global GR) or (pglobal GR I)
+pred subst-gref i:term, i:gref, o:term.
+subst-gref (global _) GR' (global GR').
+subst-gref (pglobal _ I) GR' (pglobal GR' I).
+subst-gref T _ _ :- coq.error T "is not a gref".
 
 } % util

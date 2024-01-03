@@ -102,6 +102,15 @@ weakenings-to map2b [map3].
 weakenings-to map3  [map4].
 weakenings-to map4  [].
 
+% lower/higher levels at distance 1 from a given level
+pred all-weakenings-from i:map-class, o:list map-class.
+all-weakenings-from map0  [].
+all-weakenings-from map1  [map0].
+all-weakenings-from map2a [map1, map0].
+all-weakenings-from map2b [map1, map0].
+all-weakenings-from map3  [map2a, map2b, map1, map0].
+all-weakenings-from map4  [map3, map2a, map2b, map1, map0].
+
 % all possible parametricity classes that can be created by combinations of 2 lists of map classes
 pred product i:list map-class, i:list map-class, o:list param-class.
 product Ms Ns Classes :-
@@ -176,10 +185,6 @@ dep-arrow map4  (pc map0 map4)  (pc map4 map0).
 
 } % map-class
 
-pred do-not-fail.
-:before "term->gref:fail"
-coq.term->gref _ _ :- do-not-fail, !, false.
-
 namespace param-class {
 
 % extensions of functions over map classes to parametricity classes
@@ -195,6 +200,15 @@ weakenings-to (pc M N) Classes :-
   map-class.weakenings-to M Ms,
   map-class.weakenings-to N Ns,
   map-class.product Ms Ns Classes.
+
+pred all-weakenings-from i:param-class, o:list param-class.
+all-weakenings-from (pc M N) Classes :-
+  map-class.all-weakenings-from M Ms,
+  map-class.all-weakenings-from N Ns,
+  map-class.product Ms Ns StrictClasses,
+  map-class.product [M] Ns MClasses,
+  map-class.product Ms [N] NClasses,
+  std.flatten [StrictClasses, MClasses, NClasses] Classes.
 
 pred negate i:param-class, o:param-class.
 negate (pc M N) (pc N M).
@@ -229,6 +243,13 @@ dep-arrow (pc M N) ClassA ClassB :-
   union ClassAM {param-class.negate ClassAN} ClassA,
   union ClassBM {param-class.negate ClassBN} ClassB.
 
+pred to-string i:param-class, o:string.
+to-string (pc M N) String :- std.do! [
+  map-class->string M MStr,
+  map-class->string N NStr,
+  String is MStr ^ NStr
+].
+
 % generate a weakening function from a parametricity class to another, by forgetting fields 1 by 1
 pred forget i:param-class, i:param-class, o:univ-instance -> term -> term -> term -> term.
 forget (pc M N) (pc M N) (_\ _\ _\ r\ r) :- !.
@@ -246,6 +267,29 @@ forget (pc M N) (pc M' N') ForgetF :-
   coq.locate
     {calc ("forget_" ^ {map-class->string M} ^ NStr ^ "_" ^ {map-class->string M1} ^ NStr)} Forget1,
   ForgetF = (ui\ a\ b\ r\ ForgetF' ui a b (app [pglobal Forget1 ui, a, b, r])).
+
+% weaking of the out class of a gref.
+% e.g. if GR has type `forall A B, R A B -> Param21 X Y`
+% then `weaken-out (pc map1 map0) GR T`
+% where `T` has type `forall A B, R A B -> Param10 X Y`
+pred weaken-out i:param-class, i:gref, o:term.
+weaken-out OutC GR WT :- std.do! [
+  coq.env.global GR T,
+  coq.env.typeof GR Ty,
+  replace-out-ty OutC Ty WTy,
+  std.assert-ok! (coq.elaborate-skeleton T WTy WT)
+    "weaken-out: failed to weaken"
+].
+
+pred replace-out-ty i:param-class, i:term, o:term.
+replace-out-ty OutC (prod N A B) (prod N A B') :- !,
+   pi x\ replace-out-ty OutC (B x) (B' x).
+replace-out-ty OutC InT OutT :- std.do! [
+  coq.safe-dest-app InT HD Ts,
+  trocq.db.gref->class OutGRClass OutC,
+  util.subst-gref HD OutGRClass HD',
+  coq.mk-app HD' Ts OutT
+  ].
 
 % succeed if the parametricity class contains a map class over 2b
 % this means that a translation of a sort at this class will require univalence,
