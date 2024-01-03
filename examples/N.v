@@ -43,10 +43,10 @@ Fixpoint succ x :=
     | 1 => 1~0
   end.
 
-Fixpoint map (x : positive) : nat :=
+Fixpoint to_nat (x : positive) : nat :=
   match x with
-    | p~1 => 1 + (map p + map p)
-    | p~0 => map p + map p
+    | p~1 => 1 + (to_nat p + to_nat p)
+    | p~0 => to_nat p + to_nat p
     | 1 => 1
   end.
 
@@ -78,57 +78,58 @@ Inductive N : Set :=
 Declare Scope N_scope.
 Delimit Scope N_scope with N.
 Bind Scope N_scope with N.
+Coercion Npos : positive >-> N.
 
 Notation "0" := N0 : N_scope.
 
-Definition succ_pos (n : N) : positive :=
+Module N.
+Local Definition succ_subdef (n : N) : positive :=
  match n with
    | N0 => 1%positive
    | Npos p => Pos.succ p
  end.
+Arguments succ_subdef /.
+Definition succ : N -> N := succ_subdef.
 
-Definition Nsucc (n : N) := Npos (succ_pos n).
-
-Definition Nadd (m n : N) := match m, n with
+Definition add (m n : N) := match m, n with
 | N0, x | x, N0 => x
-| Npos p, Npos q => Npos (Pos.add p q)
+| Npos p, Npos q => Pos.add p q
 end.
-Infix "+" := Nadd : N_scope.
-Notation "n .+1" := (Nsucc n) : N_scope.
+Infix "+" := add : N_scope.
+Notation "n .+1" := (succ n) : N_scope.
 
-(* various possible proofs to fill the fields of a parametricity witness between N and nat *)
-
-Definition Nmap (n : N) : nat :=
-  match n with
-  | N0 => 0
-  | Npos p => Pos.map p
-  end.
-
-Fixpoint Ncomap (n : nat) : N :=
-  match n with O => 0 | S n => Nsucc (Ncomap n) end.
-
-Lemma Naddpp p : (Npos p + Npos p)%N = Npos p~0.
+Lemma addpp p : (Npos p + Npos p)%N = Npos p~0.
 Proof. by elim: p => //= p IHp; rewrite Pos.addpp. Defined.
 
-Lemma NcomapD i j : Ncomap (i + j) = (Ncomap i + Ncomap j)%N.
+Definition to_nat (n : N) : nat :=
+  match n with N0 => 0 | Npos p => Pos.to_nat p end.
+
+Fixpoint of_nat (n : nat) : N :=
+  match n with O => 0 | S n => succ (of_nat n) end.
+
+Lemma of_natD i j : of_nat (i + j) = (of_nat i + of_nat j)%N.
 Proof.
 elim: i j => [|i IHi] [|j]//=; first by rewrite -nat_add_n_O//.
 rewrite -nat_add_n_Sm/= IHi.
-case: (Ncomap i) => // p; case: (Ncomap j) => //=.
-- by rewrite /Nsucc/= Pos.addp1.
-- by move=> q; rewrite /Nsucc/= Pos.addpS Pos.addSp.
+case: (of_nat i) => // p; case: (of_nat j) => //=.
+- by rewrite /succ/= Pos.addp1.
+- by move=> q; rewrite /succ/= Pos.addpS Pos.addSp.
 Defined.
 
-Let NcomapNpos p k : Ncomap k = Npos p -> Ncomap (k + k) = Npos p~0.
-Proof. by move=> kp; rewrite NcomapD kp Naddpp. Defined.
+Local Definition of_nat_double p k :
+  of_nat k = Npos p -> of_nat (k + k) = Npos p~0.
+Proof. by move=> kp; rewrite of_natD kp addpp. Defined.
 
-Lemma NmapK (n : N) : Ncomap (Nmap n) = n.
-Proof. by case: n => //= ; elim=> //= p /NcomapNpos/= ->. Defined.
+Lemma to_natK (n : N) : of_nat (to_nat n) = n.
+Proof. by case: n => //= ; elim=> //= p /of_nat_double/= ->. Defined.
 
-Lemma NcomapK (n : nat) : Nmap (Ncomap n) = n.
+Lemma of_natK (n : nat) : to_nat (of_nat n) = n.
 Proof.
 elim: n => //= n IHn; rewrite -[in X in _ = X]IHn.
-by case: (Ncomap n)=> //; elim=> //= p ->; rewrite /= !add_n_Sm.
+by case: (of_nat n)=> //; elim=> //= p ->; rewrite /= !add_n_Sm.
 Defined.
 
-Definition Niso := Iso.Build NcomapK NmapK.
+Definition of_nat_iso := Iso.Build of_natK to_natK.
+End N.
+Infix "+" := N.add : N_scope.
+Notation "n .+1" := (N.succ n) : N_scope.

@@ -20,12 +20,12 @@ Set Universe Polymorphism.
 
 (* Let us first prove that type nat , of unary natural numbers, and type N , of
 binary ones, are equivalent *)
-Definition RN44 : (N <=> nat)%P := Iso.toParamSym Niso.
+Definition RN44 : (N <=> nat)%P := Iso.toParamSym N.of_nat_iso.
 
 (* This equivalence proof coerces to a relation of type N -> nat -> Type , which
 relates the respective zero and successor constants of these types: *)
 Definition RN0 : RN44 0%N 0%nat. Proof. done. Defined.
-Definition RNS m n : RN44 m n -> RN44 (Nsucc m) (S n).
+Definition RNS m n : RN44 m n -> RN44 (N.succ m) (S n).
 Proof. by move: m n => _ + <-; case=> //=. Defined.
 
 (* We now register all these informations in a database known to the tactic: *)
@@ -34,7 +34,7 @@ Trocq Use RN44.
 
 (* We can now make use of the tactic to prove a recurrence principle on N *)
 Lemma N_Srec : forall (P : N -> Type), P N0 ->
- (forall n, P n -> P (Nsucc n)) -> forall n, P n.
+ (forall n, P n -> P (N.succ n)) -> forall n, P n.
 Proof. trocq. (* N replaces nat in the goal *) exact nat_rect. Defined.
 
 (* Inspecting the proof term atually reveals that univalence was not needed
@@ -43,4 +43,4 @@ Print N_Srec.
 Print Assumptions N_Srec.
 
 (* Indeed this computes *)
-Eval compute in N_Srec (fun n => N) (0%N) Nadd (Npos 1~0~1~1~1~0).
+Eval compute in N_Srec (fun _ => N) (0%N) N.add 1~0~1~1~0~1%positive.
