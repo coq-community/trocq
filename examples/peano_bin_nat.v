@@ -20,24 +20,15 @@ Set Universe Polymorphism.
 
 (* the best we can do to link these types is (4,4), but
 we only need (2a,3) which is morally that Nmap is a split injection *)
-Definition RN := SplitSurj.toParamSym@{Set} {|
-   SplitSurj.retract := Ncomap;
-   SplitSurj.section := Nmap;
-   SplitSurj.sectionK := NmapK |}.
-
-(* for brevity, we create witnesses at lower classes by forgetting fields in RN2a3 *)
-(* this behaviour can be automated so as to only declare Rn2a3 and get for free all the instances
-   reachable by forgetting fields *)
-(* in the general case, if a field requires an axiom, it is better to manually recreate instances
-   that do not need this field, so that it is not imported before forgetting, and the lower
-   instances can be declared without the axiom *)
+Definition RN : Param2a3.Rel N nat :=
+ SplitSurj.toParamSym (SplitSurj.Build N.to_natK).
 
 (* as 0 and Nsucc appear in the goal, we need to link them with nat constructors *)
 (* NB: as these are not type formers, only class (0,0) is required, so these proofs amount to what
    would be done in the context of raw parametricity *)
 
-Definition RN0 : RN N0 0%nat. Proof. done. Qed.
-Definition RNS : forall m n, RN m n -> RN (Nsucc m) (S n).
+Definition RN0 : RN 0%N 0%nat. Proof. done. Qed.
+Definition RNS : forall m n, RN m n -> RN m.+1%N n.+1%nat.
 Proof. by move=> _ + <-; case=> //=. Qed.
 
 Trocq Use RN.
@@ -45,7 +36,7 @@ Trocq Use RN0.
 Trocq Use RNS.
 
 Lemma N_Srec : forall (P : N -> Type), P N0 ->
- (forall n, P n -> P (Nsucc n)) -> forall n, P n.
+ (forall n, P n -> P n.+1%N) -> forall n, P n.
 Proof.
   trocq.
   (* the output sort of P' is (1,1) because of the covariant and contravariant occurrences of P in
