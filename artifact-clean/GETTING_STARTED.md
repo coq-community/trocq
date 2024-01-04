@@ -4,18 +4,14 @@ This artifact contains an implementation of the Trocq parametricity framework as
 
 ## Testing the code (recommended)
 
-In this set-up, the reader considers this code mainly as the artifact for our paper, and thus wants to check it is working properly. To that end, we propose to interact in an easy way with a Docker container containing our code. The main requirement for the reader is to have [Docker](https://www.docker.com) and [VSCode](https://code.visualstudio.com) installed on their machine.
+In this set-up, the reader considers this code mainly as the artifact for our paper, and thus wants to check it is working properly. To that end, we propose to interact in an easy way with a Docker container containing our code. The main requirement for the reader is to have [Docker](https://www.docker.com) and [VSCode](https://code.visualstudio.com) installed on their machine. You also need to ensure you have more than 6GB of disk space available.
 
 Here are the instructions:
-- Pull the Docker image containing our code.
-  ```shell
-  docker pull cohencyril/trocq
-  ```
 - Run a Docker container from this image and leave this terminal on the side.
   ```shell
-  docker run --rm -it -v bash cohencyril/trocq
+  docker run -d bash cohencyril/trocq
   ```
-- Start VSCode on the host and install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
+- Start VSCode on the host and install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension or run `code --install-extension ms-vscode-remote.remote-containers`
 - Click on the `><` button at the bottom left-hand corner of the window.
   A menu opens in the middle.
 - Choose `Attach to Running Container...` and select the container that is based on the `cohencyril/trocq` image.
