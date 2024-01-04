@@ -20,11 +20,18 @@ Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
 Elpi Db trocq.db lp:{{
+
+  % trocq.db.rel (pc M N) {{ParamMN.Rel}} {{ParamMN.BuildRel}}
+  %   {{ParamMN.R}} {{ParamMN.covariant}} {{ParamMN.contravariant}}
+  pred trocq.db.rel o:param-class, o:gref, o:gref,
+    o:gref, o:gref, o:gref.
+
   pred trocq.db.r o:param-class, o:constant.
   :name "default-r"
   trocq.db.r C R :- var C, !,
     declare_constraint (trocq.db.r C R) [C].
 
+  % subsummed by trocq.db.rel
   pred trocq.db.gref->class o:gref, o:param-class.
 
   pred trocq.db.ptype o:constant.
@@ -66,4 +73,5 @@ Elpi Db trocq.db lp:{{
   :name "default-gref"
   trocq.db.gref _ _ _ _ _ :- do-not-fail, !, false.
   trocq.db.gref GR Out _ _ _ :- coq.error "cannot find" GR "at out class" Out.
+
 }}.

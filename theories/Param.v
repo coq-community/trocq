@@ -29,8 +29,6 @@ From Trocq.Elpi.constraints Extra Dependency "constraints.elpi" as constraints.
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
-Inductive map_class : Set := map0 | map1 | map2a | map2b | map3 | map4.
-
 (* PType and weaken *)
 
 Elpi Command genpparam.
@@ -38,15 +36,6 @@ Elpi Accumulate File util.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File param_class.
 
-Definition PType@{i} (m n : map_class) (* : Type@{i+1} *) := Type@{i}.
-Definition weaken@{i} (m n m' n' : map_class) {A : Type@{i}} (a : A) : A := a.
-
-Elpi Query lp:{{
-  coq.locate "PType" (const PType),
-  coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.ptype PType)),
-  coq.locate "weaken" (const Weaken),
-  coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.weaken Weaken)).
-}}.
 
 (* generate
   PParamMN_Type P Q := ParamMN_TypePQ for all M N under 2b
@@ -67,7 +56,7 @@ Elpi Accumulate lp:{{
   pred generate-match2
     i:term, i:univ-instance, i:param-class, i:term, i:map-class, o:term.
   generate-match2 RetType UI2 Class QVar P Match :-
-    std.map [map0, map1, map2a, map2b, map3, map4]
+    map-classes all Classes, std.map Classes
       (q\ b\ generate-branch UI2 Class (pc P q) b) Branches,
     coq.locate "map_class" MapClass,
     coq.univ-instance UI0 [],
@@ -76,7 +65,7 @@ Elpi Accumulate lp:{{
   pred generate-match1
     i:term, i:univ-instance, i:param-class, i:term, i:term, o:term.
   generate-match1 RetType UI2 Class PVar QVar Match :-
-    std.map [map0, map1, map2a, map2b, map3, map4]
+    map-classes all Classes, std.map Classes
       (p\ b\ generate-match2 RetType UI2 Class QVar p b) Branches,
     coq.locate "map_class" MapClass,
     coq.univ-instance UI0 [],
@@ -118,9 +107,9 @@ Elpi Query lp:{{
   coq.univ.variable U L,
   coq.univ.super U U1,
   coq.univ.variable U1 L1,
-  Classes1 = [map0, map1, map2a],
-  Classes2 = [map2b, map3, map4],
-  Classes = [map0, map1, map2a, map2b, map3, map4],
+  map-classes low Classes1,
+  map-classes high Classes2,
+  map-classes all Classes,
   % first the ones where the arguments matter
   std.forall Classes1 (m\
     std.forall Classes1 (n\

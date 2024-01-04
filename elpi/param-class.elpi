@@ -23,36 +23,47 @@ type map2b map-class.
 type map3  map-class.
 type map4  map-class.
 
+kind class-kind type.
+type low class-kind.
+type high class-kind.
+type all class-kind.
+
+pred map-classes o:class-kind, o:list map-class.
+map-classes all [map0, map1, map2a, map2b, map3, map4].
+map-classes low [map0, map1, map2a].
+map-classes high [map2b, map3, map4].
+
+pred sym-rel o:gref.
+sym-rel {{:gref lib:trocq.sym_rel}}.
+
+pred paths o:gref.
+paths {{:gref lib:trocq.paths}}.
+
 kind param-class type.
 type pc map-class -> map-class -> param-class.
 
+pred map->class o:map-class, o:gref.
+map->class map0 {{:gref lib:trocq.map0}}.
+map->class map1 {{:gref lib:trocq.map1}}.
+map->class map2a {{:gref lib:trocq.map2a}}.
+map->class map2b {{:gref lib:trocq.map2b}}.
+map->class map3 {{:gref lib:trocq.map3}}.
+map->class map4 {{:gref lib:trocq.map4}}.
+
+pred map-class->indc-class o:map-class, o:gref.
+map-class->indc-class map0 {{:gref lib:trocq.indc_map0}}.
+map-class->indc-class map1 {{:gref lib:trocq.indc_map1}}.
+map-class->indc-class map2a {{:gref lib:trocq.indc_map2a}}.
+map-class->indc-class map2b {{:gref lib:trocq.indc_map2b}}.
+map-class->indc-class map3 {{:gref lib:trocq.indc_map3}}.
+map-class->indc-class map4 {{:gref lib:trocq.indc_map4}}.
+
 pred map-class->term i:map-class, o:term.
-map-class->term map0 (pglobal Map0 UI) :-
-  coq.locate "map0" Map0,
-  coq.univ-instance UI [].
-map-class->term map1 (pglobal Map1 UI) :-
-  coq.locate "map1" Map1,
-  coq.univ-instance UI [].
-map-class->term map2a (pglobal Map2a UI) :-
-  coq.locate "map2a" Map2a,
-  coq.univ-instance UI [].
-map-class->term map2b (pglobal Map2b UI) :-
-  coq.locate "map2b" Map2b,
-  coq.univ-instance UI [].
-map-class->term map3 (pglobal Map3 UI) :-
-  coq.locate "map3" Map3,
-  coq.univ-instance UI [].
-map-class->term map4 (pglobal Map4 UI) :-
-  coq.locate "map4" Map4,
-  coq.univ-instance UI [].
+map-class->term Class (pglobal Map UI) :- std.do! [
+  map-class->indc-class Class Map, coq.univ-instance UI [] ].
 
 pred term->map-class i:term, o:map-class.
-term->map-class (pglobal Map0 _)  map0  :- coq.locate "map0"  Map0.
-term->map-class (pglobal Map1 _)  map1  :- coq.locate "map1"  Map1.
-term->map-class (pglobal Map2a _) map2a :- coq.locate "map2a" Map2a.
-term->map-class (pglobal Map2b _) map2b :- coq.locate "map2b" Map2b.
-term->map-class (pglobal Map3 _)  map3  :- coq.locate "map3"  Map3.
-term->map-class (pglobal Map4 _)  map4  :- coq.locate "map4"  Map4.
+term->map-class (pglobal Map _) Class :- map-class->indc-class Class Map.
 
 pred map-class->string i:map-class, o:string.
 map-class->string map0  "0".
@@ -62,9 +73,18 @@ map-class->string map2b "2b".
 map-class->string map3  "3".
 map-class->string map4  "4".
 
+
 pred param-class->string i:param-class, o:string.
 param-class->string (pc M N) S :-
   S is {map-class->string M} ^ {map-class->string N}.
+
+pred param-class->add-suffix i:param-class, i:string, o:string.
+param-class->add-suffix Class P S :- S is P ^ {param-class->string Class}.
+
+pred param-class->add-2-suffix i:string,
+  i:param-class, i:param-class, i:string, o:string.
+param-class->add-2-suffix Sep Class1 Class2 P S :-
+   S is P ^ {param-class->string Class1} ^ Sep ^ {param-class->string Class2}.
 
 % names of the fields contained in a witness of a given level
 pred map-class->fields i:map-class, o:list string.
