@@ -9,10 +9,10 @@ In this set-up, the reader considers this code mainly as the artifact for our pa
 Here are the instructions:
 - Run a Docker container from this image and leave this terminal on the side.
   ```shell
-  docker run -d cohencyril/trocq
+  docker run -it -v --rm cohencyril/trocq
   ```
-- Start VSCode on the host and install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension or run `code --install-extension ms-vscode-remote.remote-containers`
-- Click on the `><` button at the bottom left-hand corner of the window.
+- Start VSCode on the host and install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension by running `code --install-extension ms-vscode-remote.remote-containers` or from the menus.
+- Click on the `><` button at the bottom left-hand corner of the window or press F1.
   A menu opens in the middle.
 - Choose `Attach to Running Container...` and select the container that is based on the `cohencyril/trocq` image.
   A new window opens and connects to this container.
