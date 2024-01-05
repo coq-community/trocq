@@ -89,7 +89,56 @@ As `int` is defined in the MathComp library, this property is already proved and
 
 #### Bitwise arithmetic (`Vector_tuple.v`)
 
-todo
+Here, we focus on relating two dependent types encoding for fixed-size bitvectors:
+```coq
+Definition bounded_nat (k : nat) := {n : nat & n < pow 2 k}%nat.
+Definition bitvector (k : nat) := Vector.t Bool k.
+```
+
+We can relate them together, in an easier way by transitivity, by first relating `bounded_nat k` to `bitvector k` for a given `k`, then by relating `Vector.t A k` to `Vector.t A' k'` for any related types `A` and `A'`, and any related numbers `k` and `k'`, before combining both previous proofs with the following lemma available in Trocq:
+```coq
+Param44_trans : forall A B C, Param44.Rel A B -> Param44.Rel B C -> Param44.Rel A C.
+```
+
+This proof `RBV` can be added to Trocq by `Trocq Use RBV`. We can then define operations to get and set bits in both encodings of bitvectors, relate them with `RBV`, and add them to Trocq as well.
+```coq
+setBit_bv : forall {k : nat}, bitvector k -> nat -> Bool -> bitvector k
+setBit_bnat : forall {k : nat}, bounded_nat k -> nat -> Bool -> bounded_nat k
+getBit_bv : forall {k : nat}, bitvector k -> nat -> Bool
+getBit_bnat : forall {k : nat}, bounded_nat k -> nat -> Bool
+```
+```coq
+setBitR
+  (k k' : nat) (kR : natR k k')
+  (bn : bounded_nat k) (bv' : bitvector k') (r : RBV bn bv')
+  (n n' : nat) (nR : natR n n')
+  (b b' : Bool) (bR : BoolR b b') :
+    RBV (setBit_bnat bn n b) (setBit_bv bv' n' b')
+```
+```coq
+Trocq Use setBitR.
+```
+```coq
+getBitR
+  (k k' : nat) (kR : natR k k')
+  (bn : bounded_nat k) (bv' : bitvector k') (r : RBV bn bv')
+  (n n' : nat) (nR : natR n n') :
+    BoolR (getBit_bnat bn n) (getBit_bv bv' n').
+```
+```coq
+Trocq Use getBitR.
+```
+Now suppose we proved a lemma about getting a bit that just got set to a new value, in the `bitvector` encoding:
+```coq
+Lemma setBitThenGetSame :
+  forall {k : nat} (bv : bitvector k) (i : nat) (b : Bool),
+    (i < k)%nat -> getBit_bv (setBit_bv bv i b) i = b.
+```
+Provided that we add proofs in Trocq relating `nat`, `Bool`, equality, and order to themselves, we can call the `trocq` tactic on the following goal, and close the proof with `setBitThenGetSame`:
+```coq
+forall {k : nat} (bn : bounded_nat k) (i : nat) (b : Bool),
+  (i < k)%nat -> getBit_bnat (setBit_bnat bn i b) i = b
+```
 
 ### Containers
 
