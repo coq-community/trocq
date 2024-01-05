@@ -18,27 +18,29 @@ From Trocq_examples Require Import N.
 
 Set Universe Polymorphism.
 
-(* Let us first prove that type nat , of unary natural numbers, and type N , of
-binary ones, are equivalent *)
-Definition RN44 : (N <=> nat)%P := Iso.toParamSym N.of_nat_iso.
+(** In this example, we transport the induction principle on natural numbers
+  from two equivalent representations of `N`: the unary one `nat` and the binary
+  one `N`. We introduce the `Trocq Use` command to register such translations.
+  *)
+Definition RN : (N <=> nat)%P := Iso.toParamSym N.of_nat_iso.
+Trocq Use RN. (* registering related types *)
 
-(* This equivalence proof coerces to a relation of type N -> nat -> Type , which
-relates the respective zero and successor constants of these types: *)
-Definition RN0 : RN44 0%N 0%nat. Proof. done. Defined.
-Definition RNS m n : RN44 m n -> RN44 (N.succ m) (S n).
-Proof. by move: m n => _ + <-; case=> //=. Defined.
+(** This equivalence proof coerces to a relation of type `N -> nat -> Type`,
+  which we show relates the respective zero and successor constants of these
+  types: *)
+Definition RN0 : RN 0%N 0%nat. Proof. done. Defined.
+Definition RNS m n : RN m n -> RN (N.succ m) (S n). Proof. by case. Defined.
+Trocq Use RN0. Trocq Use RNS. (* registering related constants *)
 
-(* We now register all these informations in a database known to the tactic: *)
-Trocq Use RN0. Trocq Use RNS.
-Trocq Use RN44.
+(** We can now make use of the tactic to prove an induction principle on `N` *)
+Lemma N_Srec : forall (P : N -> Type), P 0%N ->
+    (forall n, P n -> P (N.succ n)) -> forall n, P n.
+Proof. trocq. (* replaces N by nat in the goal *) exact nat_rect. Defined.
 
-(* We can now make use of the tactic to prove an induction principle on N *)
-Lemma N_Srec : forall (P : N -> Type), P N0 ->
- (forall n, P n -> P (N.succ n)) -> forall n, P n.
-Proof. trocq. (* N replaces nat in the goal *) exact nat_rect. Defined.
-
-(* Inspecting the proof term atually reveals that univalence was not needed
-in the proof of N_Srec.  *)
+(** Inspecting the proof term actually reveals that univalence was not needed in
+    the proof of `N_Srec`. The `example` directory of the artifact provides more
+    examples, for weaker relations than equivalences, and beyond representation
+    independence. *)
 Print N_Srec.
 Print Assumptions N_Srec.
 

@@ -28,8 +28,7 @@ Definition RN : Param2a3.Rel N nat :=
    would be done in the context of raw parametricity *)
 
 Definition RN0 : RN 0%N 0%nat. Proof. done. Qed.
-Definition RNS : forall m n, RN m n -> RN m.+1%N n.+1%nat.
-Proof. by move=> _ + <-; case=> //=. Qed.
+Definition RNS m n : RN m n -> RN m.+1%N n.+1%nat. Proof. by case. Qed.
 
 Trocq Use RN.
 Trocq Use RN0.
