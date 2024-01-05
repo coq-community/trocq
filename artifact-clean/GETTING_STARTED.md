@@ -11,6 +11,8 @@ Here are the instructions:
 - Clone or download the repository of the [Trocq plugin](https://github.com/coq-community/trocq), e.g.
   `curl -L -O https://github.com/coq-community/trocq/archive/master.zip && unzip master.zip`
 - Run VSCode in it (e.g. `code trocq-master`) and immediately after opening it will suggest to "Reopen in Container", click this (otherwise type F1 and "Reopen in Container").
+- Wait for VSCode to download a 1.28 GB archive that extracts to about 6 GB, on our system this takes about 2 min.
+- Wait for VSCode to compile the code of the pluging, this takes about 30s.
 - Now, the `examples` folder can be unfolded and the files can be inspected by clicking on them.
 
 When a file is clicked, it is displayed and a `Goals` tab opens. It shows the state of step-by-step execution of the file by Coq. The main actions related to the Trocq plugin are the `Trocq Use` commands feeding the database of the plugin, and the `trocq` tactic actually performing the expected proof transfer step.
