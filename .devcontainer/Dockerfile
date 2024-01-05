@@ -4,3 +4,4 @@ RUN opam update -y
 RUN opam install -y coq-lsp
 RUN git clone -b strat --depth 1 https://github.com/ecranceMERCE/coq-elpi
 RUN opam install -y ./coq-elpi
+RUN opam install -y coq-hott.8.17
