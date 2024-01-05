@@ -16,13 +16,9 @@ The first step is done with the `Trocq Use` command whose only argument is the p
 
 ## Examples
 
-In this section, we show various use cases of Trocq related to arithmetic, containers, mathematics, and rewriting.
+In this section, we show some use cases of Trocq related to arithmetic, polymorphism, and dependent types.
 
-### Arithmetic
-
-Trocq can be used to perform proof transfer in arithmetic goals, and thus enable proof reuse by allowing the use of standard library lemmas on user-defined custom arithmetic types.
-
-#### Binary natural numbers (`peano_bin_nat.v`)
+### Binary natural numbers (`peano_bin_nat.v`)
 
 In this example, we define a binary version of natural numbers in the following way:
 ```coq
@@ -71,7 +67,7 @@ We can conclude this proof by noticing the goal is now exactly the induction pri
 
 The `peano_bin_nat.v` file contains this example but remarks that the isomorphism-based `RN44` was not strictly necessary, and a relation at level $(2_a, 3)$ was sufficient to perform this proof transfer.
 
-#### Modular arithmetic (`int_to_Zp.v`)
+### Modular arithmetic (`int_to_Zp.v`)
 
 In this example, we study a *directed* relation between unary integers (`int`) and integers modulo a constant $p$. Indeed, it is directed because the types are not fully equivalent and thus a relation at level $(4, 4)$ of the hierarchy cannot be stated between them. We know that two functions `modp : Zmodp -> int` and `reprp : Zmodp -> int` can be defined and the following property holds:
 ```coq
@@ -87,7 +83,7 @@ After adding to Trocq a proof relating additions in both encodings and a proof r
 ```
 As `int` is defined in the MathComp library, this property is already proved and comes under the name `addC`. We can therefore close the goal and get commutativity of addition over `Zmodp` "for free".
 
-#### Bitwise arithmetic (`Vector_tuple.v`)
+### Bitwise arithmetic (`Vector_tuple.v`)
 
 Here, we focus on relating two dependent types encoding for fixed-size bitvectors:
 ```coq
@@ -139,39 +135,3 @@ Provided that we add proofs in Trocq relating `nat`, `Bool`, equality, and order
 forall {k : nat} (bn : bounded_nat k) (i : nat) (b : Bool),
   (i < k)%nat -> getBit_bnat (setBit_bnat bn i b) i = b
 ```
-
-### Containers
-
-todo
-
-### Lifting equivalences to lists
-
-`list nat` `list binnat`
-todo
-
-### Vectors and iterated tuples (`Vector_tuple.v`)
-
-todo
-
-<!-- ```coq
-Lemma head_const {n : nat} : forall (i : int), Vector.hd (Vector.const i (S n)) = i.
-Proof. destruct n; simpl; reflexivity. Qed.
-```
-states that the head of a vector filled with `(n + 1)` copies of any `(i : int)` is equal to `i`, for vectors as the type `Vector.t` from Coq's standard library. The `trocq` tactic transfers it to its analogue on the head of a tuple filled with `(n + 1)` copies of any `(z : Zp)`, with type `tuple` being defined as a fixpoint-generated iterated product and `Zp` a type for integers modulo p:
-```coq
-Lemma head_const' : forall {n : nat} (z : Zp), head (const z (S n)) = z.
-Proof. trocq. apply @head_const. Qed.
-```
-The database used by the `trocq` tactic  has proofs that `vector A` and `tuple A'` are (4-4)-related (i.e, equivalent) when `A` and `A'` are related and that Zp and int are (4, 2b)-related (as well as the corollaries on weaker relations), plus proofs that the respective `head`, `const` and successor operations on these types are related.
-
-Types `Vector.t` and `tuple` play here the role of a pair of arbitrary equivalent polymorphic data structures, and `Zp` that of a refinement of `int`. -->
-
-### Mathematics
-
-infinite summation
-todo
-
-### Rewriting
-
-setoid / gen rewriting
-todo
