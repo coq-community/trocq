@@ -93,9 +93,3 @@ In file `artifact_paper_example.v`, this amounts to putting the pointer on line
 on line 38 column 14 and checking the updated goal is the expected one (in this
 particular case, featuring `nat` in the associated goal instead of `N` in the
 initial goal).
-
-### Examples from the Trocq paper
-
-## Exploring the code
-
-###
