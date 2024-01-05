@@ -73,28 +73,19 @@ The `peano_bin_nat.v` file contains this example but remarks that the isomorphis
 
 #### Modular arithmetic (`int_to_Zp.v`)
 
-todo
-
-<!-- ```coq
-Lemma Radd : forall (x : Zp) (x' : int) (xR : Rp x x') (y : Zp) (y' : int) (yR : Rp y y'), Rp (x + y)%Zp (x' + y')%int.
-Proof. (...) Qed.
-
-Trocq Use Radd.
-```
-will enable the translation of the addition over type Zp (integers mod p) to type int (integers) because Rp is defined as the embedding of an integer mod p into int via a suitable `pmap` function:
-
+In this example, we study a *directed* relation between unary integers (`int`) and integers modulo a constant $p$. Indeed, it is directed because the types are not fully equivalent and thus a relation at level $(4, 4)$ of the hierarchy cannot be stated between them. We know that two functions `modp : Zmodp -> int` and `reprp : Zmodp -> int` can be defined and the following property holds:
 ```coq
-Definition Rp (x : Zp) (n : int) := pmap x = n.
+forall x, modp (reprp x) = x
 ```
-
-As soon as Rp is equipped with the suitable structure (which is not an equivalence in this case!), we can use it to transfer to Zp the obvious consequences of the arithemtic on integers. For instance:
+The graph of `modp` is therefore a surjective relation, and through the `SplitSurj` module we can build a parametricity relation `Rp : Param2a4.Rel Zmodp int`, which can be added to Trocq with the following command:
 ```coq
-Goal (forall x y, x + y = y + x)%Zp.
-Proof.
-trocq. (* here we obtain the corresponding goal type int *)
-apply int_add_comm. (* here we use the commutativity of addition on  type int *)
-Qed.
-``` -->
+Trocq Use Rp.
+```
+After adding to Trocq a proof relating additions in both encodings and a proof relating equality to itself at level $(0,1)$, with 2 further calls to `Trocq Use`, we can transfer the following goal to the statement of commutativity of addition over `int`:
+```coq
+(forall x y, x + y = y + x)%Zmodp.
+```
+As `int` is defined in the MathComp library, this property is already proved and comes under the name `addC`. We can therefore close the goal and get commutativity of addition over `Zmodp` "for free".
 
 #### Bitwise arithmetic (`Vector_tuple.v`)
 
