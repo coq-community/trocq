@@ -63,7 +63,7 @@ Here are the instructions:
   ```
   4. You can also run `make install` to install Trocq on your system.
 
-## Exploring the examples
+## Exploring the examples with VSCode
 
 After completing the **Getting the right setup** phase above, the `examples`
 folder can be unfolded and the files can be inspected by clicking on them.
