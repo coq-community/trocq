@@ -63,6 +63,10 @@ Here are the instructions:
   ```
   4. You can also run `make install` to install Trocq on your system.
 
+### Via codespaces (experimental)
+
+[Open codespaces](https://github.com/codespaces/new?skip_quickstart=true&machine=standardLinux32gb&repo=717137925&ref=master&devcontainer_path=.devcontainer%2Fdevcontainer.json&geo=EuropeWest) and create it.
+
 ## Exploring the examples with VSCode
 
 After completing the **Getting the right setup** phase above, the `examples`
