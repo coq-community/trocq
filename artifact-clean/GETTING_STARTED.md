@@ -7,18 +7,10 @@ This artifact contains an implementation of the Trocq parametricity framework as
 In this set-up, the reader considers this code mainly as the artifact for our paper, and thus wants to check it is working properly. To that end, we propose to interact in an easy way with a Docker container containing our code. The main requirement for the reader is to have [Docker](https://www.docker.com) and [VSCode](https://code.visualstudio.com) installed on their machine. You also need to ensure you have more than 6GB of disk space available.
 
 Here are the instructions:
-- Run a Docker container from this image and leave this terminal on the side.
-  ```shell
-  docker run -it --rm cohencyril/trocq
-  ```
-- Start VSCode on the host and install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension by running `code --install-extension ms-vscode-remote.remote-containers` or from the menus.
-- Click on the `><` button at the bottom left-hand corner of the window or press F1.
-  A menu opens in the middle.
-- Choose `Attach to Running Container...` and select the container that is based on the `cohencyril/trocq` image.
-  A new window opens and connects to this container.
-- Wait for the actions displayed on the bottom bar to end.
-  That is, the navigator on the top left-hand side shows `Connected to remote.` and the bottom bar does no longer load anything and just displays `Container cohencyril/trocq [...]`.
-- Click `Open Folder` in the navigator on the top left-hand side, then navigate to `/home/coq/trocq` and click `OK`.
+- Make sure your VSCode has the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension by running `code --install-extension ms-vscode-remote.remote-containers` or from the menus.
+- Clone or download the repository of the [Trocq plugin](https://github.com/coq-community/trocq), e.g.
+  `curl -L -O https://github.com/coq-community/trocq/archive/master.zip && unzip master.zip`
+- Run VSCode in it (e.g. `code trocq-master`) and immediately after opening it will suggest to "Reopen in Container", click this (otherwise type F1 and "Reopen in Container").
 - Now, the `examples` folder can be unfolded and the files can be inspected by clicking on them.
 
 When a file is clicked, it is displayed and a `Goals` tab opens. It shows the state of step-by-step execution of the file by Coq. The main actions related to the Trocq plugin are the `Trocq Use` commands feeding the database of the plugin, and the `trocq` tactic actually performing the expected proof transfer step.
