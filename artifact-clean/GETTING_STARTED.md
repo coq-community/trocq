@@ -9,7 +9,7 @@ In this set-up, the reader considers this code mainly as the artifact for our pa
 Here are the instructions:
 - Run a Docker container from this image and leave this terminal on the side.
   ```shell
-  docker run -it -v --rm cohencyril/trocq
+  docker run -it --rm cohencyril/trocq
   ```
 - Start VSCode on the host and install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension by running `code --install-extension ms-vscode-remote.remote-containers` or from the menus.
 - Click on the `><` button at the bottom left-hand corner of the window or press F1.
