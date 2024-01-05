@@ -101,37 +101,9 @@ build: |-
   [custom version](https://github.com/ecranceMERCE/coq-elpi/tree/strat)
   of Coq-Elpi. There is not yet a dedicated way to install it.
 
-  There are however two ways to develop it and experiment with it:
+  There are however three ways to develop it and experiment with it,
+  they are documented in the [GETTING_STARTED.md file](GETTING_STARTED.md).
 
-  ### Through nix
-
-  1. First install nix https://nixos.org/download
-  2. Add the [cachix](https://docs.cachix.org/installation) repository `coq-community`
-  ```shell
-  nix-env -iA cachix -f https://cachix.org/api/v1/install
-  cachix use coq-community
-  ```
-  3. Clone the current repository and type `nix-shell`
-  ```shell
-  git clone https://github.com/coq-community/trocq.git
-  nix-shell
-  ```
-  4. You may also use `nix-build` to build it and reuse it as a nix package.
-
-  ### Through opam
-
-  1. Install [opam](https://opam.ocaml.org/doc/Install.html)
-  2. Install the custom version of `coq-elpi`
-  ```shell
-  opam pin add coq-elpi https://github.com/ecranceMERCE/coq-elpi/archive/refs/heads/strat.tar.gz
-  ```
-  3. Build Trocq
-  ```shell
-  git clone https://github.com/coq-community/trocq.git
-  cd trocq
-  make   # or make -j <number-of-cores-on-your-machine>
-  ```
-  4. You can also run `make install` to install Trocq on your system.
 
 documentation: |-
   ## Documentation
