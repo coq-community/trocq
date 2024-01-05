@@ -12,4 +12,4 @@ This artifact is in reality a specially packaged version of a Coq plugin that, a
 
 ## Available
 
-Via [https://www.softwareheritage.org/](https://archive.softwareheritage.org/browse/revision/1268bcbbc4143bc26c03e9e0ccb29216f36f5f91/?origin_url=https://github.com/coq-community/trocq).
+Via [Software Heritage](https://www.softwareheritage.org/), with direct link: [swh:1:dir:1a3b3c876b58f9ec4440ab24a28b50f850d3b9f2](https://archive.softwareheritage.org/browse/directory/1a3b3c876b58f9ec4440ab24a28b50f850d3b9f2/).
