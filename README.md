@@ -72,4 +72,4 @@ they are documented in the [GETTING_STARTED.md file](GETTING_STARTED.md).
 
 ## Documentation
 
-To appear.
+See the [tutorial](artifact-doc/TUTORIAL.md).
