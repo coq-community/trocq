@@ -2,7 +2,9 @@
 
 This artifact contains an implementation of the Trocq parametricity framework as a plugin for the Coq proof assistant. As such, we offer several possibilities for the reader, according to their level of familiarity with the ecosystem and interest in our work for their own use. All methods were tested on Linux and macOS, we therefore recommend that the reader use one of these operating systems.
 
-## Testing the code (recommended)
+## Getting the right setup
+
+### Via VSCode and Docker (recommended)
 
 In this set-up, the reader considers this code mainly as the artifact for our paper, and thus wants to check it is working properly. To that end, we propose to interact in an easy way with a Docker container containing our code. The main requirement for the reader is to have [Docker](https://www.docker.com) and [VSCode](https://code.visualstudio.com) installed on their machine. You also need to ensure you have more than 6GB of disk space available.
 
@@ -13,7 +15,15 @@ Here are the instructions:
 - Run VSCode in it (e.g. `code trocq-master`) and immediately after opening it will suggest to "Reopen in Container", click this (otherwise type F1 and "Reopen in Container").
 - Wait for VSCode to download a 1.28 GB archive that extracts to about 6 GB, on our system this takes about 2 min.
 - Wait for VSCode to compile the code of the pluging, this takes about 30s.
-- Now, the `examples` folder can be unfolded and the files can be inspected by clicking on them.
+
+### Via Opam (ocaml/coq/opam users only) or Nix (nix/nixos users only)
+
+Please refer to the main README.md
+
+## Exploring the examples
+
+After completing the **Getting the right setup** phase above,
+the `examples` folder can be unfolded and the files can be inspected by clicking on them.
 
 When a file is clicked, it is displayed and a `Goals` tab opens. It shows the state of step-by-step execution of the file by Coq. The main actions related to the Trocq plugin are the `Trocq Use` commands feeding the database of the plugin, and the `trocq` tactic actually performing the expected proof transfer step.
 
@@ -21,6 +31,8 @@ One can check that this tactic is working as expected by clicking right before i
 
 In file `artifact_paper_example.v`, this amounts to putting the pointer on line 38 column 7 (counter visible on the bottom right-hand side of the editor), then on line 38 column 14 and checking the updated goal is the expected one (in this particular case, featuring `nat` in the associated goal instead of `N` in the initial goal).
 
-## Installing the plugin
+## Examples from the paper
 
-In this set-up, the reader is a regular Coq user and might want to install the plugin for further use in their proofs. In this case, the recommended way to proceed is to clone the [Trocq repository](https://github.com/coq-community/trocq/) and follow instructions in the `README`. In particular, two options are available to install Trocq, according to personal preference, one through the `opam` package manager and the other through Nix.
+### Example from the artifact paper
+
+### Examples from the Trocq paper
