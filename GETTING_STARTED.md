@@ -63,8 +63,6 @@ Here are the instructions:
   ```
   4. You can also run `make install` to install Trocq on your system.
 
-Please refer to the main README.md
-
 ## Exploring the examples
 
 After completing the **Getting the right setup** phase above, the `examples`
