@@ -5,9 +5,11 @@ This tutorial for Trocq first explains how to use the plugin in general, then co
 ## Use of the plugin
 
 The Trocq plugin must be used in two steps:
-1. First, the user fills in the knowledge base by declaring pairs of terms linked by a parametricity relation.
-These terms can be inductive types or any constants. Two terms `a : A` and `a' : A'` must be related by an instance of the relation `AR` linking their types `A` and `A'`, *i.e.*, an inhabitant of `AR a a'`. In the particular case of types, two types `A` and `B` must be related by an inhabitant of `ParamNK.Rel A B` with `(N, K)` the parametricity class describing the structure given to the relation between `A` and `B`, ranging from a raw relation to a full type equivalence.
+
+1. First, the user fills in the knowledge base by declaring pairs of terms linked by a parametricity relation.  
+These terms can be inductive types or any constants. Two terms `a : A` and `a' : A'` must be related by an instance of the relation `AR` linking their types `A` and `A'`, *i.e.*, an inhabitant of `AR a a'`. In the particular case of types, two types `A` and `B` must be related by an inhabitant of `ParamNK.Rel A B` with `(N, K)` the parametricity class describing the structure given to the relation between `A` and `B`, ranging from a raw relation to a full type equivalence.  
 Declaring these relations can be done by filling every desired field of the `Param` record, but can be made easier by going through the definitions in `theories/Common.v`. Indeed, we offer to the user a way to generate `Param` records from functions (module `Fun`), split injections (module `SplitInj`), split surjections (module `SplitSurj`), or isomorphisms (module `Iso`), respectively yielding instances of `Param` at levels $(4, 0)$, $(4, 2_b)$, $(4, 2_a)$, and $(4, 4)$.
+
 2. Second, the user states a goal to prove featuring terms that are left-hand components in the previously declared pairs, so that Trocq can perform proof transfer and rephrase the goal with the right-hand components, by combining the parametricity relations provided with the pairs of terms.
 
 The first step is done with the `Trocq Use` command whose only argument is the parametricity relation. The second step is done by calling the `trocq` tactic after stating the goal to prove. The tactic then automatically proves the goal substitution with a generated transfer proof and only leaves the associated goal to prove.
@@ -18,11 +20,56 @@ In this section, we show various use cases of Trocq related to arithmetic, conta
 
 ### Arithmetic
 
-Trocq can be used to perform proof transfer in arithmetic goals, and thus enable proof reuse by allowing to use standard library lemmas on user-defined custom arithmetic types.
+Trocq can be used to perform proof transfer in arithmetic goals, and thus enable proof reuse by allowing the use of standard library lemmas on user-defined custom arithmetic types.
 
 #### Binary natural numbers (`peano_bin_nat.v`)
 
-todo
+In this example, we define a binary version of natural numbers in the following way:
+```coq
+Inductive positive : Set :=
+  | xI : positive -> positive
+  | xO : positive -> positive
+  | xH : positive.
+
+Inductive N : Set :=
+  | N0 : N
+  | Npos : positive -> N.
+```
+We can show that there is an isomorphism between `N` and the standard library `nat` encoding for natural numbers in Peano style, by proving `Iso.type N nat`, *i.e.*, by inhabiting the following types:
+```coq
+N_to_nat : N -> nat
+nat_to_N : nat -> N
+N_to_natK : forall n, nat_to_N (N_to_nat n) = n
+nat_to_NK : forann n, N_to_nat (nat_to_N n) = n
+```
+By using `Iso.toParam`, we can prove `RN44 : Param44.Rel N nat`, which is a parametricity relation between both types, and as such, can be added to Trocq with the following command:
+```coq
+Trocq Use RN44.
+```
+
+Now, suppose we want to prove the following lemma about binary natural numbers (the successor-based induction principle):
+```coq
+Lemma N_Srec : forall (P : N -> Type), P N0 -> (forall n, P n -> P n.+1%N) -> forall n, P n.
+```
+We can see `N0` and a binary successor operation `.+1%N` appear in the goal. We must therefore add them to Trocq as well before running the tactic. As they are not type formers, the parametricity proofs expected to relate `N0` to `O` and `.+1%N` to `S` are instances of the relation given in `RN44` relating natural numbers in both encodings:
+```coq
+RN0 : RN 0%N 0%nat
+RNS : forall m n, RN m n -> RN m.+1%N n.+1%nat
+```
+Once these proofs are defined, we can add them to Trocq with the following commands:
+```coq
+Trocq Use RN0.
+Trocq Use RNS.
+```
+Now, everything has been declared and we are ready to call `trocq` on the goal, to obtain the following associated goal:
+```coq
+forall (P : nat -> PType map1 map1), P O -> (forall n, P n -> P (S n)) -> forall n, P n
+```
+Let us explain quickly the `PType map1 map1`. According to dependency propagation in the Trocq inference rules, the occurrence of `Type` in the original goal had to be related to itself at level $(2_a, 0)$ in the hierarchy, *i.e.* by a term of type `Param2a0.Rel Type Type`, which can be proved by giving structure $(2_a, 0)$ to any relation of the hierarchy. Because of all the occurrences of `P` in the goal, this initially arbitrary relation was constrained to be at least `Param11.Rel`, which explains the displayed class in the output goal. Please note that `PType map1 map1` is convertible to `Type`, this is just present to inform the user about what was required during the proof.
+
+We can conclude this proof by noticing the goal is now exactly the induction principle generated by Coq on the `nat` type, and calling `exact nat_rect`.
+
+The `peano_bin_nat.v` file contains this example but remarks that the isomorphism-based `RN44` was not strictly necessary, and a relation at level $(2_a, 3)$ was sufficient to perform this proof transfer.
 
 #### Modular arithmetic (`int_to_Zp.v`)
 
