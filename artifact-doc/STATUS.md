@@ -12,4 +12,4 @@ This artifact is in reality a specially packaged version of a Coq plugin that, a
 
 ## Available
 
-todo (Zenodo?)
+Via [Software Heritage](https://www.softwareheritage.org/).
