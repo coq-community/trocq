@@ -73,3 +73,7 @@ they are documented in the [GETTING_STARTED.md file](GETTING_STARTED.md).
 ## Documentation
 
 See the [tutorial](artifact-doc/TUTORIAL.md).
+
+## ESOP 2024 artifact documentation
+
+The ESOP 2024 artifact documentation files can be found in the `artifact-doc` directory, except for `INSTALL.md` that can be found in the current directory.
