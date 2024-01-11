@@ -21,8 +21,9 @@ end, we propose to interact in an easy way with a Docker container
 containing our code. The main requirement for the reader is to have
 [Docker](https://www.docker.com) and
 [VSCode](https://code.visualstudio.com) installed on their
-machine. VSCode must have permission to run Docker. You also need to
-ensure you have more than 6GB of disk space available.
+machine. The VSCode current user must have permission to run
+Docker. You also need to ensure you have more than 6GB of disk space
+available.
 
 The container with all the dependencies is accessible on Dockerhub as [`cohencyril/trocq-deps`](https://hub.docker.com/repository/docker/cohencyril/trocq-deps) and the corresponding `Dockerfile` is in [.devcontainer/Dockerfile](https://github.com/coq-community/trocq/blob/master/.devcontainer/Dockerfile) in this repo. You could run it manually using `docker run -it cohencyril/trocq-deps` but you would not be able to run VSCode in the docker terminal, hence the setup described below.
 

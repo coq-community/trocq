@@ -13,8 +13,8 @@ should be met.
 
 The main requirement is to have [Docker](https://www.docker.com) and
 [VSCode](https://code.visualstudio.com) installed on their machine.
-VSCode must have permission to run Docker. You also need to ensure
-you have more than 6GB of disk space available.
+The VSCode current user must have permission to run Docker. You also
+need to ensure you have more than 6GB of disk space available.
 
 ## Using opam
 
