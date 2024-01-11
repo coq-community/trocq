@@ -11,7 +11,7 @@ systems.
 
 ### Via codespaces (browser setup)
 
-[Open codespaces](https://github.com/codespaces/new?skip_quickstart=true&machine=standardLinux32gb&repo=717137925&ref=master&devcontainer_path=.devcontainer%2Fdevcontainer.json&geo=EuropeWest) and create it.
+[Open codespaces](https://github.com/codespaces/new?skip_quickstart=true&machine=standardLinux32gb&repo=717137925&ref=master&devcontainer_path=.devcontainer%2Fdevcontainer.json&geo=EuropeWest) and click "Create codespace".
 
 ### Via VSCode and Docker (machine setup)
 
