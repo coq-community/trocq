@@ -7,6 +7,7 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 [![Contributing][contributing-shield]][contributing-link]
 [![Code of Conduct][conduct-shield]][conduct-link]
 [![Zulip][zulip-shield]][zulip-link]
+[![DOI][doi-shield]][doi-link]
 
 
 [contributing-shield]: https://img.shields.io/badge/contributions-welcome-%23f7931e.svg
@@ -19,6 +20,8 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 [zulip-link]: https://coq.zulipchat.com/#narrow/stream/237663-coq-community-devs.20.26.20users
 
 
+[doi-shield]: https://zenodo.org/badge/DOI/10.5281/zenodo.10492404.svg
+[doi-link]: https://doi.org/10.5281/zenodo.10492404
 
 Trocq is a prototype of a modular parametricity plugin for Coq, aiming
 to perform proof transfer by translating the goal into an associated
