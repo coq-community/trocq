@@ -1,1 +1,1 @@
-INSTALL.md
+../INSTALL.md

@@ -9,19 +9,20 @@ interest in our work for their own use. All methods were tested on Linux and
 macOS, we therefore recommend that the reader use one of these operating
 systems.
 
-### Via codespaces (browser setup)
+### Via codespaces (recommended browser setup)
 
 [Open codespaces](https://github.com/codespaces/new?skip_quickstart=true&machine=standardLinux32gb&repo=717137925&ref=master&devcontainer_path=.devcontainer%2Fdevcontainer.json&geo=EuropeWest) and click "Create codespace".
 
-### Via VSCode and Docker (machine setup)
+### Via VSCode and Docker (recommended machine setup)
 
-In this set-up, the reader considers this code mainly as the artifact for our
-paper, and thus wants to check it is working properly. To that end, we propose
-to interact in an easy way with a Docker container containing our code. The main
-requirement for the reader is to have [Docker](https://www.docker.com) and
-[VSCode](https://code.visualstudio.com) installed on their machine, VSCode must have
-permission to run Docker.
-You also need to ensure you have more than 6GB of disk space available.
+In this set-up, the reader considers this code mainly as the artifact
+for our paper, and thus wants to check it is working properly. To that
+end, we propose to interact in an easy way with a Docker container
+containing our code. The main requirement for the reader is to have
+[Docker](https://www.docker.com) and
+[VSCode](https://code.visualstudio.com) installed on their
+machine. VSCode must have permission to run Docker. You also need to
+ensure you have more than 6GB of disk space available.
 
 The container with all the dependencies is accessible on Dockerhub as [`cohencyril/trocq-deps`](https://hub.docker.com/repository/docker/cohencyril/trocq-deps) and the corresponding `Dockerfile` is in [.devcontainer/Dockerfile](https://github.com/coq-community/trocq/blob/master/.devcontainer/Dockerfile) in this repo. You could run it manually using `docker run -it cohencyril/trocq-deps` but you would not be able to run VSCode in the docker terminal, hence the setup described below.
 
