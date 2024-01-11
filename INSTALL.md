@@ -9,7 +9,11 @@ interest in our work for their own use. All methods were tested on Linux and
 macOS, we therefore recommend that the reader use one of these operating
 systems.
 
-### Via VSCode and Docker (recommended)
+### Via codespaces (browser setup)
+
+[Open codespaces](https://github.com/codespaces/new?skip_quickstart=true&machine=standardLinux32gb&repo=717137925&ref=master&devcontainer_path=.devcontainer%2Fdevcontainer.json&geo=EuropeWest) and create it.
+
+### Via VSCode and Docker (machine setup)
 
 In this set-up, the reader considers this code mainly as the artifact for our
 paper, and thus wants to check it is working properly. To that end, we propose
@@ -18,6 +22,8 @@ requirement for the reader is to have [Docker](https://www.docker.com) and
 [VSCode](https://code.visualstudio.com) installed on their machine, VSCode must have
 permission to run Docker.
 You also need to ensure you have more than 6GB of disk space available.
+
+The container with all the dependencies is accessible on Dockerhub as [`cohencyril/trocq-deps`](https://hub.docker.com/repository/docker/cohencyril/trocq-deps) and the corresponding `Dockerfile` is in [.devcontainer/Dockerfile](https://github.com/coq-community/trocq/blob/master/.devcontainer/Dockerfile) in this repo. You could run it manually using `docker run -it cohencyril/trocq-deps` but you would not be able to run VSCode in the docker terminal, hence the setup described below.
 
 Here are the instructions:
 - Make sure your VSCode has the [Dev
@@ -30,14 +36,6 @@ Here are the instructions:
 - Run VSCode in it (e.g. `code trocq-master`) and immediately after opening it
   will suggest to "Reopen in Container", click this (otherwise type F1 and
   "Reopen in Container").
-  <details><summary>More information on the container</summary>
-  For the record, the said container is accessible on Dockerhub as
-  [`cohencyril/trocq-deps`](https://hub.docker.com/repository/docker/cohencyril/trocq-deps)
-  and the corresponding `Dockerfile` is in
-  [.devcontainer/Dockerfile](https://github.com/coq-community/trocq/blob/master/.devcontainer/Dockerfile)
-  in this repo. You can run it manually using `docker run -it cohencyril/trocq-deps` but
-  you will not be able to run VSCode in the docker terminal, hence the setup described above.
-  </details>
 - Wait for VSCode to download a 1.28 GB archive that extracts to about 6 GB, on
   our system this takes about 2 min.
 - Wait for VSCode to compile the code of the plugin, this takes about 30s.
@@ -72,9 +70,6 @@ Here are the instructions:
   ```
   4. You can also run `make install` to install Trocq on your system.
 
-### Via codespaces (experimental)
-
-[Open codespaces](https://github.com/codespaces/new?skip_quickstart=true&machine=standardLinux32gb&repo=717137925&ref=master&devcontainer_path=.devcontainer%2Fdevcontainer.json&geo=EuropeWest) and create it.
 
 ## Exploring the examples with VSCode
 
