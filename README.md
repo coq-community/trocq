@@ -73,7 +73,18 @@ they are documented in the [INSTALL.md file](INSTALL.md).
 
 ## Documentation
 
-See the [tutorial](artifact-doc/TUTORIAL.md).
+For now, there is one tactic:
+- `trocq` (without arguments) which attempts to run a translation on
+a given goal, using the information provided by the user with the
+commands described below.
+
+And three commands:
+- `Trocq Use t` to use a translation `t` during the subsequent calls to
+the tactic `trocq`.
+- `Trocq Register Univalence u` to declare a univalence axiom `u`.
+- `Trocq Register Funext fe` to declare a function extensionality axiom `fe`.
+
+See the [tutorial](artifact-doc/TUTORIAL.md) for concrete usecases.
 
 ## ESOP 2024 artifact documentation
 
