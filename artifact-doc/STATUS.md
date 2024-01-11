@@ -12,4 +12,6 @@ This artifact is in reality a specially packaged version of a Coq plugin that, a
 
 ## Available
 
-Via [Software Heritage](https://www.softwareheritage.org/), with direct link: [swh:1:dir:1a3b3c876b58f9ec4440ab24a28b50f850d3b9f2](https://archive.softwareheritage.org/browse/directory/1a3b3c876b58f9ec4440ab24a28b50f850d3b9f2/).
+We archive our repository on both Zenodo and Software Heritage.
+- Via [Zenodo DOI 10.5281/zenodo.10492403](https://zenodo.org/records/10492404),
+- Via [Software Heritage](https://www.softwareheritage.org/), with direct link: [swh:1:dir:f7d5b646b2ee339c1bf50713763511da659582fb](https://archive.softwareheritage.org/browse/directory/f7d5b646b2ee339c1bf50713763511da659582fb/).
