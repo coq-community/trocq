@@ -5,9 +5,8 @@ requirements.
 
 ## Using github codespaces
 
-You need to have remaining minutes of usage in your Codespaces plan.
-Unless you are often using Codespaces for free, this requirement
-should be met.
+You need a github account and remaining minutes of usage in your Codespaces plan.
+Unless you are often using Codespaces for free, this requirement should be met.
 
 ## Using VSCode
 
