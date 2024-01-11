@@ -201,7 +201,7 @@ Proof.
   unfold R_trans, tuple_vectorR.
   exists (Vector.const a n).
   split.
-  - apply Param_const_d.
+  - now apply Param_const_d.
   - apply Vector.Param_const. exact aR.
 Defined.
 
@@ -443,16 +443,6 @@ Axiom getBitR :
 Axiom Param10_lt :
   forall (n1 n1' : nat) (n1R : natR n1 n1') (n2 n2' : nat) (n2R : natR n2 n2'),
     Param10.Rel (n1 < n2)%nat (n1' < n2')%nat.
-
-(* Trocq Use Param00_nat.
-Trocq Use Param2a0_nat.
-Trocq Use SR.
-Trocq Use Rp00.
-Trocq Use Rp2a0.
-Trocq Use Rp02b.
-Trocq Use Param_head.
-Trocq Use Param_const.
-Trocq Use Param01_paths. *)
 
 Axiom setBitThenGetSame :
   forall {k : nat} (bv : bitvector k) (i : nat) (b : Bool),
