@@ -33,14 +33,14 @@ Inductive N : Set :=
 ```
 We can show that there is an isomorphism between `N` and the standard library `nat` encoding for natural numbers in Peano style, by proving `Iso.type N nat`, *i.e.*, by inhabiting the following types:
 ```coq
-N_to_nat : N -> nat
-nat_to_N : nat -> N
-N_to_natK : forall n, nat_to_N (N_to_nat n) = n
-nat_to_NK : forann n, N_to_nat (nat_to_N n) = n
+N.to_nat : N -> nat
+N.of_nat : nat -> N
+N.to_natK : forall n, N.of_nat (N.to_nat n) = n
+N.of_natK : forall n, N.to_nat (N.of_nat n) = n
 ```
-By using `Iso.toParam`, we can prove `RN44 : Param44.Rel N nat`, which is a parametricity relation between both types, and as such, can be added to Trocq with the following command:
+By using `Iso.toParamSym`, we can prove `RN : Param44.Rel N nat`, which is a parametricity relation between both types, and as such, can be added to Trocq with the following command:
 ```coq
-Trocq Use RN44.
+Trocq Use RN.
 ```
 
 Now, suppose we want to prove the following lemma about binary natural numbers (the successor-based induction principle):
