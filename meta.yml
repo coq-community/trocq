@@ -99,14 +99,19 @@ build: |-
 
   As Trocq is a prototype, it is currently unreleased, and depends on a
   [custom version](https://github.com/ecranceMERCE/coq-elpi/tree/strat)
-  of Coq-Elpi. There is not yet a dedicated way to install it.
+  of Coq-Elpi. It is not yet packaged in Opam or Nix, but will be in
+  the near future.
 
   There are however three ways to develop it and experiment with it,
-  they are documented in the [GETTING_STARTED.md file](GETTING_STARTED.md).
+  they are documented in the [INSTALL.md file](INSTALL.md).
 
 
 documentation: |-
   ## Documentation
-  
-  To appear.
+
+  See the [tutorial](artifact-doc/TUTORIAL.md).
+
+  ## ESOP 2024 artifact documentation
+
+  The ESOP 2024 artifact documentation files can be found in the `artifact-doc` directory, except for `INSTALL.md` that can be found in the current directory.
 ---

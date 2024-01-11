@@ -65,10 +65,11 @@ and readable code with respect to a sequent-style theoretical presentation.
 
 As Trocq is a prototype, it is currently unreleased, and depends on a
 [custom version](https://github.com/ecranceMERCE/coq-elpi/tree/strat)
-of Coq-Elpi. There is not yet a dedicated way to install it.
+of Coq-Elpi. It is not yet packaged in Opam or Nix, but will be in
+the near future.
 
 There are however three ways to develop it and experiment with it,
-they are documented in the [GETTING_STARTED.md file](GETTING_STARTED.md).
+they are documented in the [INSTALL.md file](INSTALL.md).
 
 ## Documentation
 
