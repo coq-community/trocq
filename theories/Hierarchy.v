@@ -24,6 +24,7 @@ Unset Universe Minimization ToSet.
 
 Set Polymorphic Inductive Cumulativity.
 
+(* Coq representation of the hierarchy *)
 Inductive map_class : Set := map0 | map1 | map2a | map2b | map3 | map4.
 
 Register map0 as trocq.indc_map0.
@@ -38,6 +39,8 @@ Register paths as trocq.paths.
 (*************************)
 (* Parametricity Classes *)
 (*************************)
+
+(* first unilateral witnesses describing one side of the structure given to a relation *)
 
 Module Map0.
 Record Has@{i} {A B : Type@{i}} (R : A -> B -> Type@{i}) := BuildHas {}.
@@ -90,7 +93,14 @@ Register Map3.Has as trocq.map3.
 Register Map4.Has as trocq.map4.
 Register sym_rel as trocq.sym_rel.
 
+(* syntactic representation of annotated universes
+ * useful to annotate the initial goal with fresh variables of type map_class
+ * that will be mapped to variables in the constraint graph
+ *)
 Definition PType@{i} (m n : map_class) (* : Type@{i+1} *) := Type@{i}.
+(* placeholder for a weakening from (m, n) to (m', n')
+ * replaced with a real weakening function once the ground classes are known
+ *)
 Definition weaken@{i} (m n m' n' : map_class) {A : Type@{i}} (a : A) : A := a.
 Register PType as trocq.ptype.
 Register weaken as trocq.weaken.
@@ -610,7 +620,6 @@ Proof.
 Defined.
 
 (* generate id_ParamMN : forall A, ParamMN.Rel A A for all M N *)
-
 
 Elpi Accumulate lp:{{
   pred generate-id-param i:param-class, i:univ, i:univ.variable.

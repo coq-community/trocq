@@ -36,6 +36,7 @@ Elpi Accumulate File constraint_graph.
 Elpi Accumulate File constraints.
 Elpi Typecheck.
 Elpi Accumulate lp:{{
+  % command to register the univalence axiom
   main [str "Register", str "Univalence", str S] :- !, std.do! [
     std.assert! (coq.locate S GR) "unknown global reference",
     coq.univ-instance UI0 [],
@@ -56,6 +57,7 @@ Elpi Accumulate lp:{{
     coq.say "Univalence axiom successfully registered."
   ].
 
+  % command to register the funext axiom
   main [str "Register", str "Funext", str S] :- !, std.do! [
     std.assert! (coq.locate S GR) "unknown global reference",
     coq.univ-instance UI0 [],
@@ -75,6 +77,8 @@ Elpi Accumulate lp:{{
       (clause _ (before "default-funext") (trocq.db.funext Const)),
     coq.say "Function extensionality axiom successfully registered."
   ].
+
+  % command to add custom witnesses to the database
 
   main [str "Use", str X] :- !,
     coq.locate X GR, main [str "Use", trm (global GR)].

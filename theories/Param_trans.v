@@ -18,6 +18,10 @@ Require Import HoTT_additions Hierarchy Common.
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
+(* transitivity proofs for Param
+ * makes some proofs easier cf example in Vector_tuple.v
+ *)
+
 Definition R_trans {A B C : Type} (R1 : A -> B -> Type) (R2 : B -> C -> Type) : A -> C -> Type :=
   fun a c => {b : B & R1 a b * R2 b c}.
 

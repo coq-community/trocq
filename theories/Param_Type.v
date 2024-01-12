@@ -108,6 +108,10 @@ Check Map2a_Type44. *)
 
 (* now R is always Param44.Rel *)
 
+(* NB: here we would like to use i+1 instead of j but Coq does not allow it
+ * Map*.Has is a constant so it currently cannot be instantiated with an algebraic universe
+ *)
+
 Definition Map2b_Type44@{i j | i < j} `{Univalence} :
   @Map2b.Has@{j} Type@{i} Type@{i} Param44.Rel@{i}.
 Proof.

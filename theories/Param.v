@@ -29,13 +29,11 @@ From Trocq.Elpi.constraints Extra Dependency "constraints.elpi" as constraints.
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
-(* PType and weaken *)
-
+(* TODO: dead code? *)
 Elpi Command genpparam.
 Elpi Accumulate File util.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File param_class.
-
 
 (* generate
   PParamMN_Type P Q := ParamMN_TypePQ for all M N under 2b
@@ -154,6 +152,7 @@ Elpi Accumulate lp:{{
     FinalProof = {{ @comap lp:G lp:G' lp:GR (_ : lp:G') }},
     util.when-debug dbg.full (coq.say FinalProof),
 
+    % TODO: explain why we need elaboration + typechecking + unification
     std.assert-ok! (coq.elaborate-skeleton FinalProof G EFinalProof) "proof elaboration error",
     std.assert-ok! (coq.typecheck EFinalProof G2) "proof typechecking error",
     std.assert-ok! (coq.unify-leq G2 G) "goal unification error",
@@ -164,11 +163,13 @@ Elpi Accumulate lp:{{
   translate-goal G (pc M N) G' GR' :- std.do! [
     cstr.init,
     T = (app [pglobal (const {trocq.db.ptype}) _, {map-class->term M}, {map-class->term N}]),
+    % first annotate the initial goal with fresh parametricity class variables
     term->annot-term G AG,
     util.when-debug dbg.steps (
       coq.say "will translate" AG "at level" T,
       coq.say "***********************************************************************************"
     ),
+    % generate the associated goal G' and witness GR
     param AG T G' GR,
     util.when-debug dbg.steps (
       coq.say "***********************************************************************************",
@@ -177,7 +178,10 @@ Elpi Accumulate lp:{{
       coq.say "proof:" GR,
       coq.say "***********************************************************************************"
     ),
+    % reduce the graph, so the variables all become ground in the terms
     cstr.reduce-graph,
+    % now we can remove the weaken placeholders and replace them with real weakening functions
+    % or nothing if it is weaken α α
     param.subst-weaken GR GR',
     util.when-debug dbg.steps (
       coq.say "***********************************************************************************",
@@ -186,6 +190,7 @@ Elpi Accumulate lp:{{
       coq.say "proof:" {coq.term->string GR'},
       coq.say "***********************************************************************************"
     )
+    % no need to remove the remaining annotations because they are invisible modulo conversion
   ].
 }}.
 Elpi Typecheck.
