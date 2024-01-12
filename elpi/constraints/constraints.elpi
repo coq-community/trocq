@@ -65,16 +65,17 @@ dep-type C CR :-
     (geq CR (pc map4 map4)).
 
 % D_K(C, C_1, ..., C_n)
-pred dep-gref i:gref, i:term, o:gref, o:gref.
-dep-gref GR T GR' GRR :-
+pred dep-gref i:gref, i:term, o:term, o:gref.
+dep-gref GR T Tm' GRR :-
   annot.classes T TCs OutOpt,
   util.option.value OutOpt (pc map0 map0) Out,
   if (var Out) (
     internal.link? Out ID,
     std.map TCs internal.link? IDs,
-    declare_constraint (internal.c.dep-gref ID GR T GR' GRR IDs) [_]
+    declare_constraint (internal.c.dep-gref ID GR T Tm' GRR IDs) [_]
   ) (
     trocq.db.gref GR Out Cs GR' GRR, !,
+    coq.env.global GR' Tm', !,
     std.forall2 TCs Cs eq
   ).
 
@@ -188,7 +189,7 @@ pred c.graph o:constraint-graph.
 pred c.dep-pi o:class-id, o:class-id, o:class-id.
 pred c.dep-arrow o:class-id, o:class-id, o:class-id.
 pred c.dep-type o:class-id, o:class-id.
-pred c.dep-gref o:class-id, o:gref, o:term, o:gref, o:gref, o:list class-id.
+pred c.dep-gref o:class-id, o:gref, o:term, o:term, o:gref, o:list class-id.
 pred c.geq o:or class-id param-class, o:or class-id param-class.
 
 % trigger reduction of the graph
@@ -207,8 +208,8 @@ constraint c.graph c.dep-pi c.dep-arrow c.dep-type c.dep-gref c.geq c.reduce-gra
     cstr-graph.add-dep-type ID IDR G G',
     declare_constraint (c.graph G') [_]
   ).
-  rule \ (c.graph G) (c.dep-gref ID GR T GR' GRR IDs) <=> (
-    cstr-graph.add-dep-gref ID GR T GR' GRR IDs G G',
+  rule \ (c.graph G) (c.dep-gref ID GR T Tm' GRR IDs) <=> (
+    cstr-graph.add-dep-gref ID GR T Tm' GRR IDs G G',
     declare_constraint (c.graph G') [_]
   ).
   rule \ (c.graph G) (c.geq IDorC1 IDorC2) <=> (

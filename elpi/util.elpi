@@ -88,8 +88,9 @@ delete _ [] [].
 % subst-gref T GR' T'
 % substitutes GR for GR' in T if T = (global GR) or (pglobal GR I)
 pred subst-gref i:term, i:gref, o:term.
-subst-gref (global _) GR' (global GR').
-subst-gref (pglobal _ I) GR' (pglobal GR' I).
+subst-gref (global _) GR' Tm' :- !, coq.env.global GR' Tm'.
+subst-gref (pglobal _ I) GR' Tm' :- !,
+  @uinstance! I => coq.env.global GR' Tm'.
 subst-gref T _ _ :- coq.error T "is not a gref".
 
 } % util
