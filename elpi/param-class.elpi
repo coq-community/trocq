@@ -23,6 +23,7 @@ type map2b map-class.
 type map3  map-class.
 type map4  map-class.
 
+% high = axiom might be required (on product and universe)
 kind class-kind type.
 type low class-kind.
 type high class-kind.
@@ -72,7 +73,6 @@ map-class->string map2a "2a".
 map-class->string map2b "2b".
 map-class->string map3  "3".
 map-class->string map4  "4".
-
 
 pred param-class->string i:param-class, o:string.
 param-class->string (pc M N) S :-
@@ -317,6 +317,7 @@ replace-out-ty OutC InT OutT :- std.do! [
 pred requires-axiom i:param-class.
 requires-axiom (pc M N) :- (std.mem! [map2b, map3, map4] M ; std.mem! [map2b, map3, map4] N).
 
+% find classes present in a term
 pred type->class i:term, o:list param-class, o:list term.
 type->class X [Class] Ts :-
   coq.safe-dest-app X HD Ts,

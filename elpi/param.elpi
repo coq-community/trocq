@@ -32,12 +32,14 @@ pred fresh-type.
 
 % ==================================================================================================
 
-% ParamSub + ParamConst
+% TrocqConv + TrocqConst
 param (global GR) T' (global GR') GrefR :- !,
   util.when-debug dbg.steps (coq.say "param/const" GR "@" T'),
   if (fresh-type) (
     % T' already comes from a call to annot.typecheck in the case for app
     % subtyping will be handled there
+    % (we do not want to annot.typecheck several times a same constant, because it creates
+    %  fresh class variables twice, which would split the information)
     cstr.dep-gref GR T' GR' GRR,
     GrefR = global GRR
   ) (
@@ -48,11 +50,10 @@ param (global GR) T' (global GR') GrefR :- !,
     GrefR = (W (global GRR))
   ).
 
+% universe-polymorphic case
 param (pglobal GR UI) T' (pglobal GR' UI) GrefR :- !,
   util.when-debug dbg.steps (coq.say "param/const" GR "@" T'),
   if (fresh-type) (
-    % T' already comes from a call to annot.typecheck in the case for app
-    % subtyping will be handled there
     cstr.dep-gref GR T' GR' GRR,
     GrefR = pglobal GRR UI
   ) (
@@ -63,7 +64,7 @@ param (pglobal GR UI) T' (pglobal GR' UI) GrefR :- !,
     GrefR = (W (pglobal GRR UI))
   ).
 
-% ParamSub + ParamVar
+% TrocqConv + TrocqVar
 param X T' X' (W XR) :- name X, !,
   util.when-debug dbg.steps (coq.say "param/var" X "@" T'),
   param.store X T X' XR, !,
@@ -71,7 +72,7 @@ param X T' X' (W XR) :- name X, !,
   annot.sub-type T T', !,
   weakening T T' (wfun W).
 
-% ParamUniv
+% TrocqSort
 param
   (app [pglobal (const PType) UI, MR, NR] as Type) (app [pglobal (const PType) _, M, N])
   Type (app [pglobal (const PParamType) UI1|Args]) :- trocq.db.ptype PType, !, std.do! [
@@ -84,7 +85,7 @@ param
     util.when-debug dbg.full (coq.say "param/type: added dep-type from" C "to" CR),
     coq.univ-instance UI [L],
     coq.univ.variable U L,
-    coq.univ-instance UI1 [L, {coq.univ.variable {coq.univ.super U}}], % {coq.univ.new}
+    coq.univ-instance UI1 [L, {coq.univ.variable {coq.univ.super U}}],
     trocq.db.pparam-type C PParamType,
     util.when-debug dbg.full (coq.say "param/type: suspending proof on" C),
     util.if-suspend C (param-class.requires-axiom C) (
@@ -98,7 +99,11 @@ param
     )
   ].
 
-% ParamLam
+% NB: the calls prune UI [] make sure the universe instance UI does not depend on bound variables
+%     it makes sure they remain fresh variables and Coq-Elpi does not fail for technical reasons
+%     so that Coq can fill them in the end
+
+% TrocqLam
 param (fun N T F) FunTy (fun N' T' F') FunR :- !,
   util.when-debug dbg.steps (coq.say "param/fun" N ":" T "@" FunTy),
   std.assert-ok! (coq.unify-eq FunTy (prod _ T TF)) {std.string.concat " "
@@ -118,7 +123,7 @@ param (fun N T F) FunTy (fun N' T' F') FunR :- !,
   FunR =
     fun N T x\ fun N' T' x'\ fun NR (app [pglobal (const R) UI, T, T', TR, x, x']) xR\ FR x x' xR.
 
-% ParamArrow
+% TrocqArrow
 param
   (prod _ A (_\ B)) (app [pglobal (const PType) _, M, N])
   (prod `_` A' (_\ B')) (app [pglobal (const ParamArrow) UI|Args]) :-
@@ -150,7 +155,7 @@ param
       )
     ].
 
-% ParamPi
+% TrocqPi
 param
   (prod N A B) (app [pglobal (const PType) _, M1, M2])
   (prod N' A' B') (app [pglobal (const ParamForall) UI|Args']) :- trocq.db.ptype PType, !,
@@ -190,14 +195,15 @@ param
       Args' = Args
     ).
 
-% ParamSub for F (argument B in param.args) + ParamApp
+% TrocqConv for F (argument B in param.args) + TrocqApp
 param (app [F|Xs]) B (app [F'|Xs']) (W AppR) :- std.do! [
   util.when-debug dbg.steps (coq.say "param/app" F Xs "@" B),
   annot.typecheck F FTy,
   fresh-type => param F FTy F' FR,
   util.when-debug dbg.full (coq.say "param/app:" F "@" FTy "~" F' "by" FR),
   param.args FTy B Xs Xs' XsR W,
-  coq.subst-fun XsR FR AppR].
+  coq.subst-fun XsR FR AppR
+].
 
 pred param.args i:term, i:term, i:list term, o:list term, o:list term, o:term -> term.
 param.args T B [] [] [] W :- std.do! [
@@ -220,6 +226,8 @@ type wfun (term -> term) -> weakening.
 type wsuspend (term -> term) -> (term -> term) -> weakening.
 
 % generate the weakening function from a type to a sub-type
+% cf definition of weakening in the paper
+% TODO: document suspend
 pred weakening i:term, i:term, o:weakening.
 weakening (app [pglobal (const PType) _, M, N]) (app [pglobal (const PType) _, M', N']) W :-
   trocq.db.ptype PType, !,

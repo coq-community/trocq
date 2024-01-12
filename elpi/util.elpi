@@ -14,6 +14,7 @@
 % utility predicates
 % -----------------------------------------------------------------------------
 
+% TODO: document
 pred do-not-fail.
 :before "term->gref:fail"
 coq.term->gref _ _ :- do-not-fail, !, false.
@@ -22,6 +23,7 @@ kind or type -> type -> type.
 type inl A -> or A B.
 type inr B -> or A B.
 
+% to set level of verbosity of the tool
 kind debug-level type.
 type dbg.none debug-level.
 type dbg.steps debug-level.

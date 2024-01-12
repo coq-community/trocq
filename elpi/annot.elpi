@@ -54,7 +54,7 @@ typecheck T ATy :-
 
 % sub-typing predicate following the sub-typing rules in the article
 pred sub-type i:term, i:term.
-% SubUniv
+% SubSort
 sub-type (app [pglobal (const PType) _, M1, N1]) (app [pglobal (const PType) _, M2, N2]) :-
   trocq.db.ptype PType, !,
   cstr.univ-link C1 M1 N1,
@@ -100,6 +100,7 @@ eq _ _ :- fail.
 % of the output type of T, as an option basically returning some (A,B) for an output type PType A B,
 % and none for output types that are not sorts, because it means values of type T are not type
 % constructors, so their translation will be made at class (0,0)
+% TODO: duplicate code with type->class in param-class.elpi?
 pred classes i:term, o:list param-class, o:option param-class.
 classes T Cs' Out :-
   all-classes T Cs,
@@ -120,6 +121,7 @@ all-classes (app L) Cs :- !,
 all-classes X [] :- (name X ; X = global _ ; X = pglobal _ _), !.
 all-classes X _ :- coq.error "all-classes:" X.
 
+% TODO: discuss limitations
 pred out-class i:term, o:option param-class.
 out-class (app [pglobal (const PType) _, M, N]) (some C) :- trocq.db.ptype PType, !,
   cstr.univ-link C M N.
