@@ -33,33 +33,33 @@ pred fresh-type.
 % ==================================================================================================
 
 % TrocqConv + TrocqConst
-param (global GR) T' (global GR') GrefR :- !,
+param (global GR) T' Tm' GrefR :- !,
   util.when-debug dbg.steps (coq.say "param/const" GR "@" T'),
   if (fresh-type) (
     % T' already comes from a call to annot.typecheck in the case for app
     % subtyping will be handled there
     % (we do not want to annot.typecheck several times a same constant, because it creates
     %  fresh class variables twice, which would split the information)
-    cstr.dep-gref GR T' GR' GRR,
-    GrefR = global GRR
+    cstr.dep-gref GR T' Tm' GRR,
+    GrefR = pglobal GRR _
   ) (
     annot.typecheck (global GR) T,
     annot.sub-type T T',
-    cstr.dep-gref GR T GR' GRR,
+    cstr.dep-gref GR T Tm' GRR,
     weakening T T' (wfun W),
-    GrefR = (W (global GRR))
+    GrefR = (W (pglobal GRR _))
   ).
 
 % universe-polymorphic case
-param (pglobal GR UI) T' (pglobal GR' UI) GrefR :- !,
+param (pglobal GR UI) T' Tm' GrefR :- !,
   util.when-debug dbg.steps (coq.say "param/const" GR "@" T'),
   if (fresh-type) (
-    cstr.dep-gref GR T' GR' GRR,
+    cstr.dep-gref GR T' Tm' GRR,
     GrefR = pglobal GRR UI
   ) (
     annot.typecheck (pglobal GR UI) T,
     annot.sub-type T T',
-    cstr.dep-gref GR T GR' GRR,
+    cstr.dep-gref GR T Tm' GRR,
     weakening T T' (wfun W),
     GrefR = (W (pglobal GRR UI))
   ).
