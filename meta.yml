@@ -5,7 +5,7 @@ organization: coq-community
 community: true
 action: false
 coqdoc: false
-doi: 10.5281/zenodo.10492404
+doi: 10.5281/zenodo.10492403
 
 synopsis: >-
   A modular parametricity plugin for proof transfer in Coq
