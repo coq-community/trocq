@@ -111,6 +111,10 @@ Elpi Accumulate lp:{{
   %   (clause _ (before "default-gref")
   %     (trocq.db.gref GR (pc map4 map2b) [] {{:gref int}} {{:gref Rp42b}})),
 
+  % serveral use in one go!
+  main [str "Use", X, Y | Rest] :- !, std.do![
+      main [str "Use", X], main [str "Use", Y | Rest]].
+
   main [str "Usage"] :- !, coq.say {usage-msg}.
   main _ :- coq.error {std.string.concat "\n" ["command syntax error", {usage-msg}]}.
 

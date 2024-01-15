@@ -54,15 +54,13 @@ apply: (@Param01.BuildRel (m <= n)%int (m' <= n')%int (fun _ _ => Unit)).
 - by constructor => mn; apply (le_morph _ _ Rm _ _ Rn).
 Qed.
 
-Trocq Use le01.
-Trocq Use add_morph.
+Trocq Use le01 add_morph.
 
 Variables i j : int.
 Variable ip : (j <= i)%int.
 Definition iid : (i <= i)%int := le_refl i.
 
-Trocq Use ip.
-Trocq Use iid.
+Trocq Use ip iid.
 
 Example ipi : (j + i + j <= i + i + i)%int.
 Proof.

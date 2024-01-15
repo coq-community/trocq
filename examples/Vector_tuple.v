@@ -209,12 +209,8 @@ Defined.
 
 Module AppendConst.
 
-Trocq Use Param2a0_nat.
-Trocq Use Param_add.
-Trocq Use Param02b_tuple_vector.
-Trocq Use Param_append.
-Trocq Use Param_const.
-Trocq Use Param01_paths.
+Trocq Use Param2a0_nat Param_add Param02b_tuple_vector.
+Trocq Use Param_append Param_const Param01_paths.
 
 Lemma append_const : forall {A : Type} (a : A) (n1 n2 : nat),
   append (const a n1) (const a n2) = const a (n1 + n2).
@@ -244,12 +240,7 @@ Definition Rp2a2b : Param2a2b.Rel Zp int := Rp42b.
 Lemma head_const {n : nat} : forall (i : int), Vector.hd (Vector.const i (S n)) = i.
 Proof. destruct n; simpl; reflexivity. Qed.
 
-Trocq Use Param2a0_nat.
-Trocq Use SR.
-Trocq Use Rp2a2b.
-Trocq Use Param_head.
-Trocq Use Param_const.
-Trocq Use Param01_paths.
+Trocq Use Param2a0_nat SR Rp2a2b Param_head Param_const Param01_paths.
 
 Lemma head_const' : forall {n : nat} (z : Zp), head (const z (S n)) = z.
 Proof. trocq. exact @head_const. Qed.
@@ -277,14 +268,9 @@ Proof.
     + exact vv'R.
 Defined.
 
-Trocq Use SR.
-Trocq Use Param_cons.
-Trocq Use Param_add.
-Trocq Use Param_append.
-Trocq Use Param01_paths.
-Trocq Use Param2a0_tuple_vector.
-Trocq Use Param02b_tuple_vector.
-Trocq Use Param2a0_nat.
+Trocq Use SR Param_cons Param_add Param_append Param01_paths.
+Trocq Use Param2a0_tuple_vector Param02b_tuple_vector Param2a0_nat.
+
 Lemma append_comm_cons : forall {A : Type} {n1 n2 : nat}
     (v1 : tuple A n1) (v2 : tuple A n2) (a : A),
   @paths (tuple A (S (n1 + n2))) (cons a (append v1 v2)) (append (cons a v1) v2).
@@ -449,13 +435,8 @@ Axiom setBitThenGetSame :
     (i < k)%nat -> getBit_bv (setBit_bv bv i b) i = b.
 
 
-Trocq Use Param2a0_nat.
-Trocq Use Param44_Bool.
-Trocq Use Param2a0_bnat_bv.
-Trocq Use getBitR.
-Trocq Use setBitR.
-Trocq Use Param01_paths.
-Trocq Use Param10_lt.
+Trocq Use Param2a0_nat Param44_Bool Param2a0_bnat_bv getBitR setBitR.
+Trocq Use Param01_paths Param10_lt.
 
 Lemma setBitThenGetSame' :
   forall {k : nat} (bn : bounded_nat k) (i : nat) (b : Bool),

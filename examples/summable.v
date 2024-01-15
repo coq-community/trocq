@@ -203,12 +203,8 @@ move=> u _ <-; rewrite extend_truncate//.
 by apply isSummableP.
 Qed.
 
-Trocq Use Param01_paths.
-Trocq Use Param02b_nnR.
-Trocq Use Param2a0_rseq.
-Trocq Use R_sum_xnnR.
-Trocq Use R_add_xnnR.
-Trocq Use seq_nnR_add.
+Trocq Use Param01_paths Param02b_nnR Param2a0_rseq.
+Trocq Use R_sum_xnnR R_add_xnnR seq_nnR_add.
 
 (* we get a proof over non negative reals for free,
    from the analogous proof over the extended ones *)
