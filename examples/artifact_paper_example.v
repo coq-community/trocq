@@ -30,7 +30,7 @@ Trocq Use RN. (* registering related types *)
   types: *)
 Definition RN0 : RN 0%N 0%nat. Proof. done. Defined.
 Definition RNS m n : RN m n -> RN (N.succ m) (S n). Proof. by case. Defined.
-Trocq Use RN0. Trocq Use RNS. (* registering related constants *)
+Trocq Use RN0 RNS. (* registering related constants *)
 
 (** We can now make use of the tactic to prove an induction principle on `N` *)
 Lemma N_Srec : forall (P : N -> Type), P 0%N ->

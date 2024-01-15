@@ -32,9 +32,7 @@ Definition RI : Param2a3.Rel I nat :=
 Definition RI0 : RI I0 O. Proof. exact of_nat0. Qed.
 Definition RIS m n : RI m n -> RI (IS m) (S n). Proof. exact: of_natS. Qed.
 
-Trocq Use RI.
-Trocq Use RI0.
-Trocq Use RIS.
+Trocq Use RI RI0 RIS.
 
 Lemma I_Srec : forall (P : I -> Type), P I0 ->
  (forall n, P n -> P (IS n)) -> forall n, P n.

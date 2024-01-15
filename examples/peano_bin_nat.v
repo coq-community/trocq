@@ -30,9 +30,7 @@ Definition RN : Param2a3.Rel N nat :=
 Definition RN0 : RN 0%N 0%nat. Proof. done. Qed.
 Definition RNS m n : RN m n -> RN m.+1%N n.+1%nat. Proof. by case. Qed.
 
-Trocq Use RN.
-Trocq Use RN0.
-Trocq Use RNS.
+Trocq Use RN RN0 RNS.
 
 Lemma N_Srec : forall (P : N -> Type), P N0 ->
  (forall n, P n -> P n.+1%N) -> forall n, P n.
