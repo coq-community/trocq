@@ -14,7 +14,6 @@
 % utility predicates
 % -----------------------------------------------------------------------------
 
-% TODO: document
 pred do-not-fail.
 :before "term->gref:fail"
 coq.term->gref _ _ :- do-not-fail, !, false.

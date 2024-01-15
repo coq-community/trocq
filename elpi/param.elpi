@@ -227,7 +227,6 @@ type wsuspend (term -> term) -> (term -> term) -> weakening.
 
 % generate the weakening function from a type to a sub-type
 % cf definition of weakening in the paper
-% TODO: document suspend
 pred weakening i:term, i:term, o:weakening.
 weakening (app [pglobal (const PType) _, M, N]) (app [pglobal (const PType) _, M', N']) W :-
   trocq.db.ptype PType, !,

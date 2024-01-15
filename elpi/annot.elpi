@@ -74,8 +74,6 @@ sub-type (app [F|Xs]) (app [F'|Xs']) :-
 % SubConv
 sub-type X X :- (name X ; X = global _ ; X = pglobal _ _), !.
 sub-type X Y :- coq.unify-eq X Y _.
-% TODO: perform controlled reduction
-% and extend implementation to fix, match, etc.
 sub-type X Y :- coq.error "annot.sub-type:" X "vs" Y.
 
 % syntactic term equality, taking care of adding annotation equalities in the constraint graph
@@ -100,7 +98,6 @@ eq _ _ :- fail.
 % of the output type of T, as an option basically returning some (A,B) for an output type PType A B,
 % and none for output types that are not sorts, because it means values of type T are not type
 % constructors, so their translation will be made at class (0,0)
-% TODO: duplicate code with type->class in param-class.elpi?
 pred classes i:term, o:list param-class, o:option param-class.
 classes T Cs' Out :-
   all-classes T Cs,
@@ -121,7 +118,7 @@ all-classes (app L) Cs :- !,
 all-classes X [] :- (name X ; X = global _ ; X = pglobal _ _), !.
 all-classes X _ :- coq.error "all-classes:" X.
 
-% TODO: discuss limitations
+% output class of a term
 pred out-class i:term, o:option param-class.
 out-class (app [pglobal (const PType) _, M, N]) (some C) :- trocq.db.ptype PType, !,
   cstr.univ-link C M N.
@@ -132,6 +129,5 @@ out-class (app [F|Xs]) Out :- !,
   if (App = app [F|Xs]) (Out = none) (out-class App Out).
 out-class X none :- (name X ; X = global _ ; X = pglobal _ _), !.
 out-class X _ :- coq.error "out-class:" X.
-% constant applications convertible to terms having a sort as output are not supported
 
 } % annot

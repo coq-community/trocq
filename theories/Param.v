@@ -29,7 +29,6 @@ From Trocq.Elpi.constraints Extra Dependency "constraints.elpi" as constraints.
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
-(* TODO: dead code? *)
 Elpi Command genpparam.
 Elpi Accumulate File util.
 Elpi Accumulate Db trocq.db.
@@ -152,7 +151,6 @@ Elpi Accumulate lp:{{
     FinalProof = {{ @comap lp:G lp:G' lp:GR (_ : lp:G') }},
     util.when-debug dbg.full (coq.say FinalProof),
 
-    % TODO: explain why we need elaboration + typechecking + unification
     std.assert-ok! (coq.elaborate-skeleton FinalProof G EFinalProof) "proof elaboration error",
     std.assert-ok! (coq.typecheck EFinalProof G2) "proof typechecking error",
     std.assert-ok! (coq.unify-leq G2 G) "goal unification error",

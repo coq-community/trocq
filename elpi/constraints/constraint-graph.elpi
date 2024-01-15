@@ -80,8 +80,7 @@ pred add-dep-gref
 add-dep-gref ID GR T Tm' GRR IDs (constraint-graph G) (constraint-graph G') :-
   % the classes C_i (IDs) are not really "higher" than the output class C (ID)
   % here, higher is a way to say that they must be instantiated later than the output class
-  % TODO: rename utility functions to add-earlier-node / add-later-node?
-  util.map.update ID (internal.add-higher-node (node.var (ct.gref GR T Tm' GRR) IDs)) G G1,
+  util.map.update ID (internal.add-higher-node (node.var (ct.gref GR T GR' GRR) IDs)) G G1,
   std.fold IDs G1 (id\ g\ g'\
     util.map.update id (internal.add-lower-node (node.var (ct.gref _ _ _ _) [ID])) g g')
       G'.
