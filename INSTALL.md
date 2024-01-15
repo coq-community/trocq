@@ -35,7 +35,7 @@ Here are the instructions:
 - Clone or download the repository of the [Trocq
   plugin](https://github.com/coq-community/trocq), e.g.
   `curl -L -O https://github.com/coq-community/trocq/archive/master.zip && unzip master.zip`
-- Run VSCode in it (e.g. `code trocq-master`) and immediately after opening it
+- Run VSCode in it (e.g. `code trocq-master`, or `code trocq-ESOP2024` if you are browsing the companion artifact to the paper) and immediately after opening it
   will suggest to "Reopen in Container", click this (otherwise type F1 and
   "Reopen in Container").
 - Wait for VSCode to download a 1.28 GB archive that extracts to about 6 GB, on
