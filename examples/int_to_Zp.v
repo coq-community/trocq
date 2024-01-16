@@ -45,10 +45,6 @@ Definition eqmodp (x y : int) := modp x = modp y.
 Definition eq_Zmodp (x y : Zmodp) := (x = y).
 Arguments eq_Zmodp /.
 
-(* Axiom (eqp_refl : Reflexive eqmodp). *)
-(* Axiom (eqp_sym : Symmetric eqmodp). *)
-(* Axiom (eqp_trans : Transitive eqmodp). *)
-
 Notation "0" := zero : int_scope.
 Notation "0" := zerop : Zmodp_scope.
 Notation "x == y" := (eqmodp x%int y%int)
