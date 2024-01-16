@@ -23,14 +23,15 @@ Variables (to_nat : I -> nat) (of_nat : nat -> I).
 
 Hypothesis to_natK : forall x, of_nat (to_nat x) = x.
 Hypothesis of_nat0 : of_nat O = I0.
-Hypothesis of_natS : forall x n, of_nat n = x -> of_nat (S n) = IS x.
+Hypothesis of_natS : forall n, of_nat (S n) = IS (of_nat n).
 
-(* We only need/ (2a,3) which is morally that Nmap is a split injection *)
+(* We only need (2a,3), so it suffices that to_nat is a retraction *)
 Definition RI : Param2a3.Rel I nat :=
  SplitSurj.toParamSym (SplitSurj.Build to_natK).
 
 Definition RI0 : RI I0 O. Proof. exact of_nat0. Qed.
-Definition RIS m n : RI m n -> RI (IS m) (S n). Proof. exact: of_natS. Qed.
+Definition RIS m n : RI m n -> RI (IS m) (S n).
+Proof. by move=> <-; apply: of_natS. Qed.
 
 Trocq Use RI RI0 RIS.
 

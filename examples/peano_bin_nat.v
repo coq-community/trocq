@@ -19,7 +19,7 @@ From Trocq_examples Require Import N.
 Set Universe Polymorphism.
 
 (* the best we can do to link these types is (4,4), but
-we only need (2a,3) which is morally that Nmap is a split injection *)
+we only need (2a,3) si ut suffices that N.to_nat is a retraction *)
 Definition RN : Param2a3.Rel N nat :=
  SplitSurj.toParamSym (SplitSurj.Build N.to_natK).
 
