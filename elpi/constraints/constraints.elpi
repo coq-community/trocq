@@ -103,6 +103,9 @@ pred reduce-graph.
 reduce-graph :-
   declare_constraint internal.c.reduce-graph [_].
 
+pred local-db i:list prop.
+local-db DB :- declare_constraint (internal.c.db DB) [_].
+
 % ==================================================================================================
 
 namespace internal {
@@ -185,6 +188,9 @@ constraint c.univ-link c.univ-link? c.univ-link- {
 % store the constraint graph in the Elpi constraint store
 pred c.graph o:constraint-graph.
 
+% stores the local db
+pred c.db o:list prop.
+
 % constraints to trigger addition of information to the constraint graph
 pred c.dep-pi o:class-id, o:class-id, o:class-id.
 pred c.dep-arrow o:class-id, o:class-id, o:class-id.
@@ -195,7 +201,7 @@ pred c.geq o:or class-id param-class, o:or class-id param-class.
 % trigger reduction of the graph
 pred c.reduce-graph.
 
-constraint c.graph c.dep-pi c.dep-arrow c.dep-type c.dep-gref c.geq c.reduce-graph {
+constraint c.graph c.dep-pi c.dep-arrow c.dep-type c.dep-gref c.geq c.reduce-graph c.db {
   rule \ (c.graph G) (c.dep-pi ID IDA IDB) <=> (
     cstr-graph.add-dep-pi ID IDA IDB G G',
     declare_constraint (c.graph G') [_]
@@ -216,7 +222,7 @@ constraint c.graph c.dep-pi c.dep-arrow c.dep-type c.dep-gref c.geq c.reduce-gra
     cstr-graph.add-geq IDorC1 IDorC2 G G',
     declare_constraint (c.graph G') [_]
   ).
-  rule \ (c.graph G) (c.reduce-graph) <=> (
+  rule (c.db DB) \ (c.graph G) (c.reduce-graph) <=> (
     vars? IDs,
     util.when-debug dbg.steps (
       coq.say "final constraint graph:",
@@ -228,9 +234,11 @@ constraint c.graph c.dep-pi c.dep-arrow c.dep-type c.dep-gref c.geq c.reduce-gra
       coq.say "order:" SortedIDs,
       coq.say "***********************************************************************************"
     ),
-    reduce SortedIDs G FinalValues,
-    util.when-debug dbg.steps (coq.say "final values:" FinalValues),
-    std.forall FinalValues instantiate-coq
+    DB => std.do! [
+      reduce SortedIDs G FinalValues,
+      util.when-debug dbg.steps (coq.say "final values:" FinalValues),
+      std.forall FinalValues instantiate-coq
+    ]
   ).
 }
 
@@ -238,13 +246,14 @@ constraint c.graph c.dep-pi c.dep-arrow c.dep-type c.dep-gref c.geq c.reduce-gra
 % return a list of associations of a variable and its constant class
 pred reduce i:list class-id, i:constraint-graph, o:list (pair class-id param-class).
 reduce [] _ [].
-reduce [ID|IDs] ConstraintGraph [pr ID MinClass|FinalValues] :-
+reduce [ID|IDs] ConstraintGraph [pr ID MinClass|FinalValues] :- std.do![
   cstr-graph.minimal-class ID ConstraintGraph MinClass,
   util.when-debug dbg.full (coq.say "min value" MinClass "for" ID),
   cstr-graph.maximal-class ID ConstraintGraph MaxClass,
   util.when-debug dbg.full (coq.say "max value" MaxClass "for" ID),
   util.unless (param-class.geq MaxClass MinClass) (coq.error "no solution for variable" ID),
-  reduce IDs {cstr-graph.instantiate ID MinClass ConstraintGraph} FinalValues.
+  reduce IDs {cstr-graph.instantiate ID MinClass ConstraintGraph} FinalValues
+].
 
 % now instantiate for real
 pred instantiate-coq i:pair class-id param-class.

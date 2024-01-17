@@ -79,15 +79,12 @@ Elpi Accumulate lp:{{
   ].
 
   % command to add custom witnesses to the database
-
-  main [str "Use", str X] :- !,
-    coq.locate X GR, main [str "Use", trm (global GR)].
-
-  main [str "Use", trm X] :- !, std.do! [
-    coq.term->gref X GRR,
+  % and tells trocq to use it immediately
+  main [str "Use", X] :- !, std.do! [
+    util.argument->gref X GRR,
     coq.env.typeof GRR XTy,
     param-class.type->classes XTy Class CList GR GR',
-    coq.say "accumultating" GR "@" Class "(" CList ") ~" GR' ":." GRR,
+    coq.info "accumulating" GR "@" Class "(" CList ") ~" GR' ":." GRR,
     coq.elpi.accumulate _ "trocq.db"
       (clause _ (before "default-gref")
         (trocq.db.gref GR Class CList GR' GRR)),
@@ -103,17 +100,44 @@ Elpi Accumulate lp:{{
         coq.elpi.accumulate _ "trocq.db"
           (clause _ (before "default-gref")
             (trocq.db.gref GR subclass CList GR' (const WCRR))),
-        coq.say "accumultating" GR "@" subclass "(" CList ") ~" GR'
+        coq.info "accumulating" GR "@" subclass "(" CList ") ~" GR'
           ":." (const WCRR),
     ])
   ].
-  % coq.elpi.accumulate _ "trocq.db"
-  %   (clause _ (before "default-gref")
-  %     (trocq.db.gref GR (pc map4 map2b) [] {{:gref int}} {{:gref Rp42b}})),
 
   % serveral use in one go!
   main [str "Use", X, Y | Rest] :- !, std.do![
       main [str "Use", X], main [str "Use", Y | Rest]].
+
+  main [str "RelatedWith", Rel, X] :- !, std.do! [
+    util.argument->gref Rel GRRel,
+    util.argument->gref X GRR,
+    coq.env.typeof GRR XTy,
+    param-class.type->classes XTy Class CList GR GR',
+    coq.info "accumulating" GR "@" Class "(" CList ") ~" GR' ":." GRR
+       "attached to relation" GRRel,
+    coq.elpi.accumulate _ "trocq.db"
+      (clause _ _
+        (trocq.db.known-gref GRRel GR Class CList GR' GRR)),
+    std.forall {param-class.all-weakenings-from Class} subclass\
+        sigma WTRR BaseName Suffix WName WCRR \
+      if (do-not-fail => trocq.db.known-gref GRRel GR subclass _ _ _) true (std.do! [
+        param-class.weaken-out subclass GRR WTRR,
+        coq.gref->id GRR BaseName,
+        param-class.to-string subclass Suffix,
+        WName is BaseName ^ "_weakened_to_" ^ Suffix,
+        @udecl! [] tt [] tt =>
+          coq.env.add-const WName WTRR _ @transparent! WCRR,
+        coq.elpi.accumulate _ "trocq.db"
+          (clause _ _
+            (trocq.db.known-gref GRRel GR subclass CList GR' (const WCRR))),
+        coq.info "accumulating" GR "@" subclass "(" CList ") ~" GR'
+          ":." (const WCRR) "attached to relation" GRRel,
+    ])
+  ].
+  % serveral use in one go!
+  main [str "RelatedWith", Rel, X, Y | Rest] :- !, std.do![
+      main [str "RelatedWith",  Rel, X], main [str "RelatedWith", Rel, Y | Rest]].
 
   main [str "Usage"] :- !, coq.say {usage-msg}.
   main _ :- coq.error {std.string.concat "\n" ["command syntax error", {usage-msg}]}.

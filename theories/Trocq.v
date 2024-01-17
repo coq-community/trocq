@@ -16,3 +16,6 @@ From HoTT Require Export HoTT.
 From Trocq Require Export
   HoTT_additions Hierarchy Param_Type Param_forall Param_arrow Database Param
   Param_paths Vernac Common Param_nat Param_trans Param_bool.
+
+Trocq Use Param10_paths.
+Trocq Use Param01_paths.
