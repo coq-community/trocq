@@ -149,7 +149,7 @@ Elpi Accumulate lp:{{
       "- Trocq Register Univalence <u>",
       "- Trocq Register Funext <f>",
       "- Trocq Use <RTrocq>*",
-      "- Trocq Knows <Relation> <RTrocq>*"
+      "- Trocq Knows <Relation> <RTrocq>*",
       "", "",
     ] U.
 }}.
