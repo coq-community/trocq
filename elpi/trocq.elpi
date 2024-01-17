@@ -1,0 +1,38 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                     Trocq                      %
+%  _______                   %        Copyright (C) 2023 Inria & MERCE        %
+% |__   __|                  %     (Mitsubishi Electric R&D Centre Europe)    %
+%    | |_ __ ___   ___ __ _  %        Cyril Cohen <cyril.cohen@inria.fr>      %
+%    | | '__/ _ \ / __/ _` | %        Enzo Crance <enzo.crance@inria.fr>      %
+%    | | | | (_) | (_| (_| | %    Assia Mahboubi <assia.mahboubi@inria.fr>    %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %   This file is distributed under the terms of  %
+%                        |_| %   GNU Lesser General Public License Version 3  %
+%                            % (see LICENSE file for the text of the license) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -----------------------------------------------------------------------------
+% main code for trocq tactics
+% -----------------------------------------------------------------------------
+
+
+namespace trocq {
+
+pred known->gref i:prop, o:prop.
+known->gref
+  (trocq.db.known-gref _Rel GR OutCl Classes GR' GRR)
+  (trocq.db.gref GR OutCl Classes GR' GRR :- !).
+
+pred load-rel i:gref, o:list prop.
+load-rel GRRel DB :- std.do! [
+  std.findall
+    (trocq.db.known-gref GRRel _GR _OutCl _Classes _GR' _GRR)
+    AllRel,
+  std.map AllRel known->gref DB
+  ].
+
+pred load-rels i:list gref, o:list prop.
+load-rels GRRels DB :- std.do! [
+    std.map GRRels load-rel DBs,
+    std.flatten DBs DB
+  ].
+}
