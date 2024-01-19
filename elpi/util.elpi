@@ -14,6 +14,10 @@
 % utility predicates
 % -----------------------------------------------------------------------------
 
+% Some of the Coq native predicates raise errors in Elpi, stopping all
+% ongoing computations. Adding a custom flag like do-not-fail gives us an
+% extra catch-all case in the native predicate, when this flag is active,
+% meaning the predicate will just not succeed, instead of raising an error.
 pred do-not-fail.
 :before "term->gref:fail"
 coq.term->gref _ _ :- do-not-fail, !, false.
