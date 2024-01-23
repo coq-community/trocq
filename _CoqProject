@@ -23,6 +23,8 @@ theories/Param_sigma.v
 theories/Param_prod.v
 theories/Param_option.v
 theories/Param_vector.v
+theories/Param_Empty.v
+theories/Param_list.v
 
 examples/artifact_paper_example.v
 examples/N.v
