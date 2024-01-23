@@ -101,6 +101,13 @@ Proof.
   intros A B a P t1 t2 [] p; reflexivity.
 Defined.
 
+Definition ap2 : forall {A B C : Type} (f : A -> B -> C) {a1 a2 : A} {b1 b2 : B},
+  a1 = a2 -> b1 = b2 -> f a1 b1 = f a2 b2.
+Proof.
+  intros A B C f a1 a2 b1 b2 ea eb.
+  destruct ea. destruct eb. reflexivity.
+Defined.
+
 Definition coe_inverse_cancel {A B} (e : A = B) p: coe e (coe e^ p) = p.
 Proof. elim: e p; reflexivity. Defined.
 

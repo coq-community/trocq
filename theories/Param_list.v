@@ -47,12 +47,6 @@ Definition map_in_R_list (A A' : Type) (AR : Param2a0.Rel A A') :
           end) l
       end.
 
-Definition ap2 : forall {A B C : Type} (f : A -> B -> C) {a1 a2 : A} {b1 b2 : B},
-  a1 = a2 -> b1 = b2 -> f a1 b1 = f a2 b2.
-Proof.
-  intros A B C f a1 a2 b1 b2 ea eb.
-  destruct ea. destruct eb. reflexivity.
-Defined.
 
 Definition R_in_map_list (A A' : Type) (AR : Param2b0.Rel A A') :
   forall (l : list A) (l' : list A'), listR A A' AR l l' -> map_list A A' AR l = l' :=
@@ -75,6 +69,19 @@ Proof.
   - exact (map_in_R_list A A' AR).
   - exact (R_in_map_list A A' AR).
 Defined.
+
+Definition Map4_list (A A' : Type) (AR : Param40.Rel A A') : Map4.Has (listR A A' AR).
+Proof.
+  unshelve econstructor.
+  - exact (map_list A A' AR).
+  - exact (map_in_R_list A A' AR).
+  - exact (R_in_map_list A A' AR).
+  - move=> a b; elim => //= {}a {}a' aR l l' lR /=.
+    elim: {2}_ / => //=.
+    case:  _ / (R_in_map_list A A' AR l l' lR) => {l' lR}.
+    rewrite -{2}[aR](R_in_mapK AR).
+    by case: _ / (R_in_map AR a a' aR).
+Qed.
 
 Definition listR_flip (A A' : Type) (AR : A -> A' -> Type) :
   forall (l : list A) (l' : list A'), listR A A' AR l l' -> listR A' A (sym_rel AR) l' l :=
@@ -130,4 +137,15 @@ Proof.
   - refine (eq_Map3 _ _).
     + apply listR_sym.
     + exact (Map3_list A' A (Param33_sym _ _ AR)).
+Defined.
+
+
+Definition Param44_list (A A' : Type) (AR : Param44.Rel A A') : Param44.Rel (list A) (list A').
+Proof.
+  unshelve econstructor.
+  - exact (listR A A' AR).
+  - exact (Map4_list A A' AR).
+  - refine (eq_Map4 _ _).
+    + apply listR_sym.
+    + exact (Map4_list A' A (Param44_sym _ _ AR)).
 Defined.
