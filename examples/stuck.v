@@ -20,17 +20,17 @@ Set Universe Polymorphism.
 Local Open Scope int_scope.
 Local Open Scope Zmodp_scope.
 
-Module Stuck.
-
 Definition Rp := SplitSurj.toParamSym (SplitSurj.Build reprpK).
 
 Axiom Rzero : Rp zerop zero.
 Variable Radd : binop_param Rp Rp Rp addp add.
 Variable paths_to_eqmodp : binop_param Rp Rp iff paths eqmodp.
 
-Trocq Use Rp Param01_paths Param10_paths Radd Rzero.
-Trocq Use Param44_list Param_cons Param_nil.
+Trocq Use Rp Param01_paths Param10_paths Radd Rzero Param_cons Param_nil.
 
+Module Stuck.
+
+Trocq Use Param44_list.
 Goal forall (l : list Zmodp), l = l.
 Fail trocq.
 Abort.
@@ -39,19 +39,11 @@ End Stuck.
 
 Module Works.
 
-Definition Rp := SplitSurj.toParamSym (SplitSurj.Build reprpK).
-
-Axiom Rzero : Rp zerop zero.
-Variable Radd : binop_param Rp Rp Rp addp add.
-Variable paths_to_eqmodp : binop_param Rp Rp iff paths eqmodp.
-
-Trocq Use Rp Param01_paths Param10_paths Radd Rzero.
-Trocq Use Param2a4_list Param_cons Param_nil.
-
+Trocq Use Param2a4_list.
 Goal forall (l : list Zmodp), l = l.
 trocq.
-Abort.
+reflexivity.
+Qed.
 
 End Works.
-
 
