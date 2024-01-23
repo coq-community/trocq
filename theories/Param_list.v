@@ -62,6 +62,20 @@ Definition R_in_map_list (A A' : Type) (AR : Param2b0.Rel A A') :
         end
       end.
 
+Definition Map2a_list (A A' : Type) (AR : Param2a0.Rel A A') : Map2a.Has (listR A A' AR).
+Proof.
+  unshelve econstructor.
+  - exact (map_list A A' AR).
+  - exact (map_in_R_list A A' AR).
+Defined.
+
+Definition Map2b_list (A A' : Type) (AR : Param2b0.Rel A A') : Map2b.Has (listR A A' AR).
+Proof.
+  unshelve econstructor.
+  - exact (map_list A A' AR).
+  - exact (R_in_map_list A A' AR).
+Defined.
+
 Definition Map3_list (A A' : Type) (AR : Param30.Rel A A') : Map3.Has (listR A A' AR).
 Proof.
   unshelve econstructor.
@@ -127,6 +141,16 @@ Proof.
   - exact (listR A A' AR).
   - constructor.
   - constructor.
+Defined.
+
+Definition Param42a_list (A A' : Type) (AR : Param42a.Rel A A') : Param42a.Rel (list A) (list A').
+Proof.
+  unshelve econstructor.
+  - exact (listR A A' AR).
+  - exact (Map4_list A A' AR).
+  - refine (eq_Map2a _ _).
+    + apply listR_sym.
+    + exact (Map2a_list A' A (Param2a2a_sym _ _ AR)).
 Defined.
 
 Definition Param33_list (A A' : Type) (AR : Param33.Rel A A') : Param33.Rel (list A) (list A').
