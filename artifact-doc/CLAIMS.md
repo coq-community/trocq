@@ -27,6 +27,10 @@ As explained in the paper, univalent parametricity makes use of the univalence a
 In the `int_to_Zp.v` file, we present proof transfer done by Trocq on a goal featuring integers modulo a hypothetical constant $p$, which is not equivalent to the whole set of integers, but a weaker relation — a split surjection — can still be stated between them. Whereas tools like univalent parametricity propagate type equivalences everywhere, Trocq can handle more diverse relations in a finer-grained way.
 Another supporting evidence is in `nat_ind.v` where we show any type `I` with abstract zero and successor and a split surjection from `nat` compatible with zero and successor, can be endowed with an induction principle similar to the one of `nat`.
 
+### Trocq can get stuck if the wrong translation is picked
+
+In the `stuck.v` file, we show that assuming that lists preserves equivalences `Param44_list` is too strong and that we need to have other preservation properties such as `Param2a4_list`, that are thus incomparable between themselves through the weakening relation.
+
 ### Trocq supports polymorphism and dependent types.
 
 The `Vector_tuple.v` file defines a type equivalence between fixed-size vectors and iterated tuples, which are both implemented in Coq using polymorphism — elements inside these data structures can be anything — and dependent types — to ensure the size is a fixed integer $n$.
