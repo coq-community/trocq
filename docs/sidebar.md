@@ -3,6 +3,7 @@
 </a></p>
 
 - [Home](home.md)
+- [GitHub repository](https://github.com/coq-community/trocq/)
 - [Quick start](quick-start.md)
   + [Type isomorphisms](/quick-start?id=proof-transfer-with-type-isomorphisms)
   + [Directed relations](/quick-start?id=using-trocq-with-directed-relations-sections-and-retractions)

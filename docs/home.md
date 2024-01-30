@@ -1,9 +1,13 @@
-<p style="text-align: center"><img src="trocq-logo-text.png" alt="Trocq logo" width="50%" /></p>
+<p style="text-align: center"><a href="https://github.com/coq-community/trocq"><img src="trocq-logo-text.png" alt="Trocq logo" width="50%" /></a></p>
 
+[![GitHub repository][github-shield]][github-link]
 [![Contributing][contributing-shield]][contributing-link]
 [![Code of Conduct][conduct-shield]][conduct-link]
 [![Zulip][zulip-shield]][zulip-link]
 [![DOI][doi-shield]][doi-link]
+
+[github-shield]: https://img.shields.io/github/v/release/coq-community/trocq
+[github-link]: https://github.com/coq-community/trocq
 
 [contributing-shield]: https://img.shields.io/badge/contributions-welcome-%23f7931e.svg
 [contributing-link]: https://github.com/coq-community/manifesto/blob/master/CONTRIBUTING.md
