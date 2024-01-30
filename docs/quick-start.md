@@ -71,15 +71,15 @@ First, we need to relate `N` to `nat`.
 #### Type relations
 
 Trocq can work with various structures on relations between types, ranging from raw relations (in our case, of type `N -> nat -> Type`) to full type equivalences.
-They are represented as a `ParamNK.Rel` record containing a relation and two unilateral sub-records representing the structure given to this relation in both ways (here, level `N` from `A` to `B`, and level `K` from `B` to `A`):
+They are represented as a `ParamXY.Rel` record containing a relation and two unilateral sub-records representing the structure given to this relation in both ways (here, level `X` from `A` to `B`, and level `Y` from `B` to `A`):
 ```coq
-ParamNK.Rel A B := {
+ParamXY.Rel A B := {
   R : A -> B -> Type;
-  covariant : MapN.Has R;
-  contravariant : MapK.Has R^-1;
+  covariant : MapX.Has R;
+  contravariant : MapY.Has R^-1;
 }
 ```
-A unilateral sub-record is given by a number of fields chosen from an inclusive hierarchy, where level `K` contains fields for which there exists a path to node `K` in the following graph:
+A unilateral sub-record is given by a number of fields chosen from an inclusive hierarchy, where a level contains fields for which there exists a path to the associated node in the following graph:
 
 <p style="text-align: center"><img src="hierarchy.jpeg" alt="Hierarchy" width="80%" /></p>
 
@@ -125,7 +125,7 @@ In order to perform proof transfer for `N_Srect`, we need to declare in Trocq al
 
 #### Operations and constants
 
-According to the abstraction theorem of parametricity, the required type of the proofs to give to relate a constant `k : T` to a constant `k' : T'` is `TR k k'`, with `TR` being the relation existing between `T` and `T'` (*i.e.*, the `R` field inside a record, declared in Trocq, of type `ParamNK.Rel T T'`).
+According to the abstraction theorem of parametricity, the required type of the proofs to give to relate a constant `k : T` to a constant `k' : T'` is `TR k k'`, with `TR` being the relation existing between `T` and `T'` (*i.e.*, the `R` field inside a record, declared in Trocq, of type `ParamXY.Rel T T'`).
 We can use this theorem to know what we need to prove to relate our source and target constants.
 
 !> In the future, Trocq is expected to generate the expected goal on its own, so that the user does not need to know the abstraction theorem, but only the two terms they want to relate together, but it is currently not the case yet.
@@ -170,9 +170,9 @@ Definition bitvector (k : nat) := Vector.t bool k.
 
 The required type of the Trocq relation between these type formers is the following:
 ```coq
-forall (k k' : nat) (kR : natR k k'), ParamNK.Rel (bounded_nat k) (bitvector k')
+forall (k k' : nat) (kR : natR k k'), ParamXY.Rel (bounded_nat k) (bitvector k')
 ```
-for a given level `(N,K)`, with `natR : nat -> nat -> Type` a term relating `nat` to itself.
+for a given level `(X,Y)`, with `natR : nat -> nat -> Type` a term relating `nat` to itself.
 Indeed, in this example, we can see that the length of the bitvector is expressed in `nat` for both encodings, meaning this type will not change during the translation.
 Moreover, we can see that one of the encodings uses the standard `Vector.t` type.
 We can exploit this by using the following proofs declared in `Param_nat.v` and `Param_vector.v` in Trocq:
@@ -277,15 +277,93 @@ Proof. trocq. exact set_x_get_x. Qed.
 
 ## Using Trocq with directed relations (sections and retractions)
 
-!> Coming soon...
+Trocq can also be used with relations that are weaker than an equivalence, for instance only a section or a retraction.
+In this section, we give three examples: the embedding from `positive` to the `N` type that extends it with a zero, an axiomatised example of modular arithmetic, and an example of result about sums of sequences of reals involving an extension of reals with infinity.
 
-### Positive and non-negative binary natural numbers
+### Positive and non-negative binary integers
 
-!> Coming soon...
+We recall the definition of the type `N` of binary natural numbers:
+```coq
+Inductive N : Set :=
+  | N0 : N
+  | Npos : positive -> N.
+```
+
+Here, we can see that the `Npos` constructor is a trivial embedding function from `positive` to `N`, and we can easily define a function in the opposite way:
+```coq
+Definition N_to_pos (n : N) : positive :=
+  match n with
+  | Npos p => p
+  | N0 => d
+  end.
+```
+with `d : positive` a default value.
+Indeed, `N_to_pos` performs a truncation on the zero value because `positive` does not have a zero.
+
+One of the compositions of these functions is trivially an identity, and the other cannot be in the general case because of this truncation (the theorem is only conditionally true):
+```coq
+Theorem NposK : forall (p : positive), N_to_pos (Npos p) = p.
+Theorem N_to_pos_condK : forall (n : N), n <> N0 -> Npos (N_to_pos n) = n.
+```
+
+As we have no isomorphism, the Trocq relation will live at a lower level than `(4,4)`.
+More precisely, we can declare a split injection from `positive` to `N` with `NposK`, at level `(4,2b)`:
+```coq
+Definition pos_N_inj : SplitInj.type positive N := SplitInj.Build NposK.
+Definition pos_N_R : Param42b.Rel positive N := SplitInj.toParam pos_N_inj.
+Trocq Use pos_N_R.
+```
+
+?> Because of this lower level, Trocq will not be able to transfer all goals involving `positive` to goals expressed with `N`. Some of these goals are impossible to prove from a more general result anyway. Note that conditional identities such as `N_to_pos_condK` above are not currently supported by Trocq. They would indeed require adding a level to the hierarchy between `1` and `2b` (a conditional version of field `R_in_map`).
+
+An example of theorem that could be proved for `positive` from the more general result on `N` is the commutativity of addition:
+```coq
+Lemma pos_add_comm : forall (p q : positive), p + q = q + p.
+```
+After relating in Trocq the addition over `positive` to its counterpart over `N`, and equality to itself, the tactic is able to transfer the goal and we can close the proof with the result on `N`:
+```coq
+Proof. trocq. apply N_add_comm. Qed.
+```
 
 ### Modular arithmetic
 
-!> Coming soon...
+It is possible to mix modular arithmetic and standard arithmetic by defining a type `Zmodp` of integers modulo a value and show it can be related to a general encoding of integers such as the standard library `Z`.
+
+!> Note that parametricity relates terms whose types have the same structure, meaning that in the case of a type `Zmod p` dependent on an integer `p`, `Zmod` is a type former, and as such, it has to be related to another type former, which `Z` is not. Here, we make the choice of fixing `p` before defining `Zmodp`.
+
+Here, we define two functions, one computing the modulo of an integer, the other computing a canonical integer value representing an integer in the modular space.
+We also show that one of their compositions is an identity and from that, we can define a split surjection in Coq and add it to Trocq through the `SplitSurj` module:
+```coq
+Definition modp : Z -> Zmodp.
+Definition reprp : Zmodp -> Z.
+Theorem reprpK : forall (z : Zmodp), modp (reprp z) = z.
+Definition Z_Zmodp_surj : SplitSurj.type Z Zmodp := SplitSurj.Build reprpK.
+Definition Z_Zmodp_R : Param42a.Rel Z Zmodp := SplitSurj.toParam Z_Zmodp_surj.
+Trocq Use Z_Zmodp_R.
+```
+
+?> To give a slightly different example, here we relate `Z` to `Zmodp`, aiming to rephrase a goal expressed with the bigger type `Z` as a goal expressed with `Zmodp`, instead of pulling the goal in the subtype back to a more general goal, as it was done for `positive` and `N` above.
+
+If we define an equality over `Z` checking whether both values are congruent to each other modulo `p`, and use it in a general goal expressed with `Z`, if we relate it to a classic equality over `Zmodp`, Trocq can rephrase the general goal as a goal over `Zmodp` (we omit the details about multiplication and the zero here, as they have been covered in the previous examples):
+```coq
+Definition eqmodp (x y : Z) := modp x = modp y.
+Definition eq_Zmodp (x y : Zmodp) := (x = y).
+Theorem eq_mod_R :
+  forall (m : Z) (x : Zmodp), Z_Zmodp_R m x ->
+  forall (n : Z) (y : Zmodp), Z_Zmodp_R n y ->
+    Param01.Rel (eqmodp m n) (eq_Zmodp x y).
+Trocq Use eq_mod_R.
+```
+
+```coq
+Goal forall (m n : Z), m = n * p -> eqmodp m 0.
+  trocq; unfold eq_Zmodp.
+  (* forall (m n : Zmodp), m = n * p -> m = 0 *)
+  (* [...] (then we conclude the proof with a modular arithmetic argument) *)
+Qed.
+```
+
+!> For the same reason as above (parametricity), `eqmodp` cannot directly be related to equality because they have different types: `eqmodp : Z -> Z -> Type` and `(=) : forall (A : Type), A -> A -> Type`. This is the reason for the `eq_Zmodp` redefinition here.
 
 ### Summable reals
 
@@ -293,7 +371,9 @@ Proof. trocq. exact set_x_get_x. Qed.
 
 ## Polymorphic and dependent container types
 
-!> Coming soon...
+As shown in the first section of this tutorial, as Trocq has support for the whole syntax of CCω, in particular, it supports dependent types.
+In this section, we show that this feature can be combined with the composition of parametricity proofs to perform proof transfer between polymorphic and dependent container types, and transfer both the container type and the type of the contents of the containers.
+We present an equivalence between iterated tuples and vectors from the standard library, an embedding from vectors to lists, an example of composition of proofs presented previously in this tutorial, as well as an example of realistic use case of Trocq for refinements.
 
 ### Iterated tuples and vectors
 
