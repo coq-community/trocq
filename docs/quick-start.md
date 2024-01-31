@@ -373,7 +373,7 @@ Qed.
 
 As shown in the first section of this tutorial, as Trocq has support for the whole syntax of CCω, in particular, it supports dependent types.
 In this section, we show that this feature can be combined with the composition of parametricity proofs to perform proof transfer between polymorphic and dependent container types, and transfer both the container type and the type of the contents of the containers.
-We present an equivalence between iterated tuples and vectors from the standard library, an embedding from vectors to lists, an example of composition of proofs presented previously in this tutorial, as well as an example of realistic use case of Trocq for refinements.
+We present an equivalence between iterated tuples and vectors from the standard library, an embedding from options to lists, an example of composition of proofs presented previously in this tutorial, as well as an example of realistic use case of Trocq for refinements.
 
 ### Iterated tuples and vectors
 
@@ -506,9 +506,60 @@ Theorem peek_const {A : Type} : forall (a : A) (n : nat), peek (const a n) = a.
 Proof. trocq. apply Vector.peek_const. Qed.
 ```
 
-### Lists and vectors
+### Options and lists
 
-!> Coming soon...
+Support for polymorphism and dependent types does not limit to type equivalences.
+It is also possible to define directed relations between container types so that a lemma about a given container can be proved by transfer to a more general data structure.
+Here, we present the example of a theorem about a map operation `omap` on the option type.
+We will prove it from the associated theorem proved on lists.
+
+#### Defining the directed relation
+
+We can register a split injection from options to lists in Trocq, by defining two conversion functions and proving that one of the compositions is an identity.
+
+```coq
+Definition option_to_list : forall {A : Type} : option A -> list A.
+Definition list_to_option : forall {A : Type}, list A -> option A.
+Theorem option_to_listR (A : Type) :
+  forall (xo : option A), list_to_option (option_to_list xo) = xo.
+```
+
+We can then create the split injection and the associated parametricity record:
+```coq
+Definition option_list_inj (A : Type) : @SplitInj.type (option A) (list A) :=
+  SplitInj.Build (option_to_listR A).
+
+Definition Param_option_list_d (A : Type) : Param42b.Rel (option A) (list A) :=
+  SplitInj.toParam (option_list_inj A).
+```
+?> Note that again, we assume we are in a setup where relations linking the target standard type were defined previously. Here, it allows relating `option A` to `list A` and leaving the step changing the parameter `A` to an `A'` to the parametricity lemma over lists.
+
+By transitivity, we can state the full relation and add it to Trocq:
+```coq
+Definition Param42b_option_list (A A' : Type) (AR : Param42b.Rel A A') :
+  Param42b.Rel (option A) (list A').
+Proof.
+  apply (@Param42b_trans _ (list A)).
+  - apply Param_option_list_d.
+  - apply (Param42b_list A A' AR).
+Defined.
+Trocq Use Param42b_option_list.
+```
+
+#### Proof transfer with non-equivalent containers
+
+After proving that `omap` is related to `List.map`, we can transfer the following lemma and prove it:
+```coq
+Theorem option_map_compose (A B C : Type) (f : A -> B) (g : B -> C) :
+  forall (xo : option A), omap g (omap f xo) = omap (fun x => g (f x)) xo.
+Proof.
+  trocq.
+  (*  forall (A B C : Type) (f : A -> B) (g : B -> C),
+        forall (l : list A), map g (map f xo) = map (fun x => g (f x)) l.
+  *)
+  apply map_compose.
+Qed.
+```
 
 ### Complex proof transfer by composition
 
