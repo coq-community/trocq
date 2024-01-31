@@ -377,7 +377,134 @@ We present an equivalence between iterated tuples and vectors from the standard 
 
 ### Iterated tuples and vectors
 
-!> Coming soon...
+In this example, we show Trocq can be used to switch between two polymorphic and dependent container types.
+
+Although the standard library vector type is a widely used example for introducing dependent types, using it in realistic formalisation projects can have several drawbacks, including having to deal with the whole complexity of dependent types even for writing functions as simple as getting the head of the vector.
+For practical reasons, an alternative is the iterated tuple, *i.e.*, `tuple A n` is a tuple of size `n` containing values of type `A`.
+```coq
+Definition tuple (A : Type) : nat -> Type :=
+  fix F n :=
+    match n with
+    | O => unit
+    | S k => F k * A
+    end.
+```
+One of the advantages of this representation of fixed-size container is that `tuple A (S n)` is *convertible* to `tuple A n * A`, meaning the implementation of a `peek` function reading the outermost value is trivial:
+```coq
+Definition peek {A : Type} {n : nat} (t : tuple A (S n)) : A :=
+  match t with (t', a) => a end.
+```
+whereas the implementation for vectors is more cumbersome:
+```coq
+Definition Vector.peek {A : Type} {n : nat} (v : Vector.t A (S n)) : A :=
+  match v in t _ m
+    return match m with O => unit | S _ => A end
+  with
+  | nil => tt
+  | cons a _ => a
+  end.
+```
+Let us also assume a `const` function on both representations, encoding for a constant container containing `n` times the same value:
+```coq
+Definition const {A : Type} (a : A) : forall (n : nat), tuple A n :=
+  fix F n :=
+    match n with
+    | O => tt
+    | S k => (F k, a)
+    end.
+```
+```coq
+Definition Vector.const {A : Type} (a : A) : forall (n : nat), Vector.t A n :=
+  fix F n :=
+    match n with
+    | O => nil
+    | S k => cons a (F k)
+    end.
+```
+
+Now, as the standard library vector is more widespread, we can assume more properties are available about it, and could be reused for proving similar properties on iterated tuples.
+For instance, let us take the following theorem:
+```coq
+Theorem Vector.peek_const {A : Type} : forall (a : A) (n : nat),
+  Vector.peek (Vector.const a n) = a.
+```
+
+#### Proving the equivalence between both encodings
+
+As we are proving equivalences involving vectors, we can exploit the same idea as in the section above about bounded natural numbers and bitvectors: first proving the equivalence between `tuple` and `Vector.t` for fixed parameter `A` and index `n`, then reusing `Vector.Param44` to switch between `Vector.t A n` and `Vector.t A' n'` for related `A`/`A'` and `n`/`n'`.
+
+In order to prove the relation between `tuple` and `Vector.t`, we proceed as usual and define two functions to convert a tuple to a vector and conversely, then we prove that both compositions are identities, so that we can prove an isomorphism and the following relation:
+```coq
+Definition Param44_tuple_vector_d (A : Type) (n : nat) :
+  Param44.Rel (tuple A n) (Vector.t A n).
+```
+Then, by using transitivity of parametricity records and `Vector.Param44`, we can conclude the proof:
+```coq
+Definition tuple_vector_R :
+  forall (A A' : Type) (AR : Param44.Rel A A')
+         (n n' : nat) (nR : natR n n'),
+    Param44.Rel (tuple A n) (Vector.t A' n').
+Trocq Use tuple_vector_R.
+```
+
+#### Relating constants
+
+We must now provide relations linking both implementations of `peek` and `const`.
+Following the transitivity idea again, we can exploit proofs present on vectors:
+```coq
+Definition Vector.peekR
+  (A A' : Type) (AR : Param00.Rel A A')
+  (n n' : nat) (nR : natR n n')
+  (v : Vector.t A (S n)) (v' : Vector.t A' (S n')) (vR : Vector.tR A A' AR n n' nR v v') :
+    AR (Vector.peek v) (Vector.peek v').
+
+Definition Vector.constR
+  (A A' : Type) (AR : Param00.Rel A A')
+  (a : A) (a' : A') (aR : AR a a')
+  (n n' : nat) (nR : natR n n') :
+    Vector.tR A A' AR n n' nR (Vector.const a n) (Vector.const a' n').
+```
+
+The remaining crucial properties to prove are made easier because they are constant on the parameter and index:
+```coq
+Definition tuple_vector_peekR (A : Type) (n : nat) :
+  forall (t : tuple A (S n)) (v : Vector.t A (S n)), Param44_tuple_vector_d A n t v ->
+    AR (peek t) (Vector.peek v).
+
+Definition tuple_vector_constR (A : Type) (a : A) (n : nat) :
+    Param44_tuple_vector_d A n (const a n) (Vector.const a n).
+```
+
+The final relations proved and added to Trocq are the following:
+```coq
+Definition peekR
+  (A A' : Type) (AR : Param00.Rel A A')
+  (n n' : nat) (nR : natR n n')
+  (t : tuple A (S n)) (v' : Vector.t A' (S n')) (r : tuple_vector_R A A' AR n n' nR t v') :
+    AR (peek t) (Vector.peek v').
+Proof.
+  (* [...] transitivity : tuple_vector_peekR + Vector.peekR *)
+Defined.
+Trocq Use peekR.
+
+Definition constR
+  (A A' : Type) (AR : Param00.Rel A A')
+  (a : A) (a' : A') (aR : AR a a')
+  (n n' : nat) (nR : natR n n') :
+    tuple_vector_R A A' AR n n' nR (const a n) (Vector.const a' n').
+Proof.
+  (* [...] transitivity : tuple_vector_constR + Vector.constR *)
+Defined.
+Trocq Use constR.
+```
+
+#### Actual proof reuse
+
+Modulo adding equality to Trocq, we can now prove "for free" the following theorem expressed on iterated tuples:
+```coq
+Theorem peek_const {A : Type} : forall (a : A) (n : nat), peek (const a n) = a.
+Proof. trocq. apply Vector.peek_const. Qed.
+```
 
 ### Lists and vectors
 
