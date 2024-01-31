@@ -43,7 +43,7 @@ Proof.
   exact: (transport (fun x => R2 x c) (R_in_map R1 a b r1)^).
 Defined.
 
-Definition R_in_mapK_trans {A B C : Type} (R1 : Param44.Rel A B) (R2 : Param44.Rel B C) :
+Definition R_in_mapK_trans {A B C : Type} (R1 : Param40.Rel A B) (R2 : Param40.Rel B C) :
   forall (a : A) (c : C) (r : R_trans R1 R2 a c),
     map_in_R_trans R1 R2 a c (R_in_map_trans R1 R2 a c r) = r.
 Proof.
@@ -56,7 +56,40 @@ Proof.
     by elim: (R_in_map R1 a b r1) in r2 *.
 Qed.
 
-Definition Map4_trans {A B C : Type} (R1 : Param44.Rel A B) (R2 : Param44.Rel B C) :
+Definition Map0_trans {A B C : Type} (R1 : Param00.Rel A B) (R2 : Param00.Rel B C) :
+  Map0.Has (R_trans R1 R2).
+Proof. constructor. Defined.
+
+Definition Map1_trans {A B C : Type} (R1 : Param10.Rel A B) (R2 : Param10.Rel B C) :
+  Map1.Has (R_trans R1 R2).
+Proof. constructor. exact (map_trans R1 R2). Defined.
+
+Definition Map2a_trans {A B C : Type} (R1 : Param2a0.Rel A B) (R2 : Param2a0.Rel B C) :
+  Map2a.Has (R_trans R1 R2).
+Proof.
+  unshelve econstructor.
+  - exact (map_trans R1 R2).
+  - exact (map_in_R_trans R1 R2).
+Defined.
+
+Definition Map2b_trans {A B C : Type} (R1 : Param2b0.Rel A B) (R2 : Param2b0.Rel B C) :
+  Map2b.Has (R_trans R1 R2).
+Proof.
+  unshelve econstructor.
+  - exact (map_trans R1 R2).
+  - exact (R_in_map_trans R1 R2).
+Defined.
+
+Definition Map3_trans {A B C : Type} (R1 : Param30.Rel A B) (R2 : Param30.Rel B C) :
+  Map3.Has (R_trans R1 R2).
+Proof.
+  unshelve econstructor.
+  - exact (map_trans R1 R2).
+  - exact (map_in_R_trans R1 R2).
+  - exact (R_in_map_trans R1 R2).
+Defined.
+
+Definition Map4_trans {A B C : Type} (R1 : Param40.Rel A B) (R2 : Param40.Rel B C) :
   Map4.Has (R_trans R1 R2).
 Proof.
   unshelve econstructor.
@@ -66,7 +99,7 @@ Proof.
   - exact (R_in_mapK_trans R1 R2).
 Defined.
 
-Definition R_trans_sym {A B C : Type} (R1 : Param44.Rel A B) (R2 : Param44.Rel B C) :
+Definition R_trans_sym {A B C : Type} (R1 : Param00.Rel A B) (R2 : Param00.Rel B C) :
   forall (c : C) (a : A),
     sym_rel (R_trans R1 R2) c a <~> R_trans (sym_rel R2) (sym_rel R1) c a.
 Proof.
@@ -88,4 +121,16 @@ Proof.
   - unshelve eapply (@eq_Map4 _ _ (sym_rel (R_trans R1 R2)) (R_trans (sym_rel R2) (sym_rel R1))).
     + exact (R_trans_sym R1 R2).
     + exact (Map4_trans (Param44_sym B C R2) (Param44_sym A B R1)).
+Defined.
+
+Definition Param42b_44_trans {A B C : Type} :
+  Param42b.Rel A B -> Param44.Rel B C -> Param42b.Rel A C.
+Proof.
+  intros R1 R2.
+  unshelve econstructor.
+  - exact (R_trans R1 R2).
+  - exact (@Map4_trans A B C R1 R2).
+  - unshelve eapply (@eq_Map2b _ _ (sym_rel (R_trans R1 R2)) (R_trans (sym_rel R2) (sym_rel R1))).
+    + exact (R_trans_sym R1 R2).
+    + exact (Map2b_trans (Param02b_sym B C R2) (Param02b_sym A B R1)).
 Defined.
