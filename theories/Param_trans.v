@@ -123,8 +123,8 @@ Proof.
     + exact (Map4_trans (Param44_sym B C R2) (Param44_sym A B R1)).
 Defined.
 
-Definition Param42b_44_trans {A B C : Type} :
-  Param42b.Rel A B -> Param44.Rel B C -> Param42b.Rel A C.
+Definition Param42b_trans {A B C : Type} :
+  Param42b.Rel A B -> Param42b.Rel B C -> Param42b.Rel A C.
 Proof.
   intros R1 R2.
   unshelve econstructor.
