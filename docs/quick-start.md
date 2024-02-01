@@ -563,10 +563,31 @@ Qed.
 
 ### Complex proof transfer by composition
 
-!> Coming soon...
-<!-- tuple nat ~ vector positive ? -->
+As parametricity relations can be composed, it is also possible to combine together relations declared in Trocq, including the directed ones, provided that the levels match.
+For instance, a relation with structure `(α,β)` linking `list` to itself always requires a relation with the same structure on the parameter:
+```coq
+Lemma Param31_list : forall (A A' : Type), Param31.Rel A A' -> Param31.Rel (list A) (list A').
+```
+It means that an occurrence of `list T` required at level `(3,1)` will require the existence of a relation from `T` to an associated `T'` at level `(3,1)` in Trocq.
+
+Therefore, even though `list` is *equivalent* to itself, we can declare several relations for it in Trocq, so that in cases where less information is required on the list type, a weaker relation can be accepted for the parameter, and thus transfer can be done both on a container type and the type of contents, *e.g.*, transferring `Vector.t positive n` to `tuple N n` in the following goal:
+```coq
+Theorem product_const_1 (A : Type) :
+  forall (n : nat), Vector.product (Vector.const 1%positive n) = 1%positive.
+```
+Such a statement can be turned into the following goal (provided there exists a `Vector.product` with a counterpart over tuples of `N` defined in Trocq):
+```coq
+forall (n : nat), product (const 1%N n) = 1%N
+```
 
 ### Trocq for advanced refinements
 
-!> Coming soon...
-<!-- arrays hirsch conjecture -->
+Such an approach enables refinement-like transfer, by expressing the statements with proof-oriented representations of the concepts involved in the formalisation project, be it arithmetic, containers, *etc.*, while remaining able to rephrase them in more efficient encodings to carry out proofs involving heavier computations that would take too long in the higher-level type.
+
+#### Refining a mathematical type to a lower-level representation
+
+?> This example is inspired from a [formalisation work involving advanced refinements](https://arxiv.org/pdf/2301.04060.pdf).
+
+Consider the encoding of matrices in the [MathComp library](https://github.com/math-comp/math-comp), where `'M[T](m,n)` denotes a matrix of size `m`X`n` with elements in `T`.
+
+!> To be continued...

@@ -8,6 +8,7 @@
   + [Type isomorphisms](/quick-start?id=proof-transfer-with-type-isomorphisms)
   + [Directed relations](/quick-start?id=using-trocq-with-directed-relations-sections-and-retractions)
   + [Polymorphic and dependent container types](/quick-start?id=polymorphic-and-dependent-container-types)
+  + [Trocq for advanced refinements](/quick-start?id=trocq-for-advanced-refinements)
 - [About](about.md)
 
 <p style="text-align: center">
