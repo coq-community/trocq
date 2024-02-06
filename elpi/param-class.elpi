@@ -78,14 +78,6 @@ pred param-class->string i:param-class, o:string.
 param-class->string (pc M N) S :-
   S is {map-class->string M} ^ {map-class->string N}.
 
-pred param-class->add-suffix i:param-class, i:string, o:string.
-param-class->add-suffix Class P S :- S is P ^ {param-class->string Class}.
-
-pred param-class->add-2-suffix i:string,
-  i:param-class, i:param-class, i:string, o:string.
-param-class->add-2-suffix Sep Class1 Class2 P S :-
-   S is P ^ {param-class->string Class1} ^ Sep ^ {param-class->string Class2}.
-
 % names of the fields contained in a witness of a given level
 pred map-class->fields i:map-class, o:list string.
 map-class->fields map0  [].
@@ -104,6 +96,14 @@ map-class->cofields map3  ["comap", "comap_in_R", "R_in_comap"].
 map-class->cofields map4  ["comap", "comap_in_R", "R_in_comap", "R_in_comapK"].
 
 namespace map-class {
+
+pred add-suffix i:map-class, i:string, o:string.
+add-suffix Class P S :- S is P ^ {map-class->string Class}.
+
+pred add-2-suffix i:string,
+  i:map-class, i:map-class, i:string, o:string.
+add-2-suffix Sep Class1 Class2 P S :-
+   S is P ^ {map-class->string Class1} ^ Sep ^ {map-class->string Class2}.
 
 % lower/higher levels at distance 1 from a given level
 pred weakenings-from i:map-class, o:list map-class.
@@ -205,21 +205,45 @@ dep-arrow map4  (pc map0 map4)  (pc map4 map0).
 
 } % map-class
 
+pred param-classes o:class-kind, o:list param-class.
+param-classes high Classes :- std.do! [
+  map-classes all AllMapClasses,
+  map-classes high HighMapClasses,
+  map-class.product HighMapClasses AllMapClasses Classes1,
+  map-class.product AllMapClasses HighMapClasses Classes2,
+  std.append Classes1 Classes2 Classes
+].
+param-classes Kind Classes :-
+  map-classes Kind MapClasses,
+  map-class.product MapClasses MapClasses Classes.
+
 namespace param-class {
 
 % extensions of functions over map classes to parametricity classes
+
+pred add-suffix i:param-class, i:string, o:string.
+add-suffix Class P S :- S is P ^ {param-class->string Class}.
+
+pred add-2-suffix i:string,
+  i:param-class, i:param-class, i:string, o:string.
+add-2-suffix Sep Class1 Class2 P S :-
+   S is P ^ {param-class->string Class1} ^ Sep ^ {param-class->string Class2}.
 
 pred weakenings-from i:param-class, o:list param-class.
 weakenings-from (pc M N) Classes :-
   map-class.weakenings-from M Ms,
   map-class.weakenings-from N Ns,
-  map-class.product Ms Ns Classes.
+  map-class.product [M] Ns MClasses,
+  map-class.product Ms [N] NClasses,
+  std.flatten [MClasses, NClasses] Classes.
 
 pred weakenings-to i:param-class, o:list param-class.
 weakenings-to (pc M N) Classes :-
   map-class.weakenings-to M Ms,
   map-class.weakenings-to N Ns,
-  map-class.product Ms Ns Classes.
+  map-class.product [M] Ns MClasses,
+  map-class.product Ms [N] NClasses,
+  std.flatten [MClasses, NClasses] Classes.
 
 pred all-weakenings-from i:param-class, o:list param-class.
 all-weakenings-from (pc M N) Classes :-
