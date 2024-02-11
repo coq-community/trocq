@@ -40,7 +40,7 @@ with lib; mkCoqDerivation {
   ## - arbitrary nix packages (you need to require them at the beginning of the file)
   ## - Coq packages (require them at the beginning of the file)
   ## - OCaml packages (use `coq.ocamlPackages.xxx`, no need to require them at the beginning of the file)
-  propagatedBuildInputs = [ mathcomp.ssreflect coq-elpi ]; ## e.g. `= [ mathcomp coq-elpi ]`
+  propagatedBuildInputs = [ mathcomp.ssreflect mathcomp.algebra coq-elpi ]; ## e.g. `= [ mathcomp coq-elpi ]`
 
   ## Does the package contain OCaml code?
   mlPlugin = true;
