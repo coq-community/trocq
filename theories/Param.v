@@ -22,6 +22,7 @@ From Trocq.Elpi Extra Dependency "annot.elpi" as annot.
 From Trocq.Elpi Extra Dependency "util.elpi" as util.
 From Trocq.Elpi Extra Dependency "param-class.elpi" as param_class.
 From Trocq.Elpi Extra Dependency "param.elpi" as param.
+From Trocq.Elpi Extra Dependency "trocq.elpi" as trocq.
 From Trocq.Elpi.constraints Extra Dependency "simple-graph.elpi" as simple_graph.
 From Trocq.Elpi.constraints Extra Dependency "constraint-graph.elpi" as constraint_graph.
 From Trocq.Elpi.constraints Extra Dependency "constraints.elpi" as constraints.
@@ -135,6 +136,7 @@ Elpi Accumulate File simple_graph.
 Elpi Accumulate File constraint_graph.
 Elpi Accumulate File constraints.
 Elpi Accumulate File param.
+Elpi Accumulate File trocq.
 Elpi Typecheck.
 
 Elpi Accumulate lp:{{
@@ -144,21 +146,25 @@ Elpi Accumulate lp:{{
 
 Elpi Accumulate lp:{{
   solve InitialGoal NewGoals :- debug dbg.none => std.do! [
-    InitialGoal = goal _Context _ G _ [],
+    InitialGoal = goal _Context _ G _ Args,
+    util.when-debug dbg.full (coq.say "translating args" Args),
+    std.map Args util.argument->gref GRArgs,
+    util.when-debug dbg.full (coq.say "loading rels" GRArgs),
+    trocq.load-rels GRArgs DB,
+    util.when-debug dbg.full (coq.say "local DB" DB),
     util.when-debug dbg.full (coq.say "goal" G),
-    translate-goal G (pc map0 map1) G' GR,
+    translate-goal DB G (pc map0 map1) G' GR,
     util.when-debug dbg.full (coq.say "trocq:" G "~" G' "by" GR),
     FinalProof = {{ @comap lp:G lp:G' lp:GR (_ : lp:G') }},
     util.when-debug dbg.full (coq.say FinalProof),
-
     std.assert-ok! (coq.elaborate-skeleton FinalProof G EFinalProof) "proof elaboration error",
     std.assert-ok! (coq.typecheck EFinalProof G2) "proof typechecking error",
     std.assert-ok! (coq.unify-leq G2 G) "goal unification error",
     refine.no_check EFinalProof InitialGoal NewGoals
   ].
 
-  pred translate-goal i:term, i:param-class, o:term, o:term.
-  translate-goal G (pc M N) G' GR' :- std.do! [
+  pred translate-goal i:list prop, i:term, i:param-class, o:term, o:term.
+  translate-goal DB G (pc M N) G' GR' :- DB => std.do! [
     cstr.init,
     T = (app [pglobal (const {trocq.db.ptype}) _, {map-class->term M}, {map-class->term N}]),
     % first annotate the initial goal with fresh parametricity class variables
@@ -177,6 +183,7 @@ Elpi Accumulate lp:{{
       coq.say "***********************************************************************************"
     ),
     % reduce the graph, so the variables all become ground in the terms
+    cstr.local-db DB,
     cstr.reduce-graph,
     % now we can remove the weaken placeholders and replace them with real weakening functions
     % or nothing if it is weaken α α
@@ -193,4 +200,4 @@ Elpi Accumulate lp:{{
 }}.
 Elpi Typecheck.
 
-Tactic Notation "trocq" := elpi trocq.
+Tactic Notation "trocq" ident_list(l) := elpi trocq ltac_string_list:(l).

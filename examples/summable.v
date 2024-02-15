@@ -139,9 +139,7 @@ Proof.
     + exact truncate.
     + exact R_in_truncate_nnR.
 Defined.
-
-(* the only level we will need to pre-process the distributivity goal is (0,2b) *)
-Definition Param02b_nnR : Param02b.Rel nnR xnnR := Param42b_nnR.
+Trocq RelatedWith R_nnR Param42b_nnR.
 
 (* as sequences are encoded with constants, we need to relate them *)
 
@@ -169,9 +167,7 @@ Proof.
     + exact R_in_extendK_rseq.
   - unshelve econstructor.
 Defined.
-
-(* we will only need (2a,0) on sequences to pre-process the distributivity goal *)
-Definition Param2a0_rseq : Param2a0.Rel _ _ := Param40_rseq.
+Trocq RelatedWith Rrseq Param40_rseq.
 
 (* now we need to relate the various constants at level (0,0) *)
 
@@ -203,12 +199,12 @@ move=> u _ <-; rewrite extend_truncate//.
 by apply isSummableP.
 Qed.
 
-Trocq Use Param01_paths Param02b_nnR Param2a0_rseq.
-Trocq Use R_sum_xnnR R_add_xnnR seq_nnR_add.
+Trocq RelatedWith R_nnR  R_sum_xnnR R_sum_xnnR R_add_xnnR.
+Trocq RelatedWith Rrseq seq_nnR_add.
 
 (* we get a proof over non negative reals for free,
    from the analogous proof over the extended ones *)
 Lemma sum_nnR_add : forall (u v : summable), (Σ (u + v) = Σ u + Σ v)%nnR.
-Proof. trocq; exact: sum_xnnR_add. Qed.
+Proof. trocq R_nnR Rrseq; exact: sum_xnnR_add. Qed.
 
 Print Assumptions sum_nnR_add.

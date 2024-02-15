@@ -30,12 +30,12 @@ Trocq Register Funext f.
 
 Goal
   (* Type@{i}. *)
-  (* Type@{i} -> Type@{i}. *)
+  forall A (P : Type@{i} -> Type@{i}), P A.
   (* forall (A : Type@{i}), A. *)
   (* forall (A : Type@{i}), A -> A. *)
   (* forall (A B : Type@{i}), A -> B. *)
   (* forall (F : Type@{i} -> Type@{i}) (A : Type@{i}), F A. *)
-  forall (F : Type@{i} -> Type@{i}) (A B : Type@{i}), F A -> F B.
+  (* forall (F : Type@{i} -> Type@{i}) (A B : Type@{i}), F A -> F B. *)
   (* forall (F : Type@{i} -> Type@{i} -> Type@{i}) (A B : Type@{i}), F A B. *)
   (* forall (F : Type@{i} -> Type@{i} -> Type@{i}) (A B : Type@{i}), F A B -> F B A. *)
   (* forall (F : Type@{i} -> Type@{i}) (A : Type@{i}), F A -> forall (B : Type@{i}), F B. *)

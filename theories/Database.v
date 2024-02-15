@@ -92,4 +92,14 @@ Elpi Db trocq.db lp:{{
   :name "default-gref"
   trocq.db.gref _ _ _ _ _ :- do-not-fail, !, false.
   trocq.db.gref GR Out _ _ _ :- coq.error "cannot find" GR "at out class" Out.
+
+  % The predicate known-gref is similar to the last one with one extra arguments:
+  % known-gref Rel GR ω [α_1, ..., α_n] GR' GRR
+  % BundleRel is the underlying relation in use
+  % it is used to find all translations associated to a given relation
+  % so that `trocq.use Rel`, all the associated translations
+  % of the form `gref Rel GR ω [α_1, ..., α_n] GR' GRR` will be used, i.e.
+  % added to the above database gref.
+  pred trocq.db.known-gref o:gref, o:gref, o:param-class, o:list param-class, o:gref, o:gref.
+
 }}.

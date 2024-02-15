@@ -23,6 +23,7 @@ Declare Scope Zmodp_scope.
 Delimit Scope Zmodp_scope with Zmodp.
 Local Open Scope Zmodp_scope.
 
+
 Definition binop_param {X X'} RX {Y Y'} RY {Z Z'} RZ
    (f : X -> Y -> Z) (g : X' -> Y' -> Z') :=
   forall x x', RX x x' -> forall y y', RY y y' -> RZ (f x y) (g x' y').
@@ -64,14 +65,14 @@ Variable Rmul : binop_param Rp Rp Rp mul mulp.
 Variable Reqmodp01 : forall (m : int) (x : Zmodp), Rp m x ->
   forall n y, Rp n y -> Param01.Rel (eqmodp m n) (eq_Zmodp x y).
 
-Trocq Use Rp Rmul Rzero Param10_paths Reqmodp01.
+Trocq RelatedWith Rp Rp Rmul Rzero Reqmodp01.
 
 Lemma IntRedModZp :
  (forall (m n p : Zmodp), (m = n * n)%Zmodp -> m = 0) ->
  forall (m n p : int), (m = n * n)%int -> (m == 0)%int.
 Proof.
 move=> Hyp.
-trocq; simpl.
+trocq Rp; simpl.
 exact: Hyp.
 Qed.
 
@@ -87,11 +88,11 @@ Axiom Rzero : Rp zerop zero.
 Variable Radd : binop_param Rp Rp Rp addp add.
 Variable paths_to_eqmodp : binop_param Rp Rp iff paths eqmodp.
 
-Trocq Use Rp Param01_paths Param10_paths Radd Rzero.
+Trocq RelatedWith Rp Rp Radd Rzero.
 
 Goal (forall x y, x + y = y + x)%Zmodp.
 Proof.
-  trocq.
+  trocq Rp.
   exact addC.
 Qed.
 
@@ -100,7 +101,7 @@ Proof.
   intros x y z.
   suff addpC: forall x y, (x + y = y + x)%Zmodp. {
     by rewrite (addpC x y). }
-  trocq.
+  trocq Rp.
   exact addC.
 Qed.
 

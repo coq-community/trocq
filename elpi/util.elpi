@@ -88,6 +88,10 @@ delete A [A|Xs] Xs :- !.
 delete A [X|Xs] [X|Xs'] :- delete A Xs Xs'.
 delete _ [] [].
 
+pred argument->gref i:argument, o:gref.
+argument->gref (str S) GR :- coq.locate S GR.
+argument->gref (trm T) GR :- coq.term->gref T GR.
+
 % subst-gref T GR' T'
 % substitutes GR for GR' in T if T = (global GR) or (pglobal GR I)
 pred subst-gref i:term, i:gref, o:term.
