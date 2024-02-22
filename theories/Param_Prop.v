@@ -37,7 +37,7 @@ Elpi Accumulate lp:{{
   generate-fields map0 R _ [R].
   generate-fields map1 R _ [R, Map] :-
     Map = (fun `T` (sort prop) t\ t).
-  generate-fields map2a R RClass [R, Map, MapInR] :-
+  generate-fields map2a R RClass [R, Map, MapInR] :- std.spy-do! [
     Prop = sort prop,
     Map = (fun `T` Prop t\ t),
     (pi a\ coq.mk-app R [a] (RF a)),
@@ -50,7 +50,8 @@ Elpi Accumulate lp:{{
       (fun `A` Prop a\ fun `B` Prop b\
         fun `e` (app [global Paths, Prop, a, b]) e\
           app [TransportTm, Prop, RF a, a, b,
-            e, app [IdParamTm, a]]).
+            e, app [IdParamTm, a]])
+  ].
 
   pred generate-map-prop i:map-class, i:param-class.
   generate-map-prop M RClass :- std.spy-do! [
@@ -66,16 +67,19 @@ Elpi Accumulate lp:{{
       RClass FieldsSym,
     coq.locate {calc ("Map" ^ {map-class->string M} ^ ".BuildHas")} BuildHas,
     coq.env.global BuildHas BuildHasTm,
-    Decl = app [BuildHasTm, Prop, Prop | Fields],
-    DeclSym = app [BuildHasTm, Prop, Prop | FieldsSym],
+    coq.mk-app BuildHasTm [Prop, Prop | Fields] Decl,
+    coq.mk-app BuildHasTm [Prop, Prop | FieldsSym] DeclSym,
     MapProp is
       "Map" ^ {map-class->string M} ^ "_Prop" ^ {param-class->string RClass},
     MapPropSym is
       "Map" ^ {map-class->string M} ^ "_Prop_sym" ^
       {param-class->string RClass},
     % these typechecks are very important: they add L < L1 to the constraint graph
-    coq.typecheck Decl _ ok,
-    coq.typecheck DeclSym _ ok,
+    % std.assert-ok (coq.elaborate-skeleton Decl Ty Decl') "generate-map-prop: Decl cannot be elaborated",
+    % std.assert-ok! (coq.typecheck Decl _)
+    %   "generate-map-prop: Decl ill-typed",
+    % std.assert-ok! (coq.typecheck DeclSym _)
+    %   "generate-map-prop: DeclSym ill-typed",
     @udecl! [] tt [] tt =>
       coq.env.add-const MapProp Decl _ @transparent! _,
     @udecl!  [] tt [] tt =>
@@ -84,6 +88,7 @@ Elpi Accumulate lp:{{
 }}.
 Elpi Typecheck.
 
+Set Printing Universes.
 Check (@Map0.BuildHas Prop Prop (@Param00.Rel)).
 
 Elpi Query lp:{{

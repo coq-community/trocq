@@ -615,6 +615,157 @@ Elpi Query lp:{{
   ).
 }}.
 
+
+
+Definition Prop_id_Map0 {A : Prop} : Map0.Has (@paths A).
+Proof. constructor. Defined.
+
+Definition Prop_id_Map0_sym {A : Prop} : Map0.Has (sym_rel (@paths A)).
+Proof. constructor. Defined.
+
+Definition Prop_id_Map1 {A : Prop} : Map1.Has (@paths A).
+Proof. constructor. exact idmap. Defined.
+
+Definition Prop_id_Map1_sym {A : Prop} : Map1.Has (sym_rel (@paths A)).
+Proof. constructor. exact idmap. Defined.
+
+Definition Prop_id_Map2a {A : Prop} : Map2a.Has (@paths A).
+Proof.
+  unshelve econstructor.
+  - exact idmap.
+  - exact (fun a b e => e).
+Defined.
+
+Definition Prop_id_Map2a_sym {A : Prop} : Map2a.Has (sym_rel (@paths A)).
+Proof.
+  unshelve econstructor.
+  - exact idmap.
+  - exact (fun A B e => e^).
+Defined.
+
+Definition Prop_id_Map2b {A : Prop} : Map2b.Has (@paths A).
+Proof.
+  unshelve econstructor.
+  - exact idmap.
+  - exact (fun a b e => e).
+Defined.
+
+Definition Prop_id_Map2b_sym {A : Prop} : Map2b.Has (sym_rel (@paths A)).
+Proof.
+  unshelve econstructor.
+  - exact idmap.
+  - exact (fun A B e => e^).
+Defined.
+
+Definition Prop_id_Map3 {A : Prop} : Map3.Has (@paths A).
+Proof.
+  unshelve econstructor.
+  - exact idmap.
+  - exact (fun a b e => e).
+  - exact (fun a b e => e).
+Defined.
+
+Definition Prop_id_Map3_sym {A : Prop} : Map3.Has (sym_rel (@paths A)).
+Proof.
+  unshelve econstructor.
+  - exact idmap.
+  - exact (fun A B e => e^).
+  - exact (fun A B e => e^).
+Defined.
+
+Definition Prop_id_Map4 {A : Prop} : Map4.Has (@paths A).
+Proof.
+  unshelve econstructor.
+  - exact idmap.
+  - exact (fun a b e => e).
+  - exact (fun a b e => e).
+  - exact (fun a b e => 1%path).
+Defined.
+
+Definition Prop_id_Map4_sym {A : Prop} : Map4.Has (sym_rel (@paths A)).
+Proof.
+  unshelve econstructor.
+  - exact idmap.
+  - exact (fun A B e => e^).
+  - exact (fun A B e => e^).
+  - exact (fun A B e => inv_V e).
+Defined.
+
+(* generate id_ParamMN : forall A, ParamMN.Rel A A for all M N *)
+
+Elpi Accumulate lp:{{
+  pred generate-prop-id-param i:param-class.
+  generate-prop-id-param (pc M N as Class) :-
+    map-class->string M MStr,
+    map-class->string N NStr,
+    trocq.db.rel Class _ BuildRelGR _ _ _,
+    Paths = {paths},
+    coq.locate {calc ("Prop_id_Map" ^ MStr)} IdMapGR,
+    coq.locate {calc ("Prop_id_Map" ^ NStr ^ "_sym")} IdMapSymGR,
+    coq.env.global BuildRelGR BuildRel,
+    coq.env.global IdMapGR IdMap,
+    coq.env.global IdMapSymGR IdMapSym,
+    Decl =
+      (fun `A` (sort prop) a\
+        app [BuildRel, a, a, app [global Paths, a],
+          app [IdMap, a],
+          app [IdMapSym, a]]),
+    IdParam is "Prop_id_Param" ^ MStr ^ NStr,
+    coq.typecheck Decl _ _,
+    @udecl! [] tt [] tt => coq.env.add-const IdParam Decl _ @transparent! _.
+}}.
+Elpi Typecheck.
+
+Elpi Query lp:{{
+  map-classes all Classes,
+  std.forall Classes (m\
+    std.forall Classes (n\
+      generate-prop-id-param (pc m n)
+    )
+  ).
+}}.
+
+(* Check id_Param00. *)
+(* Check id_Param32b. *)
+
+(* symmetry property for Param *)
+
+Elpi Accumulate lp:{{
+  pred generate-prop-param-sym i:param-class.
+  generate-prop-param-sym (pc M N as Class) :-
+    map-class->string M MStr,
+    map-class->string N NStr,
+    trocq.db.rel Class RelMNGR _ RMNGR CovariantMNGR ContravariantMNGR,
+    trocq.db.rel (pc N M) _ BuildRelNMGR _ _ _,
+    coq.env.global BuildRelNMGR BuildRelNM,
+    coq.env.global {sym-rel} SymRel,
+    coq.env.global RelMNGR RelMN,
+    coq.env.global RMNGR RMN,
+    coq.env.global ContravariantMNGR ContravariantMN,
+    coq.env.global CovariantMNGR CovariantMN,
+    Decl =
+      (fun `A` (sort prop) a\ fun `B` (sort prop) b\
+        fun `R` (app [RelMN, a, b]) r\
+          app [BuildRelNM, b, a,
+            app [SymRel, a, b, app [RelMN, a, b, r]],
+            app [ContravariantMN, a, b, r],
+            app [CovariantMN, a, b, r]
+          ]),
+    ParamSym is "Prop_Param" ^ MStr ^ NStr ^ "_sym",
+    std.assert-ok! (coq.typecheck Decl _) "generate-prop-param-sym: Decl ill-typed",
+    @udecl! [L] tt [] tt => coq.env.add-const ParamSym Decl _ @transparent! _.
+}}.
+Elpi Typecheck.
+
+Elpi Query lp:{{
+  map-classes all Classes,
+  std.forall Classes (m\
+    std.forall Classes (n\
+      generate-prop-param-sym (pc m n)
+    )
+  ).
+}}.
+
 (* Check Param33_sym.
 Check Param2a4_sym. *)
 
