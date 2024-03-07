@@ -747,13 +747,13 @@ Elpi Accumulate lp:{{
       (fun `A` (sort prop) a\ fun `B` (sort prop) b\
         fun `R` (app [RelMN, a, b]) r\
           app [BuildRelNM, b, a,
-            app [SymRel, a, b, app [RelMN, a, b, r]],
+            app [SymRel, a, b, app [RMN, a, b, r]],
             app [ContravariantMN, a, b, r],
             app [CovariantMN, a, b, r]
           ]),
     ParamSym is "Prop_Param" ^ MStr ^ NStr ^ "_sym",
     std.assert-ok! (coq.typecheck Decl _) "generate-prop-param-sym: Decl ill-typed",
-    @udecl! [L] tt [] tt => coq.env.add-const ParamSym Decl _ @transparent! _.
+    @udecl! [] tt [] tt => coq.env.add-const ParamSym Decl _ @transparent! _.
 }}.
 Elpi Typecheck.
 
