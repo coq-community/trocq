@@ -13,7 +13,6 @@
 
 From Coq Require Import ssreflect.
 From elpi Require Import elpi.
-From HoTT Require Import HoTT.
 From Trocq Require Import HoTT_additions Hierarchy Param_Type Param_forall
   Param_arrow Database Param Param_paths.
 

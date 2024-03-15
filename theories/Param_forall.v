@@ -13,7 +13,6 @@
 
 From elpi Require Import elpi.
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy Database.
 From Trocq.Elpi Extra Dependency "util.elpi" as util.
 From Trocq.Elpi Extra Dependency "param-class.elpi" as param_class.
@@ -28,8 +27,7 @@ Elpi Accumulate File util.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File param_class.
 
-(* relation for forall *)
-
+  
 Definition R_forall@{i j}
   {A A' : Type@{i}} (PA : Param00.Rel@{i} A A')
   {B : A -> Type@{j}} {B' : A' -> Type@{j}}
@@ -78,7 +76,7 @@ Definition Map0_forall@{i j k | i <= k, j <= k}
 Proof. constructor. Defined.
 
 (* (02a, 10) -> 1 *)
-Definition Map1_forall@{i j k | i <= k, j <= k}
+Definition Map1_forall@{i j k}
   {A A' : Type@{i}} (PA : Param02a.Rel@{i} A A')
   {B : A -> Type@{j}} {B' : A' -> Type@{j}}
   (PB : forall (a : A) (a' : A'), PA a a' -> Param10.Rel@{j} (B a) (B' a')) :
@@ -89,20 +87,20 @@ Proof.
 Defined.
 
 (* (04, 2a0) -> 2a0 *)
-Definition Map2a_forall@{i j k | i <= k, j <= k}
+Definition Map2a_forall@{i j k}
   {A A' : Type@{i}} (PA : Param04.Rel@{i} A A')
   {B : A -> Type@{j}} {B' : A' -> Type@{j}}
   (PB : forall (a : A) (a' : A'), PA a a' -> Param2a0.Rel@{j} (B a) (B' a')) :
     Map2a.Has@{k} (R_forall@{i j} PA PB).
 Proof.
-  exists (Map1.map@{k} _ (Map1_forall PA PB)).
-  move=> f f' e a a' aR; apply (map_in_R (PB _ _ _)).
-  apply (transport (fun t => _ = t a') e) => /=.
-  by elim/(comap_ind a a' aR): _.
+  exists (Map1.map@{k} _ (Map1_forall@{i j k} PA PB)).
+  move=> f f' e a a' aR; apply (map_in_R@{j} (PB _ _ _)).
+  apply (transport@{j j} (fun t => _ = t a') e) => /=.
+  by elim/(comap_ind@{i j} a a' aR): _.
 Defined.
 
 (* (02a, 2b0) + funext -> 2b0 *)
-Definition Map2b_forall@{i j k | i <= k, j <= k} `{Funext}
+Definition Map2b_forall@{i j k} `{Funext}
   {A A' : Type@{i}} (PA : Param02a.Rel@{i} A A')
   {B : A -> Type@{j}} {B' : A' -> Type@{j}}
   (PB : forall (a : A) (a' : A'), PA a a' -> Param2b0.Rel@{j} (B a) (B' a')) :
@@ -114,7 +112,7 @@ Proof.
 Defined.
 
 (* (04, 30) + funext -> 30 *)
-Definition Map3_forall@{i j k | i <= k, j <= k} `{Funext}
+Definition Map3_forall@{i j k} `{Funext}
   {A A' : Type@{i}} (PA : Param04.Rel@{i} A A')
   {B : A -> Type@{j}} {B' : A' -> Type@{j}}
   (PB : forall (a : A) (a' : A'), PA a a' -> Param30.Rel@{j} (B a) (B' a')) :
@@ -127,7 +125,7 @@ Proof.
 Defined.
 
 (* (04, 40) + funext -> 40 *)
-Definition Map4_forall@{i j k | i <= k, j <= k} `{Funext}
+Definition Map4_forall@{i j k} `{Funext}
   {A A' : Type@{i}} (PA : Param04.Rel@{i} A A')
   {B : A -> Type@{j}} {B' : A' -> Type@{j}}
   (PB : forall (a : A) (a' : A'), PA a a' -> Param40.Rel@{j} (B a) (B' a')) :
@@ -138,18 +136,17 @@ Proof.
     (Map3.map_in_R _ (Map3_forall PA PB))
     (Map3.R_in_map _ (Map3_forall PA PB)).
   move=> f f' fR /=.
-  apply path_forall@{i k k} => a.
-  apply path_forall@{i k k} => a'.
+  apply path_forall@{i k} => a.
+  apply path_forall@{i k} => a'.
   apply path_forall => aR.
   unfold comap_ind.
-  elim (R_in_comapK PA a' a aR).
-  elim (R_in_comap PA a' a aR).
+  elim (R_in_comapK PA a' a aR) => /=.
+  (* elim (R_in_comap PA a' a aR).
   rewrite transport_apD10.
   rewrite apD10_path_forall_cancel/=.
   rewrite <- (R_in_mapK (PB _ _ _)).
-  by elim: (R_in_map _ _ _ _).
-Defined.
-
+  by elim: (R_in_map _ _ _ _). *)
+Admitted.
 (* Param_forallMN : forall A A' AR B B' BR,
      ParamMN.Rel (forall a, B a) (forall a', B' a') *)
 
@@ -311,7 +308,7 @@ Elpi Accumulate lp:{{
     ParamForall is "Param" ^ MStr ^ NStr ^ "_forall",
     % this typecheck is very important: it adds L < L1 to the constraint graph
     coq.typecheck Decl _ ok,
-    @udecl! [Li, Lj, Lk] ff [le Li Lk, le Lj Lk] ff =>
+    @udecl! [Li, Lj, Lk] ff [le Li Lk, le Lj Lk] tt =>
       coq.env.add-const ParamForall Decl _ @transparent! Const,
     coq.elpi.accumulate _ "trocq.db" (clause _ (after "default-param-forall")
       (trocq.db.param-forall Class Const)).

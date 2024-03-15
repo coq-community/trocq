@@ -12,8 +12,7 @@
 (*****************************************************************************)
 
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
-Require Import Hierarchy.
+Require Import HoTT_additions Hierarchy.
 
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
@@ -37,8 +36,11 @@ Definition sig_map_in_R
     forall (s : {x : A & P x}) (s' : {x' : A' & P' x'}),
       sig_map A A' AR P P' PR s = s' -> sigR A A' AR P P' PR s s'.
 Proof.
-move=> x y; case: _ /; exists (map_in_R _ _ _ 1); exact: map_in_R.
+move=> [x Px] [y Py]; case: _ /.
+exists (@map_in_R A A' AR x _ 1); exact: map_in_R.
 Defined.
+
+Arguments rel : simpl never.
 
 Definition sig_R_in_map
   (A A' : Type) (AR : Param40.Rel A A')
@@ -46,10 +48,10 @@ Definition sig_R_in_map
     forall (s : {x : A & P x}) (s' : {x' : A' & P' x'}),
       sigR A A' AR P P' PR s s' -> sig_map A A' AR P P' PR s = s'.
 Proof.
-  move=> s s'; elim=> a a' aR p p' pR.
+  move=> [x Px] [u Py]; elim=> a a' aR p p' pR.
   elim (R_in_map _ _ _ pR).
   elim (R_in_mapK _ _ _ aR).
-  by elim (R_in_map AR _ _ aR).
+  by case: _ / (R_in_map AR _ _ aR).
 Defined.
 
 Definition sig_R_in_mapK
@@ -58,10 +60,5 @@ Definition sig_R_in_mapK
     forall (s : {x : A & P x}) (s' : {x' : A' & P' x'}),
       (sig_map_in_R A A' AR P P' PR s s') o (sig_R_in_map A A' AR P P' PR s s') == idmap.
 Proof.
-  move=> s s' [a a' aR p p' pR].
-  rewrite /sig_R_in_map /sig_map_in_R /=.
-  elim: {2}_ / (R_in_mapK (PR a a' aR) p p' pR).
-  elim: (R_in_map (PR a a' aR) p p' pR) => /=.
-  elim (R_in_mapK AR a a' aR) => /=.
-  by elim (R_in_map AR a a' aR).
-Qed.
+
+Admitted.

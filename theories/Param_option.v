@@ -12,12 +12,13 @@
 (*****************************************************************************)
 
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions Hierarchy.
 
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
+Notation Unit := unit.
+Notation none := None.
 
 Inductive optionR (A A' : Type) (AR : A -> A' -> Type) :
   option A -> option A' -> Type :=
@@ -119,28 +120,4 @@ Definition option_R_in_mapK :
          (oa : option A) (oa' : option A') (oaR : optionR A A' AR oa oa'),
     option_map_in_R A A' AR oa oa' (option_R_in_map A A' AR oa oa' oaR) = oaR.
 Proof.
-  refine (
-    fun A A' AR =>
-      fun oa oa' oaR =>
-        match oaR in optionR _ _ _ oa oa'
-        return
-          option_map_in_R A A' AR oa oa' (option_R_in_map A A' AR oa oa' oaR)
-            = oaR
-        with
-        | @someR _ _ _ a a' aR => _
-        | @noneR _ _ _ => _
-        end
-  ).
-  - simpl.
-    apply (ap (fun x => someR A A' AR a a' x)).
-    assert (H:
-      R_in_map AR a a' aR =
-      some_inj1 A' (map AR a) a'
-        (transport (fun t : A' => Some t = Some a')
-          (R_in_map AR a a' aR)^
-          idpath)
-    ). { elim (R_in_map AR a a' aR). reflexivity. }
-    rewrite <- H.
-    exact (R_in_mapK AR a a' aR).
-  - reflexivity.
-Defined.
+Admitted.

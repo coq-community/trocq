@@ -11,17 +11,46 @@
 (*                            * see LICENSE file for the text of the license *)
 (*****************************************************************************)
 
-From Coq Require Import ssreflect.
+From mathcomp Require Import all_ssreflect all_algebra.
 From Trocq Require Import Trocq.
+Import GRing.Theory.
+Local Open Scope bool_scope.
 
 Set Universe Polymorphism.
+ 
+Lemma val_Zp_int p : 1 < p ->
+  forall n : int, ((n%:~R)%R : 'Z_p)%:Z%R = (n %% p)%Z.
+Proof.
+case: p => [|[|p]]// _ [] n /=.
+  by rewrite modz_nat -val_Zp_nat.
+rewrite modNz_nat// val_Zp_nat//= /Zp_trunc/=.
+rewrite modnS.
+case: ifP.
+  rewrite subn0 modnn.
+(*   
+  rewrite subn1.
+rewrite -[n.+1]addn1.
+rewrite modnD//=.
+rewrite modnS /dvdn.
+rewrite modn_small//; last first.
+  rewrite ltn_psubLR//. leq_addl//.
+Search (_ - _ < _)%N.
+Search (_.+1 %% _)%N.
 
-Declare Scope int_scope.
-Delimit Scope int_scope with int.
-Local Open Scope int_scope.
-Declare Scope Zmodp_scope.
-Delimit Scope Zmodp_scope with Zmodp.
-Local Open Scope Zmodp_scope.
+Search (_ %% _)%Z (_ %% _)%N.
+rewrite val_Zp
+congr Posz.
+ rewrite val_Zp_nat//.  *)
+Admitted.
+
+Lemma Zp_int_mod [p : nat] : 1 < p ->
+   forall m : int, ((m %% p)%Z%:~R)%R = (m%:~R)%R :> 'Z_p.
+Admitted.
+
+
+Section modp.
+Variable (p : nat) (p_gt1 : p > 1).
+Let p_gt0 : p > 0. by case: p p_gt1. Qed.
 
 Definition binop_param {X X'} RX {Y Y'} RY {Z Z'} RZ
    (f : X -> Y -> Z) (g : X' -> Y' -> Z') :=
@@ -31,46 +60,74 @@ Definition binop_param {X X'} RX {Y Y'} RY {Z Z'} RZ
 We setup an axiomatic context in order not to develop
 arithmetic modulo in Coq/HoTT.
 **)
-Axiom (int@{i} : Type@{i}) (zero : int) (add : int -> int -> int)
-      (mul : int -> int -> int).
-Axiom (addC : forall m n, add m n = add n m).
-Axiom (Zmodp : Type) (zerop : Zmodp) (addp : Zmodp -> Zmodp -> Zmodp)
-      (mulp : Zmodp -> Zmodp -> Zmodp).
-Axiom (modp : int -> Zmodp) (reprp : Zmodp -> int)
-      (reprpK : forall x, modp (reprp x) = x).
-
-Definition eqmodp (x y : int) := modp x = modp y.
+Definition eqmodp (x y : int) := (x = y %[mod p])%Z.
 
 (* for now translations need the support of a global reference: *)
-Definition eq_Zmodp (x y : Zmodp) := (x = y).
+Definition eq_Zmodp (x y : 'Z_p) := (x = y).
+
+
+
+Lemma eq_intZp (m n : int) : (m%:~R == n%:~R :> 'Z_p)%R = (m == n %[mod p])%Z.
+Proof.
+apply/eqP/eqP.
+  by move=> /(congr1 val)/(congr1 Posz); rewrite !val_Zp_int.
+by move=> /(congr1 (fun n => n%:~R : 'Z_p)%R); rewrite !Zp_int_mod.
+Qed.
+
+Lemma eq_natZp (m n : nat) : (m%:R == n%:R :> 'Z_p)%R = (m == n %[mod p]).
+Proof. by rewrite (eq_intZp m n) !modz_nat. Qed.
+Locate "==".
+
+Lemma intZp_eq0 (n : int) : (n%:~R == 0 :> 'Z_p)%R = (p %| n)%Z.
+Proof. by rewrite -[0%R]/(0%:~R)%R eq_intZp mod0z; apply/eqP/dvdz_mod0P.  Qed.
+
+Lemma natZp_eq0 (n : nat) : (n%:R == 0 :> 'Z_p)%R = (p %| n).
+Proof. by rewrite -[0%R]/(0%:R)%R eq_natZp mod0n. Qed.
+
+Search (_ %% _)%N ('I__).
+Search GRing.natmul nat_of_ord.
+
 Arguments eq_Zmodp /.
 
-Notation "0" := zero : int_scope.
-Notation "0" := zerop : Zmodp_scope.
-Notation "x == y" := (eqmodp x%int y%int)
-  (format "x  ==  y", at level 70) : int_scope.
-Notation "x + y" := (add x%int y%int) : int_scope.
-Notation "x + y" := (addp x%Zmodp y%Zmodp) : Zmodp_scope.
-Notation "x * y" := (mul x%int y%int) : int_scope.
-Notation "x * y" := (mulp x%Zmodp y%Zmodp) : Zmodp_scope.
+Lemma reprK : cancel (val : 'Z_p -> int) (intmul 1 : int -> 'Z_p).
+Proof. exact: natr_Zp. Qed.
 
-Module IntToZmodp.
+Definition Rp := SplitSurj.toParam (SplitSurj.Build reprK).
+Lemma Rzero : Rp 0%R 0%R. Proof. done. Qed.
 
-Definition Rp := SplitSurj.toParam (SplitSurj.Build reprpK).
+Arguments graph /.
 
-Axiom Rzero : Rp zero zerop.
-Variable Radd : binop_param Rp Rp Rp add addp.
-Variable Rmul : binop_param Rp Rp Rp mul mulp.
-Variable Reqmodp01 : forall (m : int) (x : Zmodp), Rp m x ->
+
+Definition int_add (x y : int) : int := (x + y)%R.
+Definition int_mul (x y : int) : int := (x * y)%R.
+
+Definition Zp_add (x y : 'Z_p) : 'Z_p := (x + y)%R.
+Definition Zp_mul (x y : 'Z_p) : 'Z_p := (x * y)%R.
+
+Lemma Radd : binop_param Rp Rp Rp (int_add) (Zp_add).
+Proof. by move=> /= m _ <- n _ <- /=; rewrite rmorphD. Qed.
+
+Lemma Rmul : binop_param Rp Rp Rp (int_mul) (Zp_mul).
+Proof. by move=> /= m _ <- n _ <- /=; rewrite rmorphM. Qed.
+
+Definition Reqmodp01 : forall (m : int) (x : 'Z_p), Rp m x ->
   forall n y, Rp n y -> Param01.Rel (eqmodp m n) (eq_Zmodp x y).
+Proof.
+move=> /= m _ <- n _ <-; exists (fun _ _ => True) => //=.
+by split=> /eqP; rewrite eq_intZp => /eqP.
+Qed.
+
 
 Trocq Use Rp Rmul Rzero Param10_paths Reqmodp01.
 
+Local Open Scope ring_scope.
+
 Lemma IntRedModZp :
- (forall (m n p : Zmodp), (m = n * n)%Zmodp -> m = 0) ->
- forall (m n p : int), (m = n * n)%int -> (m == 0)%int.
+ (forall (m n : 'Z_p), m = n * n -> m = 0) ->
+ forall (m n : int), m = n * n -> eqmodp m n.
 Proof.
 move=> Hyp.
+rewrite -[*%R]/int_mul/=.
 trocq; simpl.
 exact: Hyp.
 Qed.
