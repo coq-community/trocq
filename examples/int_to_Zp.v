@@ -96,10 +96,18 @@ Definition Rp := SplitSurj.toParam (SplitSurj.Build reprK).
 Lemma Rzero : Rp 0%R 0%R. Proof. done. Qed.
 
 Arguments graph /.
-Lemma Radd : binop_param Rp Rp Rp (@GRing.add _) (@GRing.add _).
+
+
+Definition int_add (x y : int) : int := (x + y)%R.
+Definition int_mul (x y : int) : int := (x * y)%R.
+
+Definition Zp_add (x y : 'Z_p) : 'Z_p := (x + y)%R.
+Definition Zp_mul (x y : 'Z_p) : 'Z_p := (x * y)%R.
+
+Lemma Radd : binop_param Rp Rp Rp (int_add) (Zp_add).
 Proof. by move=> /= m _ <- n _ <- /=; rewrite rmorphD. Qed.
 
-Lemma Rmul : binop_param Rp Rp Rp (@GRing.mul _) (@GRing.mul _).
+Lemma Rmul : binop_param Rp Rp Rp (int_mul) (Zp_mul).
 Proof. by move=> /= m _ <- n _ <- /=; rewrite rmorphM. Qed.
 
 Definition Reqmodp01 : forall (m : int) (x : 'Z_p), Rp m x ->
@@ -115,10 +123,11 @@ Trocq Use Rp Rmul Rzero Param10_paths Reqmodp01.
 Local Open Scope ring_scope.
 
 Lemma IntRedModZp :
- (forall (m n p : 'Z_p), m = n * n -> m = 0) ->
- forall (m n p : int), m = n * n -> (m == 0).
+ (forall (m n : 'Z_p), m = n * n -> m = 0) ->
+ forall (m n : int), m = n * n -> eqmodp m n.
 Proof.
 move=> Hyp.
+rewrite -[*%R]/int_mul/=.
 trocq; simpl.
 exact: Hyp.
 Qed.

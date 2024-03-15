@@ -146,10 +146,10 @@ Elpi Accumulate lp:{{
       coq.say "***********************************************************************************"
     ),
     % reduce the graph, so the variables all become ground in the terms
-    cstr.reduce-graph,
+    std.spy (cstr.reduce-graph),
     % now we can remove the weaken placeholders and replace them with real weakening functions
     % or nothing if it is weaken α α
-    param.subst-weaken GR GR',
+    std.spy (param.subst-weaken GR GR'),
     util.when-debug dbg.steps (
       coq.say "***********************************************************************************",
       coq.say "after reduction:",

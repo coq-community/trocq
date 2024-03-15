@@ -17,6 +17,7 @@ Require Import HoTT_additions Hierarchy Database.
 From Trocq.Elpi Extra Dependency "param-class.elpi" as param_class.
 From Trocq.Elpi Extra Dependency "util.elpi" as util.
 
+Set Warnings "+elpi.typecheck".
 Set Universe Polymorphism.
 Unset Universe Minimization ToSet.
 
@@ -54,11 +55,11 @@ Elpi Accumulate lp:{{
   ].
 
   pred generate-map-prop i:map-class, i:param-class.
-  generate-map-prop M RClass :- std.spy-do! [
+  generate-map-prop M RClass :- std.do! [
     coq.locate {calc ("Param" ^ {param-class->string RClass} ^ ".Rel")} R,
     Prop = sort prop,
-    coq.univ-instance Empty [],
     coq.env.global R RTm,
+    % RTm = {{fun A B : Prop => lp:RTmNoEta A B}},
     generate-fields M RTm RClass Fields,
     coq.locate "sym_rel" SymRel,
     coq.env.global SymRel SymRelTm,
@@ -75,26 +76,32 @@ Elpi Accumulate lp:{{
       "Map" ^ {map-class->string M} ^ "_Prop_sym" ^
       {param-class->string RClass},
     % these typechecks are very important: they add L < L1 to the constraint graph
-    % std.assert-ok (coq.elaborate-skeleton Decl Ty Decl') "generate-map-prop: Decl cannot be elaborated",
+    std.assert-ok! (coq.elaborate-skeleton Decl _Ty Decl')
+      "generate-map-prop: Decl cannot be elaborated",
+    std.assert-ok! (coq.elaborate-skeleton DeclSym _Ty' DeclSym')
+      "generate-map-prop: Decl cannot be elaborated",
     % std.assert-ok! (coq.typecheck Decl _)
-    %   "generate-map-prop: Decl ill-typed",
+    %    "generate-map-prop: Decl ill-typed",
     % std.assert-ok! (coq.typecheck DeclSym _)
-    %   "generate-map-prop: DeclSym ill-typed",
+    %    "generate-map-prop: DeclSym ill-typed",
     @udecl! [] tt [] tt =>
-      coq.env.add-const MapProp Decl _ @transparent! _,
+      coq.env.add-const MapProp Decl' _ @transparent! _,
     @udecl!  [] tt [] tt =>
-      coq.env.add-const MapPropSym DeclSym _ @transparent! _
+      coq.env.add-const MapPropSym DeclSym' _ @transparent! _
   ].
 }}.
 Elpi Typecheck.
 
 Set Printing Universes.
-Check (@Map0.BuildHas Prop Prop (@Param00.Rel)).
+Set Printing All.
+Print Param00.Rel.
+Eval compute in (@Map0.BuildHas Prop Prop (@Param00.Rel)).
 
 Elpi Query lp:{{
   % cannot have only one binder in the declaration because this line creates a fresh level:
-  Classes = [map0],
-  std.forall [map0] (m\
+  map-classes all Classes,
+  map-classes low LowClasses,
+  std.forall LowClasses (m\
     std.forall Classes (n\
       std.forall Classes (p\
         generate-map-prop m (pc n p)
@@ -103,7 +110,8 @@ Elpi Query lp:{{
   ).
 }}.
 
-Elpi Command genparamtype.
+
+(* Elpi Command genparamtype.
 Elpi Accumulate Db trocq.db.
 Elpi Accumulate File util.
 Elpi Accumulate File param_class.
@@ -183,4 +191,4 @@ Elpi Query lp:{{
  Set Printing Universes. About Param00_Prop40.
 Set Printing Universes. Print Param12a_Prop31.
 Set Printing Universes. About Param30_Prop44.
-Set Printing Universes. Print Param44_Prop44. *)
+Set Printing Universes. Print Param44_Prop44. *) *)

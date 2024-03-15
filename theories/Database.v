@@ -36,6 +36,7 @@ Elpi Db trocq.db lp:{{
 
   % constants PType and Weaken registered so that we do not coq.locate every time
   pred trocq.db.ptype o:constant.
+  pred trocq.db.pprop o:constant.
   pred trocq.db.weaken o:constant.
 
   % param-type β α {{ Param(β)_Type(α) }}

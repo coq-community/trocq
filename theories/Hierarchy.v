@@ -100,11 +100,13 @@ Register sym_rel as trocq.sym_rel.
  * that will be mapped to variables in the constraint graph
  *)
 Definition PType@{i} (m n : map_class) (* : Type@{i+1} *) := Type@{i}.
+Definition PProp@{} (m n : map_class) (* : Type@{i+1} *) := Prop.
 (* placeholder for a weakening from (m, n) to (m', n')
  * replaced with a real weakening function once the ground classes are known
  *)
 Definition weaken@{i} (m n m' n' : map_class) {A : Type@{i}} (a : A) : A := a.
 Register PType as trocq.ptype.
+Register PProp as trocq.pprop.
 Register weaken as trocq.weaken.
 
 Elpi Command genhierarchy.
@@ -116,6 +118,8 @@ Elpi Accumulate File util.
 Elpi Query lp:{{
   {{:gref lib:trocq.ptype}} = const PType,
   coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.ptype PType)),
+  {{:gref lib:trocq.pprop}} = const PProp,
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.pprop PProp)),
   {{:gref lib:trocq.weaken}} = const Weaken,
   coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.weaken Weaken)).
 }}.

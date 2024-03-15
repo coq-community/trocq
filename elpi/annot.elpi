@@ -22,6 +22,10 @@ coq.subst-fun Args F FArgs :- !, coq.mk-app F Args FArgs.
 % NB: the output type is term because the annotations are encoded directly in Coq
 % see PType in Param.v
 pred term->annot-term i:term, o:term.
+term->annot-term (sort prop) (app [PProp , M, N]) :-
+  trocq.db.pprop PPropGR, !,
+  coq.env.global (const PPropGR) PProp, !,
+  cstr.univ-link _ M N.
 term->annot-term (sort (typ U)) (app [pglobal (const PType) UI, M, N]) :- trocq.db.ptype PType, !,
   coq.univ-instance UI [{coq.univ.variable U}],
   cstr.univ-link _ M N.
@@ -60,6 +64,11 @@ sub-type (app [pglobal (const PType) _, M1, N1]) (app [pglobal (const PType) _, 
   cstr.univ-link C1 M1 N1,
   cstr.univ-link C2 M2 N2,
   cstr.geq C1 C2.
+sub-type (app [pglobal (const PProp) _, M1, N1]) (app [pglobal (const PProp) _, M2, N2]) :-
+  trocq.db.pprop PProp, !,
+  cstr.univ-link C1 M1 N1,
+  cstr.univ-link C2 M2 N2,
+  cstr.geq C1 C2.
 % SubPi
 sub-type (prod N T F) (prod _ T' F') :- !,
   sub-type T' T, !,
@@ -80,6 +89,11 @@ sub-type X Y :- coq.error "annot.sub-type:" X "vs" Y.
 pred eq i:term, i:term.
 eq (app [pglobal (const PType) UI, M1, N1]) (app [pglobal (const PType) UI, M2, N2]) :-
   trocq.db.ptype PType, !,
+  cstr.univ-link C1 M1 N1,
+  cstr.univ-link C2 M2 N2,
+  cstr.eq C1 C2.
+eq (app [pglobal (const PProp) UI, M1, N1]) (app [pglobal (const PProp) UI, M2, N2]) :-
+  trocq.db.pprop PProp, !,
   cstr.univ-link C1 M1 N1,
   cstr.univ-link C2 M2 N2,
   cstr.eq C1 C2.
@@ -111,6 +125,8 @@ classes T Cs' Out :-
 pred all-classes i:term, o:list param-class.
 all-classes (app [pglobal (const PType) _, M, N]) [C] :- trocq.db.ptype PType, !,
   cstr.univ-link C M N.
+all-classes (app [pglobal (const PProp) _, M, N]) [C] :- trocq.db.pprop PProp, !,
+  cstr.univ-link C M N.
 all-classes X Cs :- (X = prod _ T F ; X = fun _ T F), !,
   pi x\ std.append {all-classes T} {all-classes (F x)} Cs.
 all-classes (app L) Cs :- !,
@@ -121,6 +137,8 @@ all-classes X _ :- coq.error "all-classes:" X.
 % output class of a term
 pred out-class i:term, o:option param-class.
 out-class (app [pglobal (const PType) _, M, N]) (some C) :- trocq.db.ptype PType, !,
+  cstr.univ-link C M N.
+out-class (app [pglobal (const PProp) _, M, N]) (some C) :- trocq.db.pprop PProp, !,
   cstr.univ-link C M N.
 out-class (prod _ _ F) Out :- !, pi x\ out-class (F x) Out.
 out-class (fun _ _ _) none :- !.
