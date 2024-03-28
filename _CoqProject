@@ -21,6 +21,7 @@ theories/Param_nat.v
 theories/Param_paths.v
 theories/Param_sigma.v
 theories/Param_prod.v
+theories/Param_sum.v
 theories/Param_option.v
 theories/Param_vector.v
 theories/Param_Empty.v
@@ -29,6 +30,7 @@ theories/Param_list.v
 examples/artifact_paper_example.v
 examples/N.v
 examples/int_to_Zp.v
+examples/flt3_step.v
 examples/peano_bin_nat.v
 examples/setoid_rewrite.v
 examples/summable.v

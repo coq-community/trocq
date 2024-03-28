@@ -19,9 +19,13 @@ Set Universe Polymorphism.
 Declare Scope int_scope.
 Delimit Scope int_scope with int.
 Local Open Scope int_scope.
-Declare Scope Zmod7_scope.
-Delimit Scope Zmod7_scope with Zmod7.
-Local Open Scope Zmod7_scope.
+Declare Scope Zmod9_scope.
+Delimit Scope Zmod9_scope with Zmod9.
+Local Open Scope Zmod9_scope.
+
+Definition unop_param {X X'} RX {Y Y'} RY
+   (f : X -> Y) (g : X' -> Y') :=
+  forall x x', RX x x' -> RY (f x) (g x').
 
 Definition binop_param {X X'} RX {Y Y'} RY {Z Z'} RZ
    (f : X -> Y -> Z) (g : X' -> Y' -> Z') :=
@@ -32,57 +36,61 @@ We setup an axiomatic context in order not to develop
 arithmetic modulo in Coq/HoTT.
 **)
 Axiom (int@{i} : Type@{i}) (zero : int) (add : int -> int -> int)
-      (mul : int -> int -> int) (one : int).
+      (mul : int -> int -> int) (one : int)
+      (mod3 : int -> int).
 Axiom (addC : forall m n, add m n = add n m).
-Axiom (Zmod7 : Type) (zerop : Zmod7) (addp : Zmod7 -> Zmod7 -> Zmod7)
-      (mulp : Zmod7 -> Zmod7 -> Zmod7) (onep : Zmod7).
-Axiom (modp : int -> Zmod7) (reprp : Zmod7 -> int)
-      (reprpK : forall x, modp (reprp x) = x).
+Axiom (Zmod9 : Type) (zerop : Zmod9) (addp : Zmod9 -> Zmod9 -> Zmod9)
+      (mulp : Zmod9 -> Zmod9 -> Zmod9) (onep : Zmod9).
+Axiom (modp : int -> Zmod9) (reprp : Zmod9 -> int)
+      (reprpK : forall x, modp (reprp x) = x)
+      (modp3 : Zmod9 -> Zmod9).
 
 Definition eqmodp (x y : int) := modp x = modp y.
 
 (* for now translations need the support of a global reference: *)
-Definition eq_Zmod7 (x y : Zmod7) := (x = y).
-Arguments eq_Zmod7 /.
+Definition eq_Zmod9 (x y : Zmod9) := (x = y).
+Arguments eq_Zmod9 /.
 
 Notation "0" := zero : int_scope.
-Notation "0" := zerop : Zmod7_scope.
+Notation "0" := zerop : Zmod9_scope.
 Notation "1" := one : int_scope.
-Notation "1" := onep : Zmod7_scope.
+Notation "1" := onep : Zmod9_scope.
 Notation "x == y" := (eqmodp x%int y%int)
   (format "x  ==  y", at level 70) : int_scope.
 Notation "x + y" := (add x%int y%int) : int_scope.
-Notation "x + y" := (addp x%Zmod7 y%Zmod7) : Zmod7_scope.
+Notation "x + y" := (addp x%Zmod9 y%Zmod9) : Zmod9_scope.
 Notation "x * y" := (mul x%int y%int) : int_scope.
-Notation "x * y" := (mulp x%Zmod7 y%Zmod7) : Zmod7_scope.
+Notation "x * y" := (mulp x%Zmod9 y%Zmod9) : Zmod9_scope.
 
-Module IntToZmod7.
+Module IntToZmod9.
 
 Definition Rp := SplitSurj.toParam (SplitSurj.Build reprpK).
 
 Axiom Rzero : Rp zero zerop.
 Axiom Rone : Rp one onep.
+Variable Rmod3 : unop_param Rp Rp mod3 modp3.
 Variable Radd : binop_param Rp Rp Rp add addp.
 Variable Rmul : binop_param Rp Rp Rp mul mulp.
-Variable Reqmodp01 : forall (m : int) (x : Zmod7), Rp m x ->
-  forall n y, Rp n y -> Param01.Rel (eqmodp m n) (eq_Zmod7 x y).
+Variable Reqmodp01 : forall (m : int) (x : Zmod9), Rp m x ->
+  forall n y, Rp n y -> Param01.Rel (eqmodp m n) (eq_Zmod9 x y).
 
-Trocq Use Rp Rmul Rzero Rone Param10_paths Reqmodp01.
+Trocq Use Rp Rmul Rzero Rone Radd Rmod3 Param10_paths Reqmodp01.
 Trocq Use Param01_sum.
-Notation "P \/ Q" := (P + Q)%type.
 
-Lemma IntRedModZp :
- forall (m n p : int), (m = n * n)%int ->
-   (m = p * p * p)%int -> (m == 0)%int \/ (m == 1)%int.
+Lemma flt3_step (m n p : int) :
+   ((m * m * m) + (n * n * n) = (p * p * p))%int ->
+   (eqmodp (mod3 (m * n * p)%int) 0%int).
+  
 Proof.
-trocq=> /=.
-Admitted.
+trocq; simpl.
+exact: Hyp.
+Qed.
 
 (* Print Assumptions IntRedModZp. (* No Univalence *) *)
 
-End IntToZmod7.
+End IntToZmod9.
 
-Module Zmod7ToInt.
+Module Zmod9ToInt.
 
 Definition Rp := SplitSurj.toParamSym (SplitSurj.Build reprpK).
 
@@ -92,19 +100,19 @@ Variable paths_to_eqmodp : binop_param Rp Rp iff paths eqmodp.
 
 Trocq Use Rp Param01_paths Param10_paths Radd Rzero.
 
-Goal (forall x y, x + y = y + x)%Zmod7.
+Goal (forall x y, x + y = y + x)%Zmod9.
 Proof.
   trocq.
   exact addC.
 Qed.
 
-Goal (forall x y z, x + y + z = y + x + z)%Zmod7.
+Goal (forall x y z, x + y + z = y + x + z)%Zmod9.
 Proof.
   intros x y z.
-  suff addpC: forall x y, (x + y = y + x)%Zmod7. {
+  suff addpC: forall x y, (x + y = y + x)%Zmod9. {
     by rewrite (addpC x y). }
   trocq.
   exact addC.
 Qed.
 
-End Zmod7ToInt.
+End Zmod9ToInt.
