@@ -15,4 +15,4 @@ From elpi Require Export elpi.
 From HoTT Require Export HoTT.
 From Trocq Require Export
   HoTT_additions Hierarchy Param_Type Param_forall Param_arrow Database Param
-  Param_paths Vernac Common Param_nat Param_trans Param_bool.
+  Param_paths Vernac Common Param_nat Param_trans Param_bool Param_sum.

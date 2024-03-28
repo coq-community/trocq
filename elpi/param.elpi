@@ -196,7 +196,7 @@ param
     ).
 
 % TrocqConv for F (argument B in param.args) + TrocqApp
-param (app [F|Xs]) B (app [F'|Xs']) (W AppR) :- std.do! [
+param (app [F|Xs]) B (app [F'|Xs']) (W AppR) :- std.spy-do! [
   util.when-debug dbg.steps (coq.say "param/app" F Xs "@" B),
   annot.typecheck F FTy,
   fresh-type => param F FTy F' FR,
