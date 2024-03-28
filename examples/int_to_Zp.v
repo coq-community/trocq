@@ -18,6 +18,7 @@ Set Universe Polymorphism.
 
 Declare Scope int_scope.
 Delimit Scope int_scope with int.
+Delimit Scope int_scope with ℤ.
 Local Open Scope int_scope.
 Declare Scope Zmod7_scope.
 Delimit Scope Zmod7_scope with Zmod7.
@@ -55,6 +56,18 @@ Notation "x + y" := (add x%int y%int) : int_scope.
 Notation "x + y" := (addp x%Zmod7 y%Zmod7) : Zmod7_scope.
 Notation "x * y" := (mul x%int y%int) : int_scope.
 Notation "x * y" := (mulp x%Zmod7 y%Zmod7) : Zmod7_scope.
+Notation "m ²" := (m * m)%int (at level 2) : int_scope.
+Notation "m ²" := (m * m)%Zmod7 (at level 2) : Zmod7_scope.
+Notation "m ³" := (m * m * m)%int (at level 2) : int_scope.
+Notation "m ³" := (m * m * m)%Zmod7 (at level 2) : Zmod7_scope.
+Notation "x ≡ y" := (eqmodp x%int y%int)
+  (format "x  ≡  y", at level 70) : int_scope.
+Notation "x ≢ y" := (not (eqmodp x%int y%int))
+  (format "x  ≢  y", at level 70) : int_scope.
+Notation "x ≠ y" := (not (x = y)).
+Notation "ℤ/7ℤ" := Zmod7.
+Notation ℤ := int.
+Notation "P ∨ Q" := (P + Q)%type.
 
 Module IntToZmod7.
 
@@ -69,11 +82,9 @@ Variable Reqmodp01 : forall (m : int) (x : Zmod7), Rp m x ->
 
 Trocq Use Rp Rmul Rzero Rone Param10_paths Reqmodp01.
 Trocq Use Param01_sum.
-Notation "P \/ Q" := (P + Q)%type.
 
-Lemma IntRedModZp :
- forall (m n p : int), (m = n * n)%int ->
-   (m = p * p * p)%int -> (m == 0)%int \/ (m == 1)%int.
+Lemma IntRedModZp : forall (m n p : ℤ),
+  m = n²%ℤ -> m = p³%ℤ  -> m ≡ 0 ∨ m ≡ 1.
 Proof.
 trocq=> /=.
 Admitted.

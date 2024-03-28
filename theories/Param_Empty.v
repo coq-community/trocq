@@ -55,3 +55,6 @@ Proof.
   - exact R_in_map_Empty.
   - exact R_in_mapK_Empty.
 Defined.
+
+Axiom Param01_Empty : Param01.Rel Empty Empty.
+Axiom Param10_Empty : Param10.Rel Empty Empty.
