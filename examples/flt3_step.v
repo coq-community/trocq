@@ -49,7 +49,7 @@ Definition eqmodp (x y : int) := modp x = modp y.
 
 (* for now translations need the support of a global reference: *)
 Definition eq_Zmod9 (x y : Zmod9) := (x = y).
-Arguments eq_Zmod9 /.
+Arguments eq_Zmod9 /. 
 
 Notation "0" := zero : int_scope.
 Notation "0" := zerop : Zmod9_scope.
@@ -76,15 +76,21 @@ Variable Reqmodp01 : forall (m : int) (x : Zmod9), Rp m x ->
 
 Trocq Use Rp Rmul Rzero Rone Radd Rmod3 Param10_paths Reqmodp01.
 Trocq Use Param01_sum.
+Notation not A := (A -> Empty). 
 
-Lemma flt3_step (m n p : int) :
-   ((m * m * m) + (n * n * n) = (p * p * p))%int ->
-   (eqmodp (mod3 (m * n * p)%int) 0%int).
-  
+Variable Param01_Empty : Param01.Rel Empty Empty.
+Variable Param10_Empty : Param10.Rel Empty Empty.
+
+Trocq Use Param01_Empty.
+Trocq Use Param10_Empty.
+
+Lemma flt3_step : forall (m n p : int),
+   (not (eqmodp (mod3 (m * n * p)%int) 0%int)) ->
+  not ((m * m * m) + (n * n * n) = (p * p * p))%int.
 Proof.
 trocq; simpl.
-exact: Hyp.
-Qed.
+Admitted.
+
 
 (* Print Assumptions IntRedModZp. (* No Univalence *) *)
 
