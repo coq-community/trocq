@@ -63,8 +63,8 @@ Notation "x * y" := (mulp x%Zmod9 y%Zmod9) : Zmod9_scope.
 Notation not A := (A -> Empty). 
 Notation "m ^ 2" := (m * m)%int (at level 2) : int_scope.
 Notation "m ^ 2" := (m * m)%Zmod9 (at level 2) : Zmod9_scope.
-Notation "m ^ 3" := (m * m * m)%int (at level 2) : int_scope.
-Notation "m ^ 3" := (m * m * m)%Zmod9 (at level 2) : Zmod9_scope.
+Notation "m ³" := (m * m * m)%int (at level 2) : int_scope.
+Notation "m ³" := (m * m * m)%Zmod9 (at level 2) : Zmod9_scope.
 Notation "m % 3" := (mod3 m)%int (at level 2) : int_scope.
 Notation "m % 3" := (modp3 m)%Zmod9 (at level 2) : Zmod9_scope.
 Notation "x ≡ y" := (eqmodp x%int y%int)
@@ -91,7 +91,7 @@ Trocq Use Rp Rmul Rzero Rone Radd Rmod3 Param10_paths Reqmodp01.
 Trocq Use Param01_sum Param01_Empty Param10_Empty.
 
 Lemma flt3_step : forall (m n p : ℤ),
-  m * n * p % 3 ≢ 0 -> (m^3 + n^3)%ℤ  ≠ p^3%ℤ.
+  m * n * p % 3 ≢ 0 -> (m³ + n³)%ℤ  ≠ p³%ℤ.
 Proof.
 trocq=> /=.
 Admitted.
