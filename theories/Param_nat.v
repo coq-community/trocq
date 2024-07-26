@@ -11,7 +11,7 @@
 (*                            * see LICENSE file for the text of the license *)
 (*****************************************************************************)
 
-From mathcomp Require Import ssreflect ssrfun ssrnat.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat.
 Require Import HoTT_additions Hierarchy.
 
 Set Universe Polymorphism.
@@ -21,24 +21,22 @@ Inductive natR : nat -> nat -> Type :=
   | OR : natR O O
   | SR : forall (n n' : nat), natR n n' -> natR (S n) (S n').
 
-Lemma ind (T : Type) (X : T -> Type) t (P : X t -> Type) :
-  (forall t' (e : t' = t) (x : X t'), P (transport X e x)) ->
-  forall (x : X t), P x.
-Proof. by move=> + x => /(_ t erefl); apply. Defined.
-
-Lemma eq_to_refl (T : Type) (x : T) (p : x = x) : unkeyed p = erefl.
-Proof. exact: Prop_irrelevance. Qed.
-
-Lemma natR_irrelevant m n : forall (nR nR' : natR m n), nR = nR'.
+Lemma natR_irrelevant m n (nR nR' : natR m n) : nR = nR'.
 Proof.
-suff: forall (nR : natR m n) m' n'  (nR' : natR m' n') (e : m = m') (e' : n = n') ,
-     transport (fun m' => natR m' n') e (transport (fun n' => natR m n') e' nR) = nR'.
-    by move=> /(_ _ m n _ erefl erefl); apply.
-elim => // [|{}m {}n nR IHnR] m' n' => - [|{}m' {}n' nR'] // e e'.
-  by rewrite ?eq_to_refl.
-rewrite -[nR']IHnR//; do ?by [case: e|case: e'].
-move=> e'' e'''.
-by case: _ / e'' in e *; case: _ / e''' in e' *; rewrite ?eq_to_refl.
+have @phi k l (r : natR k l) : eqn k l.
+  elim: r => {k l}; first by reflexivity.
+  move=> k l r e; exact: e.
+have @psi k l (e : eqn k l) : natR k l.
+  elim: k l e  => [| k ihk] l e.
+  - case: l e => [| l] // _; exact OR.
+  - case: l e => [| l] // e. 
+    exact: SR (ihk _ e). 
+have phiK k l r : psi k l (phi k l r) = r.
+  elim: r => {k l} // k l r e /=.
+  by rewrite [X in SR _ _ X]e. 
+rewrite -[LHS]phiK -[RHS]phiK.
+suff -> : phi _ _ nR = phi _ _ nR' by [].
+apply: eq_irrelevance. 
 Qed.
 
 Definition map_nat : nat -> nat := id.
