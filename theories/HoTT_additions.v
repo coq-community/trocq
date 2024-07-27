@@ -244,8 +244,105 @@ Lemma path_prod {A B : Type} (z z' : A * B) :
   fst z = fst z' -> snd z = snd z' -> z = z'.
 Proof.
 by case: z z' => [? ?] [? ?] /= -> ->.
-Qed.
+Defined.
 
+(* Below a copy-paste of transposed material from HoTT. 
+   TODO : tidy. *)
+
+(****)
+Definition ap_idmap {A : Type} {x y : A} (p : x = y) :
+  ap idmap p = p
+  :=
+  match p with idpath => 1 end.
+
+
+Definition ap_compose {A B C : Type} (f : A -> B) (g : B -> C) {x y : A} (p : x = y) :
+ap (g o f) p = ap g (ap f p)
+:=
+match p with idpath => 1 end.
+
+Definition ap_pp {A B : Type} (f : A -> B) {x y z : A} (p : x = y) (q : y = z) :
+ap f (p @ q) = (ap f p) @ (ap f q)
+:=
+match q with
+  idpath =>
+  match p with idpath => 1 end
+end.
+
+(** Concatenation is associative. *)
+Definition concat_p_pp {A : Type} {x y z t : A} (p : x = y) (q : y = z) (r : z = t) :
+p @ (q @ r) = (p @ q) @ r :=
+match r with idpath =>
+match q with idpath =>
+  match p with idpath => 1
+  end end end.
+
+  Definition concat_1p_p1 {A : Type} {x y : A} (p : x = y)
+: 1 @ p = p @ 1
+:= concat_1p p @ (concat_p1 p)^.
+
+Definition concat_pp_p {A : Type} {x y z t : A} (p : x = y) (q : y = z) (r : z = t) :
+  (p @ q) @ r = p @ (q @ r) :=
+  match r with idpath =>
+    match q with idpath =>
+      match p with idpath => 1
+      end end end.
+
+(** Naturality of [ap] at identity. *)
+Definition concat_A1p {A : Type} {f : A -> A} (p : forall x, f x = x) {x y : A} (q : x = y) :
+(ap f q) @ (p y) = (p x) @ q
+:=
+match q with
+  | idpath => concat_1p_p1 _
+end.
+
+Definition inverse_ap {A B : Type} (f : A -> B) {x y : A} (p : x = y) :
+(ap f p)^ = ap f (p^)
+:=
+match p with idpath => 1 end.
+
+
+Definition ap_V {A B : Type} (f : A -> B) {x y : A} (p : x = y) :
+ap f (p^) = (ap f p)^
+:=
+match p with idpath => 1 end. 
+
+Definition concat_Ap {A B : Type} {f g : A -> B} (p : forall x, f x = g x) {x y : A} (q : x = y) :
+(ap f q) @ (p y) = (p x) @ (ap g q)
+:=
+match q with
+  | idpath => concat_1p_p1 _
+end.
+
+Definition moveL_pV {A : Type} {x y z : A} (p : z = x) (q : y = z) (r : y = x) :
+  q @ p = r -> q = r @ p^.
+Proof.
+  destruct p.
+  intro h. exact ((concat_p1 _)^ @ h @ (concat_p1 _)^).
+Defined.
+
+
+(* A useful variant of concat_Ap. *)
+Definition ap_homotopic {A B : Type} {f g : A -> B} (p : forall x, f x = g x) {x y : A} (q : x = y)
+: (ap f q) = (p x) @ (ap g q) @ (p y)^.
+Proof.
+apply moveL_pV.
+apply concat_Ap.
+Defined.
+
+Definition concat_p1_1p {A : Type} {x y : A} (p : x = y)
+  : p @ 1 = 1 @ p
+  := concat_p1 p @ (concat_1p p)^.
+
+
+Definition concat_pA1 {A : Type} {f : A -> A} (p : forall x, x = f x) {x y : A} (q : x = y) :
+  (p x) @ (ap f q) =  q @ (p y)
+  :=
+  match q as i in (_ = y) return (p x @ ap f i = i @ p y) with
+    | idpath => concat_p1_1p _
+  end.
+
+(****)
 
 Reserved Notation "n .+1" (at level 2, left associativity, format "n .+1").
 Reserved Notation "n .+2" (at level 2, left associativity, format "n .+2").

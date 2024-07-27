@@ -70,8 +70,6 @@ Proof.
   - apply inverse. apply concat_1p.
 Defined.
 
-Set Printing Universes.
-
 Definition paths_R_in_mapK@{i}
   (A A' : Type@{i}) (AR : Param40.Rel@{i} A A')
   (x : A) (x' : A') (xR : AR x x')

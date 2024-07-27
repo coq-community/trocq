@@ -146,7 +146,18 @@ Let map_in_comap b a (e : f a = b) : comap f b = a :=
 
 Let map_in_comapK b a (e : f a = b) :
   comap_in_map b a (map_in_comap b a e) = e.
-Proof. exact: Prop_irrelevance. Qed.
+Proof. 
+rewrite /map_in_comap /comap_in_map /mapK' /=.
+dependent inversion e as [H] => {H}.
+rewrite concat_1p eq_trans_sym_distr ap_pp !concat_pp_p.
+rewrite [ap f (mapK f a)^]ap_V.
+set p1 := ap f _. set p2 := comapK _ _.
+rewrite eq_trans_sym_distr.
+rewrite -2!ap_V inv_V -ap_pp -ap_compose.
+set i := (X in ap X _).
+rewrite concat_A1p.
+by rewrite -concat_pp_p concat_pV concat_1p concat_Vp.
+Defined.
 
 Definition toParam@{} : Param44.Rel@{i} A B :=
   @Param44.BuildRel A B (graph f)

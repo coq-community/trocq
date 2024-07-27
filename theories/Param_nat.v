@@ -37,7 +37,7 @@ have phiK k l r : psi k l (phi k l r) = r.
 rewrite -[LHS]phiK -[RHS]phiK.
 suff -> : phi _ _ nR = phi _ _ nR' by [].
 apply: eq_irrelevance. 
-Qed.
+Defined.
 
 Definition map_nat : nat -> nat := id.
 
