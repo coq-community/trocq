@@ -342,6 +342,25 @@ Definition concat_pA1 {A : Type} {f : A -> A} (p : forall x, x = f x) {x y : A} 
     | idpath => concat_p1_1p _
   end.
 
+
+
+Definition apD10 {A} {B:A->Type} {f g : forall x, B x} (h:f = g) : f == g := fun x => match h with idpath => 1 end.
+
+Definition transport_apD10 :
+  forall {A : Type} {B : A -> Type} {a : A} (P : B a -> Type)
+         {t1 t2 : forall x : A, B x} {e : t1 = t2} {p : P (t1 a)},
+    transport (fun (t : forall x : A, B x) => P (t a)) e p =
+    transport (fun (t : B a) => P t) (apD10 e a) p.
+Proof.
+  intros A B a P t1 t2 [] p; reflexivity.
+Defined.
+
+Definition apD10_path_forall_cancel `{Funext} :
+  forall {A : Type} {B : A -> Type} {f g : forall x : A, B x} (p : forall x, f x = g x),
+    apD10 (path_forall f g p) = p.
+Proof.
+Admitted.
+
 (****)
 
 Reserved Notation "n .+1" (at level 2, left associativity, format "n .+1").

@@ -377,7 +377,7 @@ Proof.
 rewrite /ind_map => Q1 a' aR.
 case: {1 6}_ / R_in_mapK.
 by case: _ / R_in_map.
-Qed.
+Defined.
 
 Lemma weak_ind_map@{i} {A A' : Type@{i}} (AR : Param40.Rel@{i} A A') a
   (P : forall a', AR a a' -> Type@{i}) :
@@ -404,7 +404,7 @@ Proof.
 rewrite /ind_comap => Q1 a aR.
 case: {1 6}_ / R_in_comapK.
 by case: _ / R_in_comap.
-Qed.
+Defined.
 
 Lemma weak_ind_comap@{i} {A A' : Type@{i}} (AR : Param04.Rel@{i} A A') a'
   (P : forall a, AR a a' -> Type@{i}) :
