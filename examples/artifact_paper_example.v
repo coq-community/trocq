@@ -40,8 +40,6 @@ Proof. trocq. (* replaces N by nat in the goal *) exact nat_rect. Defined.
     the proof of `N_Srec`. The `example` directory of the artifact provides more
     examples, for weaker relations than equivalences, and beyond representation
     independence. *)
-Print N_Srec.
+Set Printing Depth 20.
 Print Assumptions N_Srec.
 
-(* Indeed this computes *)
-Eval compute in N_Srec (fun _ => N) (0%N) N.add 1~0~1~1~0~1%positive.
