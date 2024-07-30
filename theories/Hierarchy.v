@@ -417,20 +417,6 @@ Definition map_ind@{i} {A A' : Type@{i}} {PA : Param40.Rel@{i} A A'}
     (P : forall (a' : A'), PA a a' -> Type@{i})  :
    P a' aR -> P (map PA a) (map_in_R PA a (map PA a) idpath).
 Proof. by elim/(ind_map PA): _ aR / _. Defined.
-(* 
-
-apply (transport
-  (fun aR0 : PA a a' =>
-    P a' aR0 -> P (map PA a)
-                 (map_in_R PA a (map PA a) idpath))
-  (R_in_mapK PA a a' aR)
-  (paths_rect A' (map PA a)
-  (fun (a0 : A') (e : map PA a = a0) =>
-   P a0 (map_in_R PA a a0 e) ->
-   P (map PA a)
-    (map_in_R PA a (map PA a) idpath)) idmap a'
-  (R_in_map PA a a' aR))).
-Defined. *)
 
 Definition comap_ind@{i} {A A' : Type@{i}} {PA : Param04.Rel@{i} A A'}
     (a : A) (a' : A') (aR : PA a a')
