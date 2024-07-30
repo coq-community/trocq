@@ -89,6 +89,25 @@ Proof.
     by apply (R_in_map PB); apply fR; apply (comap_in_R PA).
 Defined.
 
+Definition apD10 {A} {B:A->Type} {f g : forall x, B x} (h:f = g)
+  : f == g
+  := fun x => match h with idpath => 1 end.
+
+Definition transport_apD10 :
+  forall {A : Type} {B : A -> Type} {a : A} (P : B a -> Type)
+         {t1 t2 : forall x : A, B x} {e : t1 = t2} {p : P (t1 a)},
+    transport (fun (t : forall x : A, B x) => P (t a)) e p =
+    transport (fun (t : B a) => P t) (apD10 e a) p.
+Proof.
+  intros A B a P t1 t2 [] p; reflexivity.
+Defined.
+
+Definition apD10_path_forall_cancel `{Funext} :
+  forall {A : Type} {B : A -> Type} {f g : forall x : A, B x} (p : forall x, f x = g x),
+    apD10 (path_forall f g p) = p.
+Proof.
+Admitted.
+
 (* (04, 40) + funext -> 40 *)
 Definition Map4_arrow@{i j k} `{Funext}
   {A A' : Type@{i}} (PA : Param04.Rel@{i} A A')
@@ -99,6 +118,22 @@ Proof.
     (Map1.map@{k} _ (Map1_arrow PA PB))
     (Map2a.map_in_R _ (Map2a_arrow PA PB))
     (Map2b.R_in_map _ (Map2b_arrow PA PB)).
+  (***)
+  move=> f f' fR /=.
+  apply path_forall@{i k} => a.
+  apply path_forall@{i k} => a'.
+  apply path_arrow@{i k} => aR /=.
+  rewrite -[in X in _ = X](R_in_comapK PA a' a aR).
+  set t := (R_in_comap PA a' a aR).
+  dependent inversion t.
+  rewrite transport_apD10 /=. set xxxx := path_forall _ _ _.
+  dependent inversion xxxx.
+  rewrite apD10_path_forall_cancel/=.
+  rewrite <- (R_in_mapK PB).
+  set u := (R_in_map _ _ _ _).
+  by dependent inversion u.
+  by elim: (R_in_map _ _ _ _).
+  (***)  
   move=> f f' fR /=.
   apply path_forall@{i k} => a.
   apply path_forall@{i k} => a'.
