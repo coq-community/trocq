@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+authors:
+  - family-names: Cohen
+    given-names: Cyril
+    orcid: https://orcid.org/0000-0003-3540-1050
+  - family-names: Crance
+    given-names: Enzo
+    orcid: https://orcid.org/0000-0002-0498-0910
+  - family-names: Mahboubi
+    given-names: Assia
+    orcid: https://orcid.org/0000-0002-0312-5461
+title: "Trocq"
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.10492403

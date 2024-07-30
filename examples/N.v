@@ -11,8 +11,7 @@
 (*                            * see LICENSE file for the text of the license *)
 (*****************************************************************************)
 
-From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
+From mathcomp Require Import all_ssreflect.
 From Trocq Require Import Common.
 
 Set Universe Polymorphism.
@@ -109,8 +108,8 @@ Fixpoint of_nat (n : nat) : N :=
 
 Lemma of_natD i j : of_nat (i + j) = (of_nat i + of_nat j)%N.
 Proof.
-elim: i j => [|i IHi] [|j]//=; first by rewrite -nat_add_n_O//.
-rewrite -nat_add_n_Sm/= IHi.
+elim: i j => [//|i IHi] [|j]; first by rewrite addn0.
+rewrite addSn addnS /= IHi.
 case: (of_nat i) => // p; case: (of_nat j) => //=.
 - by rewrite /succ/= Pos.addp1.
 - by move=> q; rewrite /succ/= Pos.addpS Pos.addSp.
@@ -126,7 +125,7 @@ Proof. by case: n => //= ; elim=> //= p /of_nat_double/= ->. Defined.
 Lemma of_natK (n : nat) : to_nat (of_nat n) = n.
 Proof.
 elim: n => //= n IHn; rewrite -[in X in _ = X]IHn.
-by case: (of_nat n)=> //; elim=> //= p ->; rewrite /= !add_n_Sm.
+by case: (of_nat n)=> //; elim=> //= p ->; rewrite /= addnS.
 Defined.
 
 Definition of_nat_iso := Iso.Build of_natK to_natK.

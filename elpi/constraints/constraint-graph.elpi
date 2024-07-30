@@ -114,18 +114,19 @@ maximal-class _ _ (pc map4 map4). % default maximal class for an unconstrained v
 
 % assign a constant class to a variable and update all the information in the graph
 % indeed, if the assigned variable was an output class for complex constraints,
-% they can now be computed and reduced to simpler constraints on the other variables
+% they can now be computed and   reduced to simpler constraints on the other variables
 pred instantiate i:class-id, i:param-class, i:constraint-graph, o:constraint-graph.
 instantiate ID Class G _ :-
   util.when-debug dbg.steps (coq.say "instantiate" ID Class G), fail.
 instantiate ID Class (constraint-graph G) (constraint-graph G') :-
-  std.map.find ID G (pr LowerNodes HigherNodes), !,
+  std.map.find ID G (pr LowerNodes HigherNodes), !, std.do! [
   internal.filter-var LowerNodes LowerIDs,
   util.unless (LowerIDs = [])
     (coq.error
       "wrong instantiation order: trying to instantiate" ID "before lower variables" LowerIDs),
   std.fold HigherNodes G (instantiate.aux ID Class) G1,
-  std.map.remove ID G1 G'.
+  std.map.remove ID G1 G'
+  ].
 instantiate ID Class G G :-
   util.when-debug dbg.full (
     coq.say "cannot instantiate" ID "at" Class "because it is not in the graph").
@@ -135,27 +136,30 @@ instantiate.aux ID Class (node.const C) G G :-
   util.unless (param-class.geq C Class)
     (coq.error
       "constraint not respected: instantiating" ID "at class" Class "despite upper bound" C).
-instantiate.aux ID Class (node.var ct.pi [IDA, IDB]) G G' :-
+instantiate.aux ID Class (node.var ct.pi [IDA, IDB]) G G' :- std.do![
   util.map.update IDA (internal.remove-lower-node (node.var ct.pi [ID])) G G1,
   util.map.update IDB (internal.remove-lower-node (node.var ct.pi [ID])) G1 G2,
   % recompute the dependent product constraint and turn it into 2 order constraints
   param-class.dep-pi Class C1 C2,
   util.map.update IDA (internal.add-lower-node (node.const C1)) G2 G3,
-  util.map.update IDB (internal.add-lower-node (node.const C2)) G3 G'.
-instantiate.aux ID Class (node.var ct.arrow [IDA, IDB]) G G' :-
+  util.map.update IDB (internal.add-lower-node (node.const C2)) G3 G'
+].
+instantiate.aux ID Class (node.var ct.arrow [IDA, IDB]) G G' :- std.do![
   util.map.update IDA (internal.remove-lower-node (node.var ct.arrow [ID])) G G1,
   util.map.update IDB (internal.remove-lower-node (node.var ct.arrow [ID])) G1 G2,
   % recompute the arrow type constraint and turn it into 2 order constraints
   param-class.dep-arrow Class C1 C2,
   util.map.update IDA (internal.add-lower-node (node.const C1)) G2 G3,
-  util.map.update IDB (internal.add-lower-node (node.const C2)) G3 G'.
-instantiate.aux ID Class (node.var ct.type [IDR]) G G' :-
+  util.map.update IDB (internal.add-lower-node (node.const C2)) G3 G'
+].
+instantiate.aux ID Class (node.var ct.type [IDR]) G G' :- std.do![
   util.map.update IDR (internal.remove-lower-node (node.var ct.type [ID])) G G1,
   % the constraint either vanishes or forces the relation to be (4,4)
   if (param-class.requires-axiom Class)
     (util.map.update IDR (internal.add-lower-node (node.const (pc map4 map4))) G1 G')
-    (G' = G1).
-instantiate.aux ID Class (node.var (ct.gref GR T Tm' GRR) IDs) G G' :-
+    (G' = G1)
+].
+instantiate.aux ID Class (node.var (ct.gref GR T Tm' GRR) IDs) G G' :- std.do! [
   std.fold {std.filter IDs (id\ id > 0)} G (id\ g\ g'\
     util.map.update id (internal.remove-lower-node (node.var (ct.gref _ _ _ _) [ID])) g g')
       G1,
@@ -164,7 +168,8 @@ instantiate.aux ID Class (node.var (ct.gref GR T Tm' GRR) IDs) G G' :-
   trocq.db.gref GR Class Cs GR' GRR, !,
   coq.env.global GR' Tm',
   % make sure the classes are consistent
-  instantiate.gref IDs TCs Cs G1 G'.
+  instantiate.gref IDs TCs Cs G1 G'
+  ].
 pred instantiate.gref
   i:list class-id, i:list param-class, i:list param-class, i:constraint-graph-content,
   o:constraint-graph-content.
@@ -174,12 +179,13 @@ instantiate.gref [-1|IDs] [TC|TCs] [C|Cs] G G' :- !,
   % we just check that it is equal to the required one
   TC = C,
   instantiate.gref IDs TCs Cs G G'.
-instantiate.gref [ID|IDs] [_|TCs] [C|Cs] G G' :-
+instantiate.gref [ID|IDs] [_|TCs] [C|Cs] G G' :- std.do![
   % here the identifier is not -1, which means that the class at this position is in the graph
   % we force it to be equal to C in the graph
   util.map.update ID (internal.add-lower-node (node.const C)) G G1,
   util.map.update ID (internal.add-higher-node (node.const C)) G1 G2,
-  instantiate.gref IDs TCs Cs G2 G'.
+  instantiate.gref IDs TCs Cs G2 G'
+].
 instantiate.aux ID Class (node.var ct.geq [IDH]) G G' :-
   % an order constraint is turned into a lower constant class
   util.map.update IDH (internal.remove-lower-node (node.var ct.geq [ID])) G G1,

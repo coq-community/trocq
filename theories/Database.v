@@ -13,7 +13,6 @@
 
 From Coq Require Import ssreflect.
 From elpi Require Export elpi.
-From HoTT Require Import HoTT.
 Require Import HoTT_additions.
 
 Set Universe Polymorphism.
@@ -37,7 +36,12 @@ Elpi Db trocq.db lp:{{
 
   % constants PType and Weaken registered so that we do not coq.locate every time
   pred trocq.db.ptype o:constant.
+  pred trocq.db.pprop o:constant.
   pred trocq.db.weaken o:constant.
+
+  pred trocq.db.ptype-or-pprop i:term, o:constant.
+  trocq.db.ptype-or-pprop (pglobal (const PCst) _) PCst :- !,
+    (trocq.db.ptype PCst; trocq.db.pprop PCst).
 
   % param-type β α {{ Param(β)_Type(α) }}
   % with α the level of the R field, and β the structure given to it
