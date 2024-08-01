@@ -29,7 +29,7 @@ variant, and computing a proof that proves the corresponding implication.
 
 The plugin features a hierarchy of structures on relations, whose instances are computed from registered user-defined proof via parametricity. This hierarchy ranges from structure-less relations to an original formulation of type
 equivalence. The resulting framework generalizes [raw parametricity](https://arxiv.org/abs/1209.6336), 
-[univalent parametricity](https://arxiv.org/abs/1209.6336) and
+[univalent parametricity](https://doi.org/10.1145/3429979) and
 [CoqEAL](https://github.com/coq-community/coqeal), and includes them in a unified framework.
 
 The plugin computes a parametricity translation "à la carte", by performing a fine-grained analysis of the requires properties for a given proof of relatedness. In particular, it is able to prove implications without resorting to full-blown type equivalence, allowing this way to perform
