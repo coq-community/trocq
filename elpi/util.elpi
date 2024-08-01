@@ -96,4 +96,118 @@ subst-gref (pglobal _ I) GR' Tm' :- !,
   @uinstance! I => coq.env.global GR' Tm'.
 subst-gref T _ _ :- coq.error T "is not a gref".
 
+pred std.string.list->set i:list string, o:std.string.set.
+std.string.list->set [] Empty :- std.string.set.empty Empty.
+std.string.list->set [S|Rest] Set :-
+  std.string.set.add S {std.string.list->set Rest} Set.
+
+pred coq.gref.list->set i:list gref, o:coq.gref.set.
+coq.gref.list->set [] Empty :- coq.gref.set.empty Empty.
+coq.gref.list->set [GR|Rest] Set :-
+  coq.gref.set.add GR {coq.gref.list->set Rest} Set.
+
+pred coq.gref.list->id-map i:list gref, o:coq.gref.map id.
+coq.gref.list->id-map [] Empty :- coq.gref.map.empty Empty.
+coq.gref.list->id-map [GR|Rest] Map :-
+  coq.gref.map.add GR {coq.gref->id GR} {coq.gref.list->id-map Rest} Map.
+
+pred coq.gref.map-string.range o:coq.gref.map string, o:std.string.set.
+coq.gref.map-string.range Map Set :- std.do! [
+  coq.gref.map.bindings Map Bindings,
+  std.map Bindings (b\ out\ b = pr _ out) Names,
+  std.string.list->set Names Set
+].
+
+pred coq.gref.list->string-map i:list gref, o:std.string.map gref.
+coq.gref.list->string-map [] Empty :- std.string.map.empty Empty.
+coq.gref.list->string-map [GR|Rest] Map :-
+  std.string.map.add {coq.gref->id GR} GR {coq.gref.list->string-map Rest} Map.
+
+pred coq.gref.string-map.domain o:std.string.map gref, o:std.string.set.
+coq.gref.string-map.domain Map Set :- std.do! [
+  std.string.map.bindings Map Bindings,
+  std.map Bindings (b\ out\ b = pr out _) Names,
+  std.string.list->set Names Set
+].
+
+% named-coe Rec1 Rec2 Coe Depth
+% builds a function from (p?global (indt Rec1)) to (p?global (indt Rec1))
+% assuming
+% - Rec1 and Rec2 are records with the same parameters
+% - all projections in Rec2 are named,
+% - if Proj2 projection with name Name in Rec2
+%   there is a projection Proj1 with the same name Name
+%   and a coercion from Proj1 to Proj2.
+% - Depth is the number of (common) parameters between Rec1 and Rec2.
+% Limitation: GR1 and GR2 have exactly one universe.
+pred named-coe i:gref, i:gref, o:term, o:int.
+named-coe GR1 GR2 Coe Depth :-
+  GR1 = indt Rec1, GR2 = indt Rec2, !,
+  std.do! [
+    coq.env.projections Rec1 OptProjs1,
+    coq.env.projections Rec2 OptProjs2,
+    std.map OptProjs1 (op\ gr\ sigma P\ op = some P, gr = const P) Projs1,
+    std.map OptProjs2 (op\ gr\ sigma P\ op = some P, gr = const P) Projs2,
+    coq.gref.list->string-map Projs1 ProjMap1,
+    coq.gref.list->string-map Projs2 ProjMap2,
+    coq.gref.string-map.domain ProjMap1 NameSet1,
+    coq.gref.string-map.domain ProjMap2 NameSet2,
+    std.assert! (std.string.set.subset NameSet2 NameSet1)
+      "The second record names is not a subset of the first one names",
+    coq.env.indt Rec1 _ _ _ Ty1 _ _,
+    coq.env.indt Rec2 _ _ _ _   [Build2] _,
+    named-coe.rec (indt Rec1) ProjMap1 Projs2 [] (indc Build2) Ty1 Coe Depth
+  ].
+named-coe Rec1 Rec2 _ _ :-
+  coq.error "Either of the following are not records: " Rec1 Rec2.
+
+pred named-coe.rec i:gref, i:std.string.map gref, i:list gref, i:list term,
+  i:gref, i:term, o:term, o:int.
+named-coe.rec SrcTy ProjMap1 Projs2 RevCommonArgs Build
+    (prod N A B) (fun N A Coe) NewDepth :-
+  @pi-decl N A x\
+    named-coe.rec SrcTy ProjMap1 Projs2
+      [x|RevCommonArgs] Build (B x) (Coe x) Depth,
+    NewDepth is Depth + 1.
+
+named-coe.rec SrcTy ProjMap1 Projs2 RevCommonArgs Build _
+    (fun `src` SrcTyArgs Coe) 0 :- !,
+  std.rev RevCommonArgs CommonArgs,
+  coq.mk-app {coq.env.global SrcTy} CommonArgs SrcTyArgs,
+  @pi-decl `src` SrcTyArgs src\
+      sigma CommonArgsSrc Projs1 Args \ std.do! [
+    std.append CommonArgs [src] CommonArgsSrc,
+    std.map Projs2 (p\ out\ sigma Name\ coq.gref->id p Name,
+      std.string.map.find Name ProjMap1 out) Projs1,
+    std.map Projs1 (p\ out\ sigma T\ coq.env.global p T,
+      coq.mk-app T CommonArgsSrc out) Args,
+    coq.mk-app {coq.env.global Build} {std.append CommonArgs Args} (Coe src)
+  ].
+
+pred subst-univ i:univ, i:term, o:term.
+subst-univ U T T' :-
+  coq.univ.variable U L,
+  coq.univ-instance UI [L],
+  (copy (sort (typ _)) (sort (typ U)),
+    pi x\ copy (pglobal x _) (pglobal x UI)) => copy T T'.
+
+pred add-named-coe i:id, i:gref, i:gref, o:constant.
+add-named-coe Name GR1 GR2 C :-
+  coq.env.univpoly? GR1 NU1,
+  coq.env.univpoly? GR2 NU2,
+  NU1 = NU2, NU1 = 1, !, std.do! [
+    named-coe GR1 GR2 CoeSkel Depth,
+    std.assert-ok! (coq.elaborate-skeleton CoeSkel _CoeWUTy CoeWU)
+        "ill-typed coercion",
+    coq.univ.new U,
+    coq.univ.variable U L,
+    subst-univ U CoeWU Coe,
+    @keepunivs! => std.assert-ok! (coq.typecheck Coe CoeTy) "wrong universes",
+    @udecl! [L] ff [] ff => coq.env.add-const Name Coe CoeTy @transparent! C,
+    @global! => coq.coercion.declare
+      (coercion (const C) Depth GR1 (grefclass GR2))
+  ].
+add-named-coe _ GR1 GR2 _ :-
+  coq.error GR1 "and" GR2 "do not have the same number of universe variables, or is different from 1".
+
 } % util
