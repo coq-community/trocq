@@ -38,3 +38,4 @@ examples/trocq_setoid_rewrite.v
 examples/Vector_tuple.v
 examples/misc.v
 examples/nat_ind.v
+examples/list_option.v
