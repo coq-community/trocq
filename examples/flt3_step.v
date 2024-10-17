@@ -41,9 +41,9 @@ Definition binop_param {X X'} RX {Y Y'} RY {Z Z'} RZ
 
 (* Arithmetic on Z_9*)
 Definition Zmod9 := 'Z_9.
-Definition zerop : Zmod9 := Zp0. 
+Definition zerop : Zmod9 := Zp0.
 Definition addp : Zmod9 -> Zmod9 -> Zmod9 := @Zp_add 8.
-Definition mulp : Zmod9 -> Zmod9 -> Zmod9 := @Zp_mul 8. 
+Definition mulp : Zmod9 -> Zmod9 -> Zmod9 := @Zp_mul 8.
 Definition onep : Zmod9 := Zp1.
 
 (* Quotient *)
@@ -94,7 +94,7 @@ Notation "x ≢ y" := (not (eqmodp x%int y%int))
   (format "x  ≢  y", at level 70) : int_scope.
 Notation "x ≠ y" := (not (x = y)) (at level 70).
 Notation "ℤ/9ℤ" := Zmod9.
-Notation ℤ := int. 
+Notation ℤ := int.
 
 Definition Rp := SplitSurj.toParam (SplitSurj.Build reprpK).
 
@@ -116,12 +116,12 @@ rewrite /Rp /= /graph /= => x1 y1 <- x2 y2 <-.
 by rewrite /modp rmorphM.
 Qed.
 
-(* This lemma says that mod-ing by 3 is the same as first mod-ing by 9 and then 
+(* This lemma says that mod-ing by 3 is the same as first mod-ing by 9 and then
    mod-ing by 3. Can probably be streamlined... *)
 Lemma Rmod3 : unop_param Rp Rp mod3 modp3.
 Proof.
 rewrite /Rp /= /graph /= => x y <- {y}.
-rewrite /modp /mod3 /modp3. 
+rewrite /modp /mod3 /modp3.
 apply: val_inj=> /=.
 wlog : x / exists n, x = Posz n.
   move=> hwlog.
@@ -144,7 +144,7 @@ case=> n -> {x}.
 set u : 'I_9 := _%:~R; set v := (X in (X %% 3)%N).
 have {v} -> : v = (n %% 9)%N by exact: val_Zp_nat.
 rewrite modn_dvdm //.
-have -> : nat_of_ord u = ((n %% 3)%N %% 9)%N. 
+have -> : nat_of_ord u = ((n %% 3)%N %% 9)%N.
   by rewrite {}/u modz_nat /= (@val_Zp_nat 9).
 rewrite modn_small //; apply: (@ltn_trans 3) => //; exact: ltn_pmod.
 Qed.
@@ -164,8 +164,12 @@ Trocq Use Param01_Empty.
 Trocq Use Param10_Empty.
 
 Lemma flt3_step : forall (m n p : ℤ),
-  (m * n * p % 3)%Z ≢ 0 -> (m³ + n³)%ℤ  ≠ p³%ℤ.
+  ((m * n * p)%Z % 3)%Z ≢ 0 -> (m³ + n³)%ℤ  ≠ p³%ℤ.
 Proof.
-(* automated proof of the reduction of the problem to ℤ/9ℤ *)
-trocq => /=.
-Admitted.
+trocq=> /=.
+
+(* the following should be a call to troq to compute *)
+move=> + + + /eqP + /eqP.
+by do 3![case; do 9?[case=> //=] => ?].
+Qed.
+Print Assumptions flt3_step.
