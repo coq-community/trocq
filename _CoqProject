@@ -1,5 +1,5 @@
--arg -noinit
 -arg -indices-matter
+-arg -w -arg +elpi.typechecker
 
 -R theories/ Trocq
 -R elpi/ Trocq.Elpi
@@ -38,3 +38,5 @@ examples/trocq_setoid_rewrite.v
 examples/Vector_tuple.v
 examples/misc.v
 examples/nat_ind.v
+examples/list_option.v
+examples/square_and_cube_mod7.v

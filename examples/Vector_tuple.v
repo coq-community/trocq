@@ -11,7 +11,7 @@
 (*                            * see LICENSE file for the text of the license *)
 (*****************************************************************************)
 
-From Coq Require Import ssreflect.
+From mathcomp Require Import ssreflect ssrfun ssrnat.
 From Trocq Require Import Trocq.
 From Trocq Require Import Param_nat Param_trans Param_bool Param_vector.
 
@@ -23,7 +23,7 @@ Definition tuple (A : Type) : nat -> Type :=
   fix F n :=
     match n with
     | O => Unit
-    | S n' => F n' * A
+    | S n' => (F n' * A)%type
     end.
 
 Definition const : forall {A : Type} (a : A) (n : nat), tuple A n :=
@@ -77,7 +77,7 @@ Definition vector_to_tupleK {A : Type} :
     fix F n v :=
       match v with
       | Vector.nil => idpath
-      | Vector.cons m a v' => ap (Vector.cons a) (F m v')
+      | Vector.cons _ a v' => ap (Vector.cons a) (F _ v')
       end.
 
 Definition tuple_to_vectorK {A : Type} :
@@ -215,7 +215,7 @@ Trocq Use Param_append Param_const Param01_paths.
 Lemma append_const : forall {A : Type} (a : A) (n1 n2 : nat),
   append (const a n1) (const a n2) = const a (n1 + n2).
 Proof.
-  trocq. exact @Vector.append_const.
+  trocq; exact: @Vector.append_const.
 Qed.
 
 End AppendConst.
@@ -279,10 +279,11 @@ Proof. by trocq. Qed.
 (* bounded nat and bitvector *)
 (* NB: we can use transitivity to make the proofs here too *)
 
+
 Module BV.
 
-Definition bounded_nat (k : nat) := {n : nat & n < pow 2 k}%nat.
-Definition bitvector (k : nat) := Vector.t Bool k.
+Definition bounded_nat (k : nat) := {n : nat & n < expn 2 n = true}%nat.
+Definition bitvector := (Vector.t Bool).
 
 (* bounded_nat k ~ bitvector k' *)
 
@@ -310,37 +311,12 @@ Definition bv_to_nat : forall {k : nat}, bitvector k -> nat :=
       (match b with true => S | false => id end) (2 * F k' bv')%nat
     end.
 
-Lemma S_add1 : forall (n : nat), S n = (n + 1)%nat.
-Proof.
-  induction n.
-  - simpl. reflexivity.
-  - simpl add. apply ap. exact IHn.
-Defined.
-
-Lemma one_lt_pow2 (k : nat) : (1 <= pow 2 k)%nat.
-Proof.
-  induction k.
-  - simpl. apply leq_n.
-  - apply (leq_trans IHk).
-    simpl.
-    apply n_leq_add_n_k.
-Defined.
-
-Axiom bv_bound :
-  forall {k : nat} (bv : bitvector k), (bv_to_nat bv <= pow 2 k - 1)%nat.
-
 Definition bv_to_bnat {k : nat} (bv : bitvector k) : bounded_nat k.
 Proof.
   unshelve econstructor.
   - exact (bv_to_nat bv).
-  - apply (mixed_trans1 _ (pow 2 k - 1) _).
-    * apply bv_bound.
-    * apply natpmswap1.
-      1: { apply one_lt_pow2. }
-      rewrite nat_add_comm.
-      rewrite <- (S_add1 (pow 2 k)).
-      apply n_lt_Sn.
-Defined.
+  - by rewrite ltn_expl.
+Qed.
 
 Axiom map_in_R_bv_bnat :
   forall {k : nat} {bv : bitvector k} {bn : bounded_nat k},
@@ -386,7 +362,7 @@ Definition Param44_bnat_bv (k k' : nat) (kR : natR k k') :
   Param44.Rel (bounded_nat k) (bitvector k').
 Proof.
   unshelve eapply (@Param44_trans _ (bitvector k) _).
-  - exact Param44_bnat_bv_d.
+  - exact Param44_bnat_bv_d.  
   - exact (Vector.Param44 Bool Bool Param44_Bool k k' kR).
 Defined.
 
@@ -425,22 +401,21 @@ Axiom getBitR :
     (n n' : nat) (nR : natR n n'),
       BoolR (getBit_bnat bn n) (getBit_bv bv' n').
 
-(* lt ~ lt *)
-Axiom Param10_lt :
+Axiom Param10_le :
   forall (n1 n1' : nat) (n1R : natR n1 n1') (n2 n2' : nat) (n2R : natR n2 n2'),
-    Param10.Rel (n1 < n2)%nat (n1' < n2')%nat.
+    BoolR (n1 <= n2)%nat (n1' <= n2')%nat.
 
 Axiom setBitThenGetSame :
   forall {k : nat} (bv : bitvector k) (i : nat) (b : Bool),
-    (i < k)%nat -> getBit_bv (setBit_bv bv i b) i = b.
+    (i < k)%nat = true -> getBit_bv (setBit_bv bv i b) i = b.
 
 
 Trocq Use Param2a0_nat Param44_Bool Param2a0_bnat_bv getBitR setBitR.
-Trocq Use Param01_paths Param10_lt.
+Trocq Use Param01_paths Param10_paths Param10_le trueR SR.
 
 Lemma setBitThenGetSame' :
   forall {k : nat} (bn : bounded_nat k) (i : nat) (b : Bool),
-    (i < k)%nat -> getBit_bnat (setBit_bnat bn i b) i = b.
+    (i < k)%nat = true -> getBit_bnat (setBit_bnat bn i b) i = b.
 Proof.
   trocq. exact @setBitThenGetSame.
 Qed.

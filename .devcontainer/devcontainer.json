@@ -1,6 +1,8 @@
 {
     "name": "Trocq",
-    "image": "cohencyril/trocq-deps",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
     "postAttachCommand": "make -j8 -k",
     "customizations": {
         "vscode": {

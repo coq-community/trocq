@@ -11,8 +11,7 @@
 (*                            * see LICENSE file for the text of the license *)
 (*****************************************************************************)
 
-From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat.
 Require Import HoTT_additions Hierarchy.
 
 Set Universe Polymorphism.
@@ -21,6 +20,24 @@ Unset Universe Minimization ToSet.
 Inductive natR : nat -> nat -> Type :=
   | OR : natR O O
   | SR : forall (n n' : nat), natR n n' -> natR (S n) (S n').
+
+Lemma natR_irrelevant m n (nR nR' : natR m n) : nR = nR'.
+Proof.
+have @phi k l (r : natR k l) : eqn k l.
+  elim: r => {k l}; first by reflexivity.
+  move=> k l r e; exact: e.
+have @psi k l (e : eqn k l) : natR k l.
+  elim: k l e  => [| k ihk] l e.
+  - case: l e => [| l] // _; exact OR.
+  - case: l e => [| l] // e. 
+    exact: SR (ihk _ e). 
+have phiK k l r : psi k l (phi k l r) = r.
+  elim: r => {k l} // k l r e /=.
+  by rewrite [X in SR _ _ X]e. 
+rewrite -[LHS]phiK -[RHS]phiK.
+suff -> : phi _ _ nR = phi _ _ nR' by [].
+apply: eq_irrelevance. 
+Defined.
 
 Definition map_nat : nat -> nat := id.
 
@@ -44,10 +61,9 @@ Definition R_in_map_nat : forall {n n' : nat}, natR n n' -> map_nat n = n' :=
 
 Definition R_in_mapK_nat : forall {n n' : nat} (nR : natR n n'),
   map_in_R_nat (R_in_map_nat nR) = nR.
-Proof.
-move=> n n'; elim=> //= {}n {}n' nR IHn.
-by elim: {2}_ / IHn; elim (R_in_map_nat nR).
-Defined.
+Proof. 
+by move=> n n'; case: _ / => //= {}n {}n' nR; apply: natR_irrelevant.
+Qed.
 
 Definition Param_nat_sym {n n' : nat} : natR n n' -> natR n' n.
 Proof.
@@ -58,19 +74,13 @@ Defined.
 
 Definition Param_nat_sym_inv {n n' : nat} :
   forall (nR : natR n n'), Param_nat_sym (Param_nat_sym nR) = nR.
-Proof.
-  intro nR. induction nR; simpl.
-  - reflexivity.
-  - rewrite IHnR. reflexivity.
-Defined.
+Proof. by elim => //= {}n {}n' nR ->. Defined.
 
-Definition natR_sym : forall (n n' : nat), sym_rel natR n n' <~> natR n n'.
+Definition natR_sym : forall (n n' : nat), sym_rel natR n n' <->> natR n n'.
 Proof.
-  intros n n'.
-  unshelve eapply equiv_adjointify.
+  intros n n'; unshelve eexists _, _.
   - apply Param_nat_sym.
   - apply Param_nat_sym.
-  - intro nR. apply Param_nat_sym_inv.
   - intro nR. apply Param_nat_sym_inv.
 Defined.
 

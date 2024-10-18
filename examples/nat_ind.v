@@ -12,7 +12,6 @@
 (*****************************************************************************)
 
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
 From Trocq Require Import Trocq.
 
 Set Universe Polymorphism.

@@ -15,6 +15,8 @@ From Coq Require Import ssreflect.
 From Trocq Require Import Trocq.
 From Trocq Require Import Param_trans Param_list.
 
+Set Universe Polymorphism.
+
 Definition option_to_list {A : Type} (xo : option A) : list A :=
   match xo with
   | None => nil
@@ -105,5 +107,6 @@ Qed.
 Goal forall A B C (xo : option A) (f : A -> B) (g : B -> C),
   omap g (omap f xo) = omap (fun x => g (f x)) xo.
 Proof.
-  trocq. apply map_compose.
+  trocq.
+  apply map_compose.
 Qed.

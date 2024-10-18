@@ -56,10 +56,10 @@ dep-arrow C CA CB :-
 
 % D_□(C, C_R)
 pred dep-type i:param-class, i:param-class.
-dep-type C CR :- var C, !,
+dep-type C CR :- var C, !, std.do![
   internal.link? C ID,
   internal.link? CR IDR,
-  declare_constraint (internal.c.dep-type ID IDR) [_].
+  declare_constraint (internal.c.dep-type ID IDR) [_]].
 dep-type C CR :-
   util.when (param-class.requires-axiom C)
     (geq CR (pc map4 map4)).
@@ -118,9 +118,9 @@ pred c.vars? o:list class-id.
 pred c.vars! o:list class-id.
 
 pred vars? o:list class-id.
-vars? IDs :- declare_constraint (c.vars? IDs) [_].
+vars? IDs :- !, declare_constraint (c.vars? IDs) [_].
 pred vars! i:list class-id.
-vars! IDs :- declare_constraint (c.vars! IDs) [_].
+vars! IDs :- !, declare_constraint (c.vars! IDs) [_].
 
 constraint c.vars c.vars? c.vars! {
   rule (c.vars IDs) \ (c.vars? IDs') <=> (IDs' = IDs).
@@ -216,21 +216,23 @@ constraint c.graph c.dep-pi c.dep-arrow c.dep-type c.dep-gref c.geq c.reduce-gra
     cstr-graph.add-geq IDorC1 IDorC2 G G',
     declare_constraint (c.graph G') [_]
   ).
-  rule \ (c.graph G) (c.reduce-graph) <=> (
+  rule \ (c.graph G) (c.reduce-graph) <=> (std.do! [
+    coq.say "final constraint graph START:",
     vars? IDs,
-    util.when-debug dbg.steps (
+    util.when-debug dbg.full (
       coq.say "final constraint graph:",
       cstr-graph.pp G,
       coq.say "***********************************************************************************"
     ),
     cstr-graph.instantiation-order IDs G SortedIDs,
-    util.when-debug dbg.steps (
+    util.when-debug dbg.full (
       coq.say "order:" SortedIDs,
       coq.say "***********************************************************************************"
     ),
     reduce SortedIDs G FinalValues,
-    util.when-debug dbg.steps (coq.say "final values:" FinalValues),
+    util.when-debug dbg.full (coq.say "final values:" FinalValues),
     std.forall FinalValues instantiate-coq
+  ]
   ).
 }
 
@@ -238,23 +240,25 @@ constraint c.graph c.dep-pi c.dep-arrow c.dep-type c.dep-gref c.geq c.reduce-gra
 % return a list of associations of a variable and its constant class
 pred reduce i:list class-id, i:constraint-graph, o:list (pair class-id param-class).
 reduce [] _ [].
-reduce [ID|IDs] ConstraintGraph [pr ID MinClass|FinalValues] :-
+reduce [ID|IDs] ConstraintGraph [pr ID MinClass|FinalValues] :- std.do! [
   cstr-graph.minimal-class ID ConstraintGraph MinClass,
   util.when-debug dbg.full (coq.say "min value" MinClass "for" ID),
   cstr-graph.maximal-class ID ConstraintGraph MaxClass,
   util.when-debug dbg.full (coq.say "max value" MaxClass "for" ID),
   util.unless (param-class.geq MaxClass MinClass) (coq.error "no solution for variable" ID),
-  reduce IDs {cstr-graph.instantiate ID MinClass ConstraintGraph} FinalValues.
+  reduce IDs {cstr-graph.instantiate ID MinClass ConstraintGraph} FinalValues
+].
 
 % now instantiate for real
 pred instantiate-coq i:pair class-id param-class.
-instantiate-coq (pr ID (pc M0 N0)) :-
+instantiate-coq (pr ID (pc M0 N0)) :- std.do! [
   util.when-debug dbg.full (coq.say "instantiating" ID "with" (pc M0 N0)),
   link- C ID,
   univ-link- C M N,
   map-class->term M0 M,
   map-class->term N0 N,
-  C = pc M0 N0.
+  C = pc M0 N0
+].
 
 } % internal
 

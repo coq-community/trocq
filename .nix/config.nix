@@ -42,6 +42,7 @@
     ## You can override Coq and other Coq coqPackages
     ## through the following attribute
     coqPackages.coq.override.version = "8.17";
+    coqPackages.mathcomp.override.version = "1.19.0";
     coqPackages.coq-elpi.override.version = "ecranceMERCE:strat";
 
     ## In some cases, light overrides are not available/enough

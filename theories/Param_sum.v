@@ -11,8 +11,9 @@
 (*                            * see LICENSE file for the text of the license *)
 (*****************************************************************************)
 
+
 From Coq Require Import ssreflect.
-From HoTT Require Import HoTT.
+Require Import HoTT_additions Hierarchy.
 Require Import Hierarchy.
 
 Set Universe Polymorphism.
@@ -79,8 +80,10 @@ Definition sum_R_in_mapK
     forall p p' (r : sumR A A' AR B B' BR p p'),
       sum_map_in_R A A' AR B B' BR p p' (sum_R_in_map A A' AR B B' BR p p' r) = r.
 Proof.
-  move=> _ _ [a a' aR|b b' bR]/=; rewrite /internal_paths_rew.
-Admitted.
+  move=> _ _ [a a' aR|b b' bR]/=.
+  - by elim/(ind_map AR): _ => /=.
+  - by elim/(ind_map BR): _ => /=.
+Qed.
 
 Definition Map0_sum A A' (AR : Param00.Rel A A') B B' (BR : Param00.Rel B B') :
   Map0.Has (sumR A A' AR B B' BR).
