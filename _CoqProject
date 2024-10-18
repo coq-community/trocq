@@ -39,3 +39,4 @@ examples/Vector_tuple.v
 examples/misc.v
 examples/nat_ind.v
 examples/list_option.v
+examples/square_and_cube_mod7.v
