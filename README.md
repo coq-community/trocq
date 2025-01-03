@@ -23,19 +23,30 @@ Follow the instructions on https://github.com/coq-community/templates to regener
 [doi-shield]: https://zenodo.org/badge/DOI/10.5281/zenodo.10492403.svg
 [doi-link]: https://doi.org/10.5281/zenodo.10492403
 
-Trocq is a modular parametricity plugin for Coq. It 
-can be used to achieve proof transfer by both translating a user goal into another, related,
-variant, and computing a proof that proves the corresponding implication.
+Trocq is a modular parametricity plugin for Coq. It can be used to
+achieve proof transfer by both translating a user goal into another,
+related, variant, and computing a proof that proves the corresponding implication.
 
-The plugin features a hierarchy of structures on relations, whose instances are computed from registered user-defined proof via parametricity. This hierarchy ranges from structure-less relations to an original formulation of type
-equivalence. The resulting framework generalizes [raw parametricity](https://arxiv.org/abs/1209.6336), 
-[univalent parametricity](https://arxiv.org/abs/1209.6336) and
-[CoqEAL](https://github.com/coq-community/coqeal), and includes them in a unified framework.
+The plugin features a hierarchy of structures on relations, whose
+instances are computed from registered user-defined proof via
+parametricity. This hierarchy ranges from structure-less relations
+to an original formulation of type equivalence. The resulting
+framework generalizes [raw
+parametricity](https://arxiv.org/abs/1209.6336), [univalent
+parametricity](https://doi.org/10.1145/3429979) and
+[CoqEAL](https://github.com/coq-community/coqeal), and includes them
+in a unified framework.
 
-The plugin computes a parametricity translation "à la carte", by performing a fine-grained analysis of the requires properties for a given proof of relatedness. In particular, it is able to prove implications without resorting to full-blown type equivalence, allowing this way to perform
-proof transfer without necessarily pulling in the univalence axiom. 
+The plugin computes a parametricity translation "à la carte", by
+performing a fine-grained analysis of the requires properties for a
+given proof of relatedness. In particular, it is able to prove
+implications without resorting to full-blown type equivalence,
+allowing this way to perform proof transfer without necessarily
+pulling in the univalence axiom.
 
-The plugin is implemented in Coq-Elpi and the code of the parametricity translation is fairly close to a pen-and-paper sequent-style presentation.
+The plugin is implemented in Coq-Elpi and the code of the
+parametricity translation is fairly close to a pen-and-paper
+sequent-style presentation.
 
 ## Meta
 
@@ -58,11 +69,12 @@ The plugin is implemented in Coq-Elpi and the code of the parametricity translat
 
 ## Building and installation instructions
 
-Trocq is a still a prototype. In particular, it depends on a [custom version](https://github.com/ecranceMERCE/coq-elpi/tree/strat) of Coq-Elpi.
-It is not yet packaged in Opam or Nix.
+Trocq is a still a prototype. In particular, it depends on a [custom
+version](https://github.com/ecranceMERCE/coq-elpi/tree/strat) of
+Coq-Elpi.  It is not yet packaged in Opam or Nix.
 
-There are however three ways to experiment with it,
-all documented in the [INSTALL.md file](INSTALL.md).
+There are however three ways to experiment with it, all documented
+in the [INSTALL.md file](INSTALL.md).
 
 ## Documentation
 
@@ -70,14 +82,15 @@ See the [tutorial](artifact-doc/TUTORIAL.md) for concrete use cases.
 
 In short, the plugin provides a tactic:
 - `trocq` (without arguments) which attempts to run a translation on
-a given goal, using the information provided by the user with the
-commands described below.
+  a given goal, using the information provided by the user with the
+  commands described below.
 
 And three commands:
-- `Trocq Use t` to use a translation `t` during the subsequent calls to
-the tactic `trocq`.
+- `Trocq Use t` to use a translation `t` during the subsequent calls
+  to the tactic `trocq`.
 - `Trocq Register Univalence u` to declare a univalence axiom `u`.
-- `Trocq Register Funext fe` to declare a function extensionality axiom `fe`.
+- `Trocq Register Funext fe` to declare a function extensionality
+  axiom `fe`.
 
 
 ## ESOP 2024 artifact documentation
