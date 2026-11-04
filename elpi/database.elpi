@@ -12,6 +12,13 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 accumulate "Trocq.Elpi/class".
+accumulate "Trocq.Elpi/aterm-type".
+
+kind verbosity type.
+type level.off verbosity.
+type level.info verbosity.
+type level.debug verbosity.
+type level.trace verbosity.
 
 namespace trocq.db {
 
@@ -49,9 +56,12 @@ pred id-map-sym o:map-class, o:constant.
 %     {{ParamMN.R}} {{ParamMN.covariant}} {{ParamMN.contravariant}}
 pred rel o:param-class, o:gref, o:gref, o:gref, o:gref, o:gref.
 
-% Given the class (M, N), obtain {{ParamMN.Rel}}, the projection of the
+% Given the class (M, N), obtain {{ParamMN.R}}, the projection of the
 % relation inside a ParamMN
 pred r o:param-class, o:constant.
+
+% Get the projection {{rel}} : {{forall A B : Type, Param00.Rel A B -> A -> B -> Type}}
+pred rel0 o:gref.
 
 % Given the class (M, N), obtain {{Id_ParamMN}}
 pred id-param o:param-class, o:constant.
@@ -78,6 +88,10 @@ pred forget o:param-class, o:param-class, o:constant.
 % Understand what's going on and use `coq.env.global` instead.
 pred paths i:univ-instance o:term.
 pred sym-rel o:gref.
+
+% Returns the grefs corresponding to {{ PType }} and {{ PTriple }}, used
+% to construct fake aterms
+pred fake-aterm-ptype o:gref o:gref.
 
 % param-type β α {{ Param(β)_Type(α) }}
 % with α the level of the R field, and β the structure given to it.
@@ -108,6 +122,10 @@ pred coercion-enabled.
 :name "coercion-enabled"
 coercion-enabled :- false.
 
+pred log-level o:verbosity.
+:name "log-level"
+log-level level.info.
+
 } % trocq.db
 
 % gref GR ω [α_1, ..., α_n] GR' GRR
@@ -117,7 +135,7 @@ coercion-enabled :- false.
 % - the α_i are the classes present in the type of GR, to give the dependency information
 %   e.g. list44 : forall A A' (AR : Param44.Rel A A'), Param44.Rel (list A) (list A')
 %        gref {{ list }} (4, 4) [(4, 4)] {{ list }} {{ list44 }}
-pred trocq.db.gref o:gref, o:param-class, o:list param-class, o:gref, o:gref.
+pred trocq.db.gref o:gref, o:aterm, o:gref, o:gref.
 
 % The predicate known-gref is similar to the last one with one extra arguments:
 %   known-gref BundleRel GR ω [α_1, ..., α_n] GR' GRR
@@ -127,4 +145,4 @@ pred trocq.db.gref o:gref, o:param-class, o:list param-class, o:gref, o:gref.
 % so that `trocq.use Rel`, all the associated translations of the form `gref
 % Rel GR ω [α_1, ..., α_n] GR' GRR` will be used, i.e. added to the above
 % database gref.
-pred trocq.db.known-gref o:gref, o:gref, o:param-class, o:list param-class, o:gref, o:gref.
+pred trocq.db.known-gref o:gref, o:gref, o:aterm, o:gref, o:gref.

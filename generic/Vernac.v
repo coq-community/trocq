@@ -17,6 +17,6 @@ From Trocq Require Import Param.
 From Trocq.Elpi Extra Dependency "vernac.elpi" as vernac.
 
 Elpi Command Trocq.
-Elpi Accumulate Db trocq.db.
 Elpi Accumulate File vernac.
+Elpi Accumulate Db trocq.db.
 Elpi Export Trocq.

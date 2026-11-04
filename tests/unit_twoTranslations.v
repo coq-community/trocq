@@ -23,7 +23,8 @@ Section TwoTranslations.
     Definition R1 : Param01.Rel A B := mkParam01 f1.
     Definition R2 : Param01.Rel A C := mkParam01 f2.
 
-    Trocq Use R1 R2.
+    Trocq Register R1.
+    Trocq Register R2.
 
     Goal A.
         trocq to B.

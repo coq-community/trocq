@@ -21,12 +21,12 @@ Section TrocqPi.
     Variable (f : A -> A').
 
     Definition Rf := mkParam30 f.
-    Trocq Use Rf.
+    Trocq Register Rf.
 
     Variable (B : A -> Type) (B' : A' -> Type).
     Variable (BR : forall (a : A) (a' : A'), Rf a a' -> Param01.Rel (B a) (B' a')).
 
-    Trocq Use BR.
+    Trocq Register BR.
 
     Goal forall (a : A), B a.
         trocq.

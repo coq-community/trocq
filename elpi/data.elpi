@@ -15,18 +15,20 @@
 % -----------------------------------------------------------------------------
 
 accumulate "Trocq.Elpi/util-rocq".
+accumulate "Trocq.Elpi/param-class-util".
 accumulate "Trocq.Elpi/database".
 
 namespace trocq.data {
 
   func pclass param-class -> term, term.
-  pclass (uvar as C) T1 T2 :- !,
-    declare_constraint (pclass C T1 T2) [C].
-  pclass (pc M N) MM NN :- !,
-    trocq.db.map-class->indc-class M MT, !,
-    trocq.db.map-class->indc-class N NT, !,
-    coq.env.global MT MM,
-    coq.env.global NT NN.
+  pclass C MM NN :- !,
+    param-class.suspend-on C (
+      C = pc M N,
+      trocq.db.map-class->indc-class M MT, !,
+      trocq.db.map-class->indc-class N NT, !,
+      coq.env.global MT MM,
+      coq.env.global NT NN
+    ).
 
   func univalence -> term.
   univalence T :-
@@ -39,46 +41,36 @@ namespace trocq.data {
     coq.env.global (const UG) T.
 
   func ttype param-class, param-class -> term.
-  ttype (uvar as CA) (uvar as CB) T :- !, 
-    declare_constraint (ttype CA CB T) [CA,CB].
-  ttype (uvar as CA) (pc MB NB) T :- !, 
-    declare_constraint (ttype CA (pc MB NB) T) [CA].
-  ttype (pc MA NA) (uvar as CB) T :- !, 
-    declare_constraint (ttype (pc MA NA) CB T) [CB].
-  ttype (pc _ _ as CA) (pc _ _ as CB) T :- !,
-    pclass CB MT NT,
-    trocq.db.pparam-type CA Const, !,
-    coq.env.global (const Const) PPi,
-    if (param-class.requires-axiom CA)
-      (T = app [PPi, MT, NT, {univalence}])
-      (T = app [PPi, MT, NT]).
+  ttype CA CB T :- 
+    param-class.suspend-on CA (
+    param-class.suspend-on CB (
+      pclass CB MT NT,
+      trocq.db.pparam-type CA Const, !,
+      coq.env.global (const Const) PPi,
+      if (param-class.requires-axiom CA)
+        (T = app [PPi, MT, NT, {univalence}])
+        (T = app [PPi, MT, NT])
+    )).
   
   func arrow param-class -> term.
-  arrow (uvar as C) T :- !,
-    declare_constraint (arrow C T) [C].
-  arrow (pc _ _ as C) T :- !,
-    trocq.db.param-arrow C Const, !,
-    coq.env.global (const Const) PArr,
-    if (param-class.requires-axiom C)
-      (T = app [PArr, {funext}])
-      (T = PArr).
+  arrow C T :- 
+    param-class.suspend-on C (
+      trocq.db.param-arrow C Const, !,
+      coq.env.global (const Const) PArr,
+      if (param-class.requires-axiom C)
+        (T = app [PArr, {funext}])
+        (T = PArr)
+    ).
 
   func forall param-class -> term.
-  forall (uvar as C) T :- !,
-    declare_constraint (forall C T) [C].
   forall C T :-
-    trocq.db.param-forall C Const, !,
-    coq.env.global (const Const) PPi,
-    if (param-class.requires-axiom C)
-      (T = app [PPi, {funext}])
-      (T = PPi).
-
-  func r param-class -> term.
-  r (uvar as C) T :- !,
-    declare_constraint (r C T) [C].
-  r C T :-
-    trocq.db.r C Const, !,
-    coq.env.global (const Const) T.
+    param-class.suspend-on C (
+      trocq.db.param-forall C Const, !,
+      coq.env.global (const Const) PPi,
+      if (param-class.requires-axiom C)
+        (T = app [PPi, {funext}])
+        (T = PPi)
+    ).
 
   % {forget0 C1 C2} is the weakening function from C1 to C2
   % If C1 > C2 and C1 and C2 only are «one step away» from each other
@@ -91,6 +83,14 @@ namespace trocq.data {
   % a weakening from C1 to C2. Works if C1 >= C2
   func forget.aux param-class, param-class -> list term.
   forget.aux C C [] :- !.
+  % TODO This is broken, when forgetting from 30 to 2b0
+  % The program will attempt 30->2a0->10->00 then fail
+  % XXX This is a quick fix for this bug
+  forget.aux (pc map3 N as CA) (pc map2b N as CB) [W0] :- !,
+    forget0 CA CB W0.
+  forget.aux (pc MA map3 as CA) (pc _ map2b as CB) [W0|Ws] :- !,
+    forget0 CA (pc MA map2b) W0,
+    forget.aux (pc MA map2b) CB Ws.
   forget.aux (pc MA N as CA) (pc _ N as CB) [W0|Ws] :- !,
     % CA >= CC >= CB
     std.mem {map-class.weakenings-from MA} MC, !,
@@ -103,71 +103,86 @@ namespace trocq.data {
 
   % {forget C1 C2} is the weakening function from C1 to C2 if C1 >= C2
   func forget param-class, param-class -> term.
-  forget (uvar as CA) (uvar as CB) T :- !, 
-    declare_constraint (forget CA CB T) [CA,CB].
-  forget (uvar as CA) (pc MB NB) T :- !, 
-    declare_constraint (forget CA (pc MB NB) T) [CA].
-  forget (pc MA NA) (uvar as CB) T :- !, 
-    declare_constraint (forget (pc MA NA) CB T) [CB].
-  forget CA CB W :- !,
-    forget.aux CA CB Ws,
-    (pi t t' tr\ 
-      std.fold Ws tr (w0\ wx\ wx'\ coq.mk-app w0 [t,t',wx] wx') (WF t t' tr)
-    ),
-    W = fun _ _ t\ fun _ _ t'\ fun _ _ tr\ WF t t' tr.
+  forget CA CB W :-
+    param-class.suspend-on CA (
+    param-class.suspend-on CB (
+      forget.aux CA CB Ws,
+      (pi t t' tr\ 
+        std.fold Ws tr (w0\ wx\ wx'\ coq.mk-app w0 [t,t',wx] wx') (WF t t' tr)
+      ),
+      W = fun _ _ t\ fun _ _ t'\ fun _ _ tr\ WF t t' tr
+    )).
 
-  % data.traslations.grefs is the list of grefs that Trocq knows how to translate
+  % {data.traslations.grefs} is the list of grefs that Trocq knows how to translate
   func translations.grefs.extract (pred) -> gref.
-  translations.grefs.extract (trocq.db.gref G _ _ _ _) G :- !.
+  translations.grefs.extract (trocq.db.gref G _ _ _) G :- !.
   pred translations.grefs -> list gref.
   translations.grefs Goals :- do-not-fail => (
-    std.findall (trocq.db.gref _ _ _ _ _) Translations,
+    std.findall (trocq.db.gref _ _ _ _) Translations,
     std.map Translations translations.grefs.extract Goals
   ).
 
-  % translations.of G is the list of registered translation goal of gref G
+  % {translations.of G} is the list of registered translation goal of gref G
   func translations.of.extract (pred) -> gref.
-  translations.of.extract (trocq.db.gref _ _ _ G' _) G' :- !.
+  translations.of.extract (trocq.db.gref _ _ G' _) G' :- !.
   pred translations.of gref -> list gref.
   translations.of G Goals :- do-not-fail => (
-    std.findall (trocq.db.gref G _ _ _ _) Translations,
+    std.findall (trocq.db.gref G _ _ _) Translations,
     std.map Translations translations.of.extract Goals
   ).
 
-  % translations.ins G is the list of registered input class levels for translation G ~ G'
-  func translations.ins.extract (pred) -> list param-class.
-  translations.ins.extract (trocq.db.gref _ _ Ins _ _) Ins :- !.
-  pred translations.ins gref, gref -> list (list param-class).
-  translations.ins G G' Inss :- do-not-fail => (
-    std.findall (trocq.db.gref G _ _ G' _) Translations,
-    std.map Translations translations.ins.extract Inss
+  % {translations.lvl G G'} is the list of aterm levels to which translation
+  % of gref G to goal G'.
+  func translations.lvl.extract (pred) -> aterm.
+  translations.lvl.extract (trocq.db.gref _ AT _ _) AT :- !.
+  pred translations.lvl gref, gref -> list aterm.
+  translations.lvl G G' ATs :- do-not-fail => (
+    std.findall (trocq.db.gref G _ G' _) Translations,
+    std.map Translations translations.lvl.extract ATs
   ).
 
-  % translations.out G G' Ins is the list of registered translation goal of gref G
-  % with annotations Ins to goal G'.
-  func translations.out.extract (pred) -> param-class.
-  translations.out.extract (trocq.db.gref _ L _ _ _) L :- !.
-  pred translations.out gref, gref, list param-class -> list param-class.
-  translations.out G G' InLvl OutLvls :- do-not-fail => (
-    std.findall (trocq.db.gref G _ InLvl G' _) Translations,
-    std.map Translations translations.out.extract OutLvls
-  ).
+  func ptype -> term.
+  ptype T :- var T, !,
+    trocq.db.fake-aterm-ptype G _, !,
+    coq.env.global G T.
+  ptype T :-
+    coq.env.global G T, !,
+    trocq.db.fake-aterm-ptype G _, !.
+
+  func ptriple -> term.
+  ptriple T :- var T, !,
+    trocq.db.fake-aterm-ptype _ G, !,
+    coq.env.global G T.
+  ptriple T :-
+    coq.env.global G T, !,
+    trocq.db.fake-aterm-ptype _ G, !.
+
+  func term->map-class term -> map-class.
+  term->map-class T N :-
+    coq.env.global G T,
+    trocq.db.map-class->indc-class N G, !.
+
+  func param.rel->param-class term -> param-class.
+  param.rel->param-class T Cl :-
+    coq.env.global G T,
+    trocq.db.rel Cl G _ _ _ _,
+    !.
 
 } % trocq.data
 
 namespace trocq {
   % {gref G α L T TR} looks up the database to find a relation such that
   % G @ (α,L) ~ T ∵ TR
-  pred data.gref i:gref, i:param-class, i:list param-class, o:term, o:term.
-  data.gref G Alpha List T TR :- var T, !,
+  pred data.gref i:gref, i:aterm, o:term, o:term.
+  data.gref G AT T TR :- var T, !,
     % If T is uvar, we take the first matching rule from the database
-    trocq.db.gref G Alpha List TG TRG, !,
+    trocq.db.gref G AT TG TRG, !,
     coq.env.global TG T,
     coq.env.global TRG TR.
-  data.gref G Alpha List T TR :- coq.env.global TG T, !,
-    (trocq.db.gref G Alpha List TG TRG ; trocq.error.translation-not-found G Alpha List {coq.env.global TG}), !,
+  data.gref G AT T TR :- coq.env.global TG T, !,
+    (trocq.db.gref G AT TG TRG ; trocq.error.translation-not-found G AT {coq.env.global TG}), !,
     coq.env.global TRG TR.
-  data.gref G Alpha List T TR :- !,
+  data.gref _ _ _ _ :- !,
     trocq.error "NYI Registering trocq to a non-gref term".
 
 } % trocq

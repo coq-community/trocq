@@ -18,16 +18,6 @@
 
 pred do-not-fail.
 
-kind or type -> type -> type.
-type inl A -> or A B.
-type inr B -> or A B.
-
-kind verbosity type.
-type level.off verbosity.
-type level.info verbosity.
-type level.debug verbosity.
-type level.trace verbosity.
-
 % Returns the numeric level associated to a verbosity, the higher the more verbose.
 pred verbosity->int i:verbosity, o:int.
 verbosity->int level.off -1.
@@ -42,16 +32,22 @@ string->verbosity "info" level.info.
 string->verbosity "debug" level.debug.
 string->verbosity "trace" level.trace.
 
-pred log-level o:verbosity.
-:name "log-level"
-log-level level.info.
-
 func logging.info prop.
 logging.info P :- util.at-level level.info P.
 func logging.debug prop.
 logging.debug P :- util.at-level level.debug P.
 func logging.trace prop.
 logging.trace P :- util.at-level level.trace P.
+
+func util.at-level verbosity, prop.
+util.at-level MinimumLevel Log :- trocq.db.log-level CurrentLevel, !,
+  if ({verbosity->int CurrentLevel} >= {verbosity->int MinimumLevel}) Log true, !.
+util.at-level _ _.
+
+
+kind or type -> type -> type.
+type inl A -> or A B.
+type inr B -> or A B.
 
 namespace util {
 
@@ -65,11 +61,6 @@ cmp-int A B lt :- A < B, !.
 cmp-int A B eq :- A = B, !.
 cmp-int _ _ gt.
 
-func at-level verbosity, prop.
-at-level MinimumLevel Log :- log-level CurrentLevel, !,
-  if ({verbosity->int CurrentLevel} >= {verbosity->int MinimumLevel}) Log true, !.
-at-level _ _.
-
 pred when i:prop, i:prop.
 when Condition Goal :-
   if (Condition) Goal true.
@@ -78,6 +69,14 @@ pred unless i:prop, i:prop.
 unless Condition Goal :-
   if (Condition) true Goal.
 
+pred do-or i:prop i:prop.
+do-or P _ :- P.
+do-or _ Q :- !, Q, fail.
+
+func if-bool i:bool, i:(func), i:(func).
+if-bool tt T _ :- !, T.
+if-bool ff _ F :- !, F.
+
 pred if-suspend i:A, i:prop, i:(func), i:(func).
 if-suspend V B T E :- var V, !, declare_constraint (if B T E) [V].
 if-suspend _ B T E :- if B T E.
@@ -85,6 +84,15 @@ if-suspend _ B T E :- if B T E.
 pred map.find-opt i:A, i:std.map A B, o:option B.
 map.find-opt K M (some V) :- std.map.find K M V, !.
 map.find-opt _ _ none.
+
+% Maps a list to another list and separates when the predicate failed
+func map-fails list A, (func A -> B) -> list B, list A.
+map-fails [] _ [] [].
+map-fails [X|L] F [X'|L'] Fails :-
+  F X X', !, map-fails L F L' Fails.
+map-fails [X|L] F L' [X|Fails] :-
+  map-fails L F L' Fails.
+
 
 func map.update A, (func option B -> option B), std.map A B -> std.map A B.
 map.update K F M M' :-
@@ -97,6 +105,30 @@ map.update K F M M' :-
   F none (some V'), !,
   std.map.add K V' M M', !.     % add
 map.update _ _ M M.          % no-op
+
+% [mem-evar! L X] succeeds once if X is an evar and occurs inside L 
+func mem-evar! -> list A, A.
+mem-evar! [X|_] Y :- X == Y, !.
+mem-evar! [_|L] Y :- mem-evar! L Y.
+
+% [split-last L L' A] is L = L ++ [X]
+pred split-last list A -> list A, A.
+split-last [] _ _ :- !, fail.
+split-last [X] [] X :- !.
+split-last [Y|L] [Y|L'] X :- split-last L L' X.
+
+% [append-uniq-evar L1 L2 L] adds elements of L2 into L1 if they are evars that did not occur
+func append-uniq-evar list A, list A -> list A.
+append-uniq-evar L1 [] L1.
+append-uniq-evar L1 [X|L2] L :- 
+  var X,
+  mem-evar! L1 X, !,
+  append-uniq-evar L1 L2 L.
+append-uniq-evar L1 [X|L2] L :-
+  var X, !,
+  append-uniq-evar [X|L1] L2 L.
+append-uniq-evar L1 [_|L2] L :- !, % X is not a var
+  append-uniq-evar L1 L2 L.
 
 func delete A, list A -> list A.
 delete A [A|Xs] Xs :- !.
@@ -158,10 +190,64 @@ lexicographic-cmp.curry F [X|_] [Y|_] Cmp :- F X Y Cmp, not (Cmp = eq), !.
 lexicographic-cmp.curry F [_|Xs] [_|Ys] Cmp :- lexicographic-cmp.curry F Xs Ys Cmp.
 lexicographic-cmp F (lexicographic-cmp.curry F).
 
+func multi-split list int, list A -> list (list A).
+multi-split [] [] [].
+multi-split [N|LN] L [O|LO] :-
+  std.split-at N L O Rest,
+  multi-split LN Rest LO.
+
+func mapTo2 list A, (func A -> B,C) -> list B, list C.
+mapTo2 [] F_ [] [].
+mapTo2 [X|L] F [X1|L1] [X2|L2] :- F X X1 X2, mapTo2 L F L1 L2.
+
+func mapTo3 list A, (func A -> B,C,D) -> list B, list C, list D.
+mapTo3 [] F_ [] [] [].
+mapTo3 [X|L] F [X1|L1] [X2|L2] [X3|L3] :- F X X1 X2 X3, mapTo3 L F L1 L2 L3.
+
+func behead list A -> A, list A.
+behead [X|L] X L.
+
+func beheads list (list A) -> list A, list (list A).
+beheads L H T :- mapTo2 L behead H T.
+
+func interleave list (list A) -> list A.
+interleave L Out :- beheads L LH LT, !, 
+  interleave LT Rest,
+  std.append LH Rest Out.
+% Else, lists are empty
+interleave L_ [].
+
+% Turns a boolean into its integer representation (either 1 or 0)
 func bool->int bool -> int.
 bool->int tt 1.
 bool->int ff 0.
 
+% Removes from a list elements matching predicate
+func filter-out list A, (func A) -> list A.
+filter-out L F L' :- std.filter L (x\ not (F x)) L'.
+
+func is-min list (pair A A), A ->.
+is-min [] _.
+is-min [(pr _ Y)|L] Z :- not (Y == Z), is-min L Z.
+
+func zip-prod list A, list B -> list (pair A B).
+zip-prod [] _ [].
+zip-prod [X|L] Ys Out :-
+  zip-prod L Ys P,
+  std.map Ys (y\ o\ o = pr X y) P2,
+  std.append P2 P Out.
+
+func topo-sort list (pair A A), list A -> list A.
+topo-sort S L L' :-
+  coq.say "[topo-sort]" S "--" L "->" L',
+  fail, !.
+topo-sort _ [] [] :- !.
+topo-sort S L L' :-
+  std.partition L (is-min S) LMin LOther,
+  std.assert! (not (LMin = [])) "Could not sort topologically",
+  util.filter-out S (x\ sigma A\ x = (pr A _), mem-evar! LMin A) S',
+  topo-sort S' LOther LOther',
+  std.append LMin LOther' L'.
 } % util
 
 pred std.string.list->set i:list string, o:std.string.set.

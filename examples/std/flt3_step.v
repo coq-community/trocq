@@ -157,17 +157,24 @@ apply: (@Param01.BuildRel (x ≡ y) (k = l) (fun _ _ => unit)) => //.
 by constructor; rewrite -exk -eyl.
 Qed.
 
-Trocq Use Rp Rmul Rzero Rone Radd Rmod3 Param10_paths Reqmodp01.
-Trocq Use Param01_sum.
-Trocq Use Param01_Empty.
-Trocq Use Param10_Empty.
+Trocq Register Rp.
+Trocq Register Radd.
+Trocq Register Rmul.
+Trocq Register Rmod3.
+Trocq Register Rzero.
+Trocq Register Rone.
+Trocq Register Reqmodp01.
+
+Trocq Register Param01_sum.
+Trocq Register Param01_Empty.
+Trocq Register Param10_Empty.
 
 Lemma flt3_step : forall (m n p : ℤ),
   ((m * n * p)%Z % 3)%Z ≢ 0 -> (m³ + n³)%ℤ ≠ p³%ℤ.
 Proof.
 trocq=> /=.
 
-(* the following should be a call to troq to compute *)
+(* the following should be a call to trocq to compute *)
 move=> + + + /eqP + /eqP.
 by do 3![case; do 9?[case=> //=] => ?].
 

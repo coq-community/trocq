@@ -33,6 +33,10 @@ Axiom add_morph :
   forall n n' : int, (n <= n')%int ->
   (m + n <= m' + n')%int.
 
+Definition add_morph_sym (m m' : int) (Rm : (m' <= m)%int)
+  (n n' : int) (Rn : (n' <= n)%int) : (m' + n' <= m + n)%int :=
+    add_morph m' m Rm n' n Rn.
+
 Lemma le_morph :
   forall m m' : int, (m <= m')%int ->
   forall n n' : int, (n' <= n)%int ->
@@ -53,13 +57,17 @@ apply: (@Param01.BuildRel (m <= n)%int (m' <= n')%int (fun _ _ => unit)).
 - by constructor => mn; apply (le_morph _ _ Rm _ _ Rn).
 Qed.
 
-Trocq Use le01 add_morph.
+Trocq Register le01.
+Trocq Register add_morph.
+Trocq Register add_morph_sym.
 
 Parameters i j : int.
 Parameters ip : (j <= i)%int.
 Definition iid : (i <= i)%int := le_refl i.
 
-Trocq Use ip iid.
+Trocq Register ip.
+Trocq Register iid.
+Trocq Register iid.
 
 Example ipi : (j + i + j <= i + i + i)%int.
 Proof.

@@ -114,6 +114,13 @@ Defined.
      exploiting already proved parametricity on vector
 *)
 
+Definition R_tuple_vector (A A' : Type) (AR : A -> A' -> Type) (n n' : nat) (nR : natR n n') :
+  (tuple A n) -> (Vector.t A' n') -> Type.
+  apply (@R_trans _ (Vector.t A n)).
+  - exact (fun t v => tuple_to_vector t = v).
+  - exact (Vector.tR A A' AR n n' nR).
+Defined.
+
 Definition Param44_tuple_vector
   (A A' : Type) (AR : Param44.Rel A A') (n n' : nat) (nR : natR n n') :
     Param44.Rel (tuple A n) (Vector.t A' n').
@@ -160,7 +167,7 @@ Proof.
 Defined.
 
 Definition Param_append
-  (A A' : Type) (AR : Param00.Rel A A')
+  (A A' : Type) (AR : Param44.Rel A A')
   (n1 n1' : nat) (n1R : natR n1 n1')
   (n2 n2' : nat) (n2R : natR n2 n2')
   (t1 : tuple A n1) (v1' : Vector.t A' n1')
@@ -210,8 +217,12 @@ Defined.
 
 Module AppendConst.
 
-Trocq Use Param2a0_nat Param_add Param02b_tuple_vector.
-Trocq Use Param_append Param_const Param01_paths.
+Trocq Register Param2a0_nat.
+Trocq Register Param02b_tuple_vector.
+Trocq Register Param_add.
+
+Trocq Register Param_append.
+Trocq Register Param_const.
 
 Lemma append_const : forall {A : Type} (a : A) (n1 n2 : nat),
   append (const a n1) (const a n2) = const a (n1 + n2).
@@ -241,7 +252,11 @@ Definition Rp2a2b : Param2a2b.Rel Zp int := Rp42b.
 Lemma head_const {n : nat} : forall (i : int), Vector.hd (Vector.const i (S n)) = i.
 Proof. destruct n; simpl; reflexivity. Qed.
 
-Trocq Use Param2a0_nat SR Rp2a2b Param_head Param_const Param01_paths.
+Trocq Register Param2a0_nat.
+Trocq Register SR.
+Trocq Register Rp2a2b.
+Trocq Register Param_head.
+Trocq Register Param_const.
 
 Lemma head_const' : forall {n : nat} (z : Zp), head (const z (S n)) = z.
 Proof. trocq. exact @head_const. Qed.
@@ -269,8 +284,13 @@ Proof.
     + exact vv'R.
 Defined.
 
-Trocq Use SR Param_cons Param_add Param_append Param01_paths.
-Trocq Use Param2a0_tuple_vector Param02b_tuple_vector Param2a0_nat.
+Trocq Register SR.
+Trocq Register Param_cons.
+Trocq Register Param_add.
+Trocq Register Param_append.
+Trocq Register Param02b_tuple_vector.
+Trocq Register Param2a0_tuple_vector.
+Trocq Register Param2a0_nat.
 
 Lemma append_comm_cons : forall {A : Type} {n1 n2 : nat}
     (v1 : tuple A n1) (v2 : tuple A n2) (a : A),
@@ -409,9 +429,13 @@ Axiom setBitThenGetSame :
   forall {k : nat} (bv : bitvector k) (i : nat) (b : bool),
     (i < k)%nat = true -> getBit_bv (setBit_bv bv i b) i = b.
 
-
-Trocq Use Param2a0_nat Param44_Bool Param2a0_bnat_bv getBitR setBitR.
-Trocq Use Param01_paths Param10_paths Param10_le trueR SR.
+Trocq Register Param2a0_nat.
+Trocq Register Param44_Bool.
+Trocq Register Param2a0_bnat_bv.
+Trocq Register getBitR.
+Trocq Register setBitR.
+Trocq Register Param10_le.
+Trocq Register trueR.
 
 Lemma setBitThenGetSame' :
   forall {k : nat} (bn : bounded_nat k) (i : nat) (b : bool),

@@ -112,6 +112,15 @@ Elpi Query lp:{{
   )).
 }}.
 
+Definition PType (n : map_class) (m : map_class) : Type := Type.
+Definition PTriple {T T' TR : Type} (X : T) (X' : T') (XR : TR) := X.
+
+Register PType as trocq.fake_aterm_ptype.
+Register PTriple as trocq.fake_aterm_ptriple.
+Elpi Query lp:{{
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.fake-aterm-ptype {{:gref lib:trocq.fake_aterm_ptype}} {{:gref lib:trocq.fake_aterm_ptriple}})).
+}}.
+
 (********************)
 (* Record Hierarchy *)
 (********************)
@@ -160,6 +169,11 @@ Elpi Query lp:{{
 
 Definition rel {A B} (R : Param00.Rel A B) := Param00.R A B R.
 Coercion rel : Param00.Rel >-> Funclass.
+
+Register rel as trocq.rel0.
+Elpi Query lp:{{
+  coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.rel0 {{:gref lib:trocq.rel0}})).
+}}.
 
 Definition map {A B} (R : Param10.Rel A B) : A -> B :=
   Map1.map _ (Param10.covariant A B R).

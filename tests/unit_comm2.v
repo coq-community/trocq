@@ -27,11 +27,11 @@ Section N.
         end.
 
     Definition NR : Param44.Rel N N. admit. Admitted.
-    Trocq Use NR.
+    Trocq Register NR.
     Definition NS {n n': N} (Rr : NR n n'): NR (S n) (S n'). admit. Admitted.
-    Trocq Use NS.
+    Trocq Register NS.
     Definition Nad {n n' : N} (Rr : NR n n') {m m' : N} (Rr' : NR m m'): NR (ad n m) (ad n' m'). admit. Admitted.
-    Trocq Use Nad. 
+    Trocq Register Nad.
 
     Variable A : Type.
 
@@ -40,16 +40,16 @@ Section N.
     Variable (append' : forall {n m : N}, T' n -> T' m -> T' (ad n m)).
 
     Definition NT
-{n n' : N} (nR : NR n n'): Param2a2b.Rel (T n) (T' n'). admit. Admitted.
-Trocq Use NT.
+        {n n' : N} (nR : NR n n'): Param2a2b.Rel (T n) (T' n'). admit. Admitted.
+    Trocq Register NT.
 
 
-Definition Nappend {n n' : N} (nR : NR n n')
-    {m m' : N} (mR : NR m m')
-    {t : T n} {t' : T' n'} (tR : NT nR t t')
-    {u : T m} {u' : T' m'} (uR : NT mR u u') :
-    NT (Nad nR mR) (append t u) (append' t' u'). admit. Admitted. 
-Trocq Use Nappend.
+    Definition Nappend {n n' : N} (nR : NR n n')
+        {m m' : N} (mR : NR m m')
+        {t : T n} {t' : T' n'} (tR : NT nR t t')
+        {u : T m} {u' : T' m'} (uR : NT mR u u') :
+        NT (Nad nR mR) (append t u) (append' t' u'). admit. Admitted. 
+    Trocq Register Nappend.
 
     Variable (P : forall {n : N}, T n -> Type).
     Variable (P' : forall {n : N}, T' n -> Type).
@@ -57,7 +57,7 @@ Trocq Use Nappend.
         {t : T n} {t' : T' n'} {tR : NT nR t t'}
         : Param44.Rel (P t) (P' t').
         admit. Admitted.
-    Trocq Use RP.
+    Trocq Register RP.
 
     Goal forall {n1 n2 : N}
         (v1 : T n1) (v2 : T n2),

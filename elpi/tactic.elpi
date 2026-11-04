@@ -21,13 +21,13 @@ evar _ _ _ :- !.
 
 pred known->gref i:prop, o:prop.
 known->gref
-  (trocq.db.known-gref _Rel GR OutCl Classes GR' GRR)
-  (trocq.db.gref GR OutCl Classes GR' GRR :- !).
+  (trocq.db.known-gref _Rel GR AT GR' GRR)
+  (trocq.db.gref GR AT GR' GRR).
 
 pred load-rel i:gref, o:list prop.
 load-rel GRRel DB :- std.do! [
   std.findall
-    (trocq.db.known-gref GRRel _GR _OutCl _Classes _GR' _GRR)
+    (trocq.db.known-gref GRRel _GR _AT _GR' _GRR)
     AllRel,
   std.map AllRel known->gref DB
 ].
@@ -52,7 +52,7 @@ parse-goal Goal G Ty G' [] :-
   std.assert-ok! (coq.typecheck G Ty) "goal ill-typed",
   util.argument->term RG' G'.
 % trocq with A B C.
-parse-goal Goal G Ty G' Rels :-
+parse-goal Goal G Ty _ Rels :-
   Goal = goal _Context _ G _ [(str "with")|RRels], !,
   std.assert-ok! (coq.typecheck G Ty) "goal ill-typed",
   std.map RRels util.argument->gref Rels.
@@ -61,7 +61,7 @@ parse-goal Goal G Ty _ [] :-
   Goal = goal _Context _ G _ [], !,
   logging.trace (coq.say "[parse-goal] No arguments"),
   std.assert-ok! (coq.typecheck G Ty) "goal ill-typed".
-parse-goal Goal _ _ _ _ :- !,
+parse-goal _ _ _ _ _ :- !,
   coq.error "Wrong usage of trocq tactic",
   fail.
 
@@ -86,19 +86,19 @@ solve InitialGoal NewGoals :- std.do! [
 ].
 
 pred translate-goal i:list prop, i:term, i:term, i:param-class, o:term, o:term.
-translate-goal DB Ty G C G' GR' :- DB => std.do! [
+translate-goal DB Ty G C G' GR' :- param-class.end-suspension ES => DB => std.do! [
   coq.reduction.lazy.norm Ty (sort S),
-  cstr.init,
   T = asort S C,
   logging.debug (coq.say "[translate-goal] will translate" G "at level" T),
-  term->aterm G AG,
+  aterm.fresh G AG,
   % generate the associated goal G' and witness GR
-  param AG T G' GR,
-  logging.debug (coq.say "[translate-goal] after translation: goal" G' "with proof" GR),
-  % reduce the graph, so the variables all become ground in the terms
-  cstr.local-db DB,
-  (cstr.reduce-graph; trocq.error "Could not solve constraint Graph"),
-  logging.debug (coq.say "[translate-goal] Beta-reducing proof" GR),
+  param AG T G' GRU Cstrs,
+  util.equals-ignore GRU GR, %XXX This is because of universe issues
+  logging.debug (coq.say "[translate-goal] after translation: goal" G' "with proof" {coq.term->string GR}),
+  (DB => solve-constraints Cstrs),
+  logging.debug (coq.say "[translate-goal] After constraint solve: goal" G' "with proof" GR),
+  ES = pc map0 map0, % This triggers elpi held constraints
+  logging.debug (coq.say "[translate-goal] After freeing constraints: goal" G' "with proof" GR),
   %TODO make β-reduction directly in weaken predicate (Issue #63)
   coq.reduction.lazy.bi-norm GR GR',
   logging.debug (coq.say "[transalte-goal] After reductions: goal" {coq.term->string G'} "with proof" {coq.term->string GR'}),

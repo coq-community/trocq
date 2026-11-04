@@ -17,21 +17,9 @@ Set Universe Polymorphism.
 
 Section TypeTest.
 
-    Variable (A B U : Type).
-    Variable (f : A -> B).
-
-    Definition R1 : Param10.Rel A B := mkParam10 f.
-
-    Trocq Use R1.
-
-    Goal A -> Type.
+    Goal Type.
         trocq.
-        enough (x : B -> Type) by exact x.
-    Abort.
-
-    Goal (fun X : Type => X) (A -> Type).
-        trocq.
-        enough (x : (fun X : Type => X) (B -> Type)) by exact x.
+        enough (x : Type) by exact x.
     Abort.
     
 

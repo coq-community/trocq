@@ -26,7 +26,8 @@ Section TrocqDepType.
     
     Definition RL (X : Type) (X' : Type) (XR : Param10.Rel X X') : Param10.Rel (L X) (L' X') := mkParam10 (m X X' (map XR)).
 
-    Trocq Use RA RL.
+    Trocq Register RA.
+    Trocq Register RL.
 
     Trocq Coercion On.
     Goal L' A'.

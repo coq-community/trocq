@@ -19,6 +19,16 @@ accumulate "Trocq.Elpi/database".
 
 namespace param-class {
 
+  func end-suspension -> param-class.
+
+  func suspend-on param-class , (func ->) ->.
+  % XXX If end-suspension works, we should not have a use for (pc X Y) suspend rules
+  suspend-on _ P :- end-suspension ES, not (var ES), !, P. % We already ended suspension
+  suspend-on X P :- var X, !, end-suspension ES, declare_constraint (suspend-on X P) [ES].
+  suspend-on (pc X Y) P :- var X, !, end-suspension ES, declare_constraint (suspend-on (pc X Y) P) [ES].
+  suspend-on (pc X Y) P :- var Y, !, end-suspension ES, declare_constraint (suspend-on (pc X Y) P) [ES].
+  suspend-on _ P :- !, P.
+
 % weaking of the out class of a gref.
 % e.g. if GR has type `forall A B, R A B -> Param21 X Y`
 % then `weaken-out (pc map1 map0) GR T`

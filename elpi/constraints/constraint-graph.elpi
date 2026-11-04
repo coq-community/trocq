@@ -16,6 +16,32 @@
 accumulate "Trocq.Elpi.constraints/simple-graph".
 accumulate "Trocq.Elpi/data".
 
+%XXX This is only here for this file
+pred annot.weaken i:aterm, i:aterm, i:term, i:term, i:term, o:term.
+%XXX This should be in data.elpi but import order
+pred trocq.data.gref.legacy gref, param-class, list param-class -> term, term.
+trocq.data.gref.legacy G Out CL G' RG :-
+  coq.say "[xxx] Looking up" G "at" CL "->" Out "to" G' "with" RG,
+  std.findall (trocq.db.gref _ _ _ _) DatabaseContents,
+  coq.say "[xxx] Gref Database :" DatabaseContents,
+  trocq.db.gref G AT0 GG' GRG0,
+  aterm.util.equals-ignore AT0 AT,
+  coq.env.global GG' G',
+  coq.env.global GRG0 RG0,
+  coq.say "[xxx] Testing" G "-" AT "-" G',
+  aterm.util.classes AT CL OOut,
+  coq.say "[xxx] Got classes" CL OOut,
+  util.option.value OOut (pc map0 map0) PreOut,
+  coq.say "[xxx] Comparing" PreOut "with" Out,
+  if (PreOut == Out) (RG = RG0) (
+    param-class.geq PreOut Out,
+    coq.env.typeof G T,
+    aterm.util.annotate-legacy T CL (some Out) AT',
+    coq.say "[xxx] Legacy annotated" AT',
+    annot.weaken AT AT' {coq.env.global G} G' RG0 RG
+  ).
+
+
 % in the constraint graph, parametricity classes are represented with integers (it is easier to
 % index on this type than on variables of type param-class)
 typeabbrev class-id int.
@@ -167,7 +193,8 @@ instantiate.aux ID Class (node.var (ct.gref GR T Tm' TRR) IDs) G G' :- std.do! [
       G1,
   aterm.util.classes T TCs _,
   % find the output constant and proof, as well as the required classes Cs
-  (trocq.data.gref GR Class Cs Tm' TRR ; trocq.error.translation-not-found GR Class Cs Tm'), !,
+  %XXX Remove this hole in translation-not-found
+  (trocq.data.gref.legacy GR Class Cs Tm' TRR ; trocq.error.translation-not-found GR _ Tm'), !,
   % make sure the classes are consistent
   instantiate.gref IDs TCs Cs G1 G'
   ].

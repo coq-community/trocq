@@ -57,14 +57,16 @@ apply: (@Param01.BuildRel (m == n)%int (m' == n')%int (fun _ _ => unit)).
 - by constructor => mn; apply (eqmodp_morph _ _ Rm _ _ Rn).
 Qed.
 
-Trocq Use eqmodp01 add_morph.
+Trocq Register eqmodp01.
+Trocq Register add_morph.
 
 #[local] Parameter i : int.
 #[local] Definition j := (i + p)%int.
 #[local] Parameter ip : (j == i)%int.
 Definition iid : (i == i)%int := eqp_refl i.
 
-Trocq Use ip iid.
+Trocq Register ip.
+Trocq Register iid.
 
 Example ipi : (j + i == i + i)%int.
 Proof.

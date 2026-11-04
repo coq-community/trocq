@@ -1,0 +1,39 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                     Trocq                      %
+%  _______                   %        Copyright (C) 2023 Inria & MERCE        %
+% |__   __|                  %     (Mitsubishi Electric R&D Centre Europe)    %
+%    | |_ __ ___   ___ __ _  %        Cyril Cohen <cyril.cohen@inria.fr>      %
+%    | | '__/ _ \ / __/ _` | %        Enzo Crance <enzo.crance@inria.fr>      %
+%    | | | | (_) | (_| (_| | %    Assia Mahboubi <assia.mahboubi@inria.fr>    %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %   This file is distributed under the terms of  %
+%                        |_| %   GNU Lesser General Public License Version 3  %
+%                            % (see LICENSE file for the text of the license) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -----------------------------------------------------------------------------
+% Base definition of annotated terms
+% -----------------------------------------------------------------------------
+
+accumulate "Trocq.Elpi/class".
+
+kind aterm type.
+
+% This type is only when a predicate works for annotated terms whose type is sort
+typeabbrev atype aterm.
+
+type atriple  term -> term -> term -> aterm.
+type asort    sort -> param-class -> aterm.
+type aglobal  gref -> term -> term -> aterm.
+type apglobal gref -> univ-instance -> term -> term -> aterm.
+type afun     name -> atype -> (aterm -> aterm) -> aterm.     % fun x : t =>
+type aprod    name -> atype -> (aterm -> aterm) -> aterm.         % forall x : t,
+type alet     name -> atype -> aterm -> (aterm -> aterm) -> aterm. % let x : T := v in
+type aapp     list aterm -> aterm.                              % app [hd|args]
+type amatch   aterm -> aterm -> list aterm -> aterm.              % match t p [branch])
+type afix     name -> int -> aterm -> (term -> aterm) -> aterm.  % fix name rno ty bo
+type aprimitive primitive-value -> aterm.
+
+
+% `adecl ax N x x' xr A` declares an annotated variable ax with name N with an annotated type A
+% which forgets to a term x and translates to a term x' with relation xr
+pred adecl o:aterm o:name o:term o:term o:term o:atype.

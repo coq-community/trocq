@@ -11,9 +11,74 @@
 %                            % (see LICENSE file for the text of the license) %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-accumulate "Trocq.Elpi/param-class-util".
-accumulate "Trocq.Elpi/aterm".
-accumulate "Trocq.Elpi/data".
+accumulate "Trocq.Elpi/annot".
+
+
+% API
+
+func check-infer -> term,term,term,term,aterm,term,term,term,term,aterm.
+check-infer W Rel T T' AT EW ERel ET ET' EAT :-
+  logging.trace (coq.say "[check-infer] Checking if data is already enough"),
+  (do-not-fail => annot.check-database T T' Rel AT W ET ET' ERel EAT EW),
+  not (var ET), not (var ET'), not (var ERel), not (var EAT), not (var EW), !.
+check-infer W Rel T T' AT EW ERel ET ET' EAT :- !, % We disable new inference for now
+  coq.env.global WG W,
+  coq.env.typeof WG WT,
+  Rel = W,
+  param-class.type->classes WT Class CList G G', !,
+  coq.env.global G T,
+  coq.env.global G' T',
+  coq.typecheck T TT ok,
+  (aterm.util.annotate-legacy TT CList (some Class) AT;
+  aterm.util.annotate-legacy TT CList none AT;
+  trocq.error "Could not make aterm back" TT "with" Class "&" CList), !,
+  EW = W, ERel = Rel, ET = T, ET' = T', EAT = AT.
+check-infer W Rel T T' AT EW ERel ET ET' EAT :-
+  logging.trace (coq.say "[check-infer] Trying to infer the data"),
+  annot.infer W Rel T T' AT,
+  logging.trace (coq.say "[check-infer] Inferred" {coq.term->string T} "~" {coq.term->string T'} "@" AT "rel" {coq.term->string Rel}),
+  logging.trace (coq.say "[check-infer] Checking the inferred data is correct"),
+  annot.check-database T T' Rel AT W ET ET' ERel EAT EW,
+  not (var ET), not (var ET'), not (var ERel), not (var EAT), not (var EW), !.
+
+% Checks and adds to database the lemma
+% (T, T', Rel) @ AT ∵ W in database ODB
+% ODB might be none -> In core database
+% T T' RT AT might be uvars -> Infer them from the type of W
+pred add-to-database term, term, term, term, aterm, option gref ->.
+add-to-database W Rel T T' AT ODB :- !,
+  logging.info (coq.say "[add-to-database] Trying to add" {coq.term->string W} "to the database"),
+  % We try with the information we have, if it does not work, we try to infer, then we retry
+  (check-infer W Rel T T' AT EW ERel_ ET ET' EAT; trocq.error "Could not infer database input for" {coq.term->string W}), !,
+  (coq.env.global G ET; trocq.error "Trocq does not support relating something that is not a gref" ":" {coq.term->string ET}), !,
+  (coq.env.global G' ET'; trocq.error "Trocq does not support relating a gref to something that is not a gref" ":" {coq.term->string ET'}), !,
+  (coq.env.global WG EW; trocq.error "Trocq does not support relating a gref with something that is not a gref" ":" {coq.term->string EW}), !,
+  if (ODB = some DBName)
+  (coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.known-gref DBName G EAT G' WG)))
+  (coq.elpi.accumulate _ "trocq.db" (clause _ _ (trocq.db.gref              G EAT G' WG))).
+
+
+func usage-msg o:string.
+usage-msg U :-
+  std.string.concat "\n" [
+    "usage:",
+    "- Trocq Register Univalence <u>",
+    "- Trocq Register Funext <f>",
+    "- Trocq Register <Witness> [rel <Rel>] [: <T> ~ <T'> [@ <AT>]] [: <DB>]",
+    "- Trocq RelatedWith <Relation> <RTrocq>+",
+    "- Trocq Logging (\"off\"|\"info\"|\"debug\"|\"trace\")",
+    "- Trocq Coercion (\"On\"|\"Off\")",
+    "- Trocq Print Translations [Gref]",
+    "", "",
+  ] U.
+
+func vernac.infer-aterm term -> aterm.
+vernac.infer-aterm uvar _AT :- !.
+vernac.infer-aterm T AT :-
+  (coq.elaborate-skeleton T _ ET ok,
+  aterm.util.fake-term->aterm ET AT 
+  ; trocq.error "Could not make an annotated term out of term" {coq.term->string T}), !,
+  logging.trace (coq.say "[infer-aterm] Inferred annotated term" AT).
 
 % command to register the univalence axiom
 main [str "Register", str "Univalence", str S] :- !, std.do! [
@@ -58,104 +123,35 @@ main [str "Register", str "Funext", str S] :- !, std.do! [
 ].
 
 % command to add custom witnesses to the database
-% and tells trocq to use it immediately
-main [str "Use", X] :- !, std.do! [
-  util.argument->gref X GRR,
-  coq.env.typeof GRR XTy,
-  param-class.type->classes XTy Class CList GR GR',
-
-  coq.gref->id GR GRId,
-  coq.gref->id GR' GR'Id,
-  coq.gref->id GRR BaseName,
-  logging.info (
-    coq.info "accumulating" GRId "@" Class "(" CList ") ~"
-      GR'Id ":." BaseName
-  ),
-
-  coq.elpi.accumulate _ "trocq.db"
-    (clause _ _
-      (trocq.db.gref GR Class CList GR' GRR)),
-  % We check that inferred Class and CList are valid for given gref.
-  coq.env.typeof GR TGR,
-  (aterm.util.mk-aterm TGR CList (some Class) _; trocq.error "Trocq could not infer classes levels for this term"), !,
-
-  std.forall {param-class.all-weakenings-from Class} subclass\
-      sigma WTRR Suffix WName WCRR \
-    if (trocq.db.gref GR subclass _ _ _) true (std.do! [
-      param-class.weaken-out subclass GRR WTRR,
-
-      param-class.to-string subclass Suffix,
-      WName is BaseName ^ "_weakened_to_" ^ Suffix,
-      (@univpoly! => coq.env.add-const WName WTRR _ @transparent! WCRR),
-      coq.elpi.accumulate _ "trocq.db"
-        (clause _ _
-          (trocq.db.gref GR subclass CList GR' (const WCRR))),
-
-      logging.info (sigma WCRRId\
-        coq.gref->id (const WCRR) WCRRId,
-        coq.info "accumulating" GRId
-          "@" subclass "(" CList ") ~" GR'Id
-          ":." WCRRId
-      ),
-  ])
-].
-
-% several use in one go!
-main [str "Use", X, Y | Rest] :- !, std.do![
-    main [str "Use", X], main [str "Use", Y | Rest]].
-
-main [str "RelatedWith", Rel, X] :- !, std.do! [
-  util.argument->gref Rel GRRel,
-  util.argument->gref X GRR,
-  coq.env.typeof GRR XTy,
-  param-class.type->classes XTy Class CList GR GR',
-
-  coq.gref->id GR GRId,
-  coq.gref->id GR' GR'Id,
-  coq.gref->id GRR BaseName,
-  coq.gref->id GRRel GRRelId,
-  logging.info (
-    coq.info "accumulating" GRId
-      "@" Class "(" CList ") ~" GR'Id
-      ":." BaseName
-      "attached to relation" GRRelId
-  ),
-
-  coq.elpi.accumulate _ "trocq.db"
-    (clause _ _
-      (trocq.db.known-gref GRRel GR Class CList GR' GRR)),
-  std.forall {param-class.all-weakenings-from Class} subclass\
-      sigma WTRR Suffix WName WCRR \
-    if (do-not-fail => trocq.db.known-gref GRRel GR subclass _ _ _) true (std.do! [
-      param-class.weaken-out subclass GRR WTRR,
-
-      param-class.to-string subclass Suffix,
-      WName is BaseName ^ "_weakened_to_" ^ Suffix,
-      (@univpoly! => coq.env.add-const WName WTRR _ @transparent! WCRR),
-      coq.elpi.accumulate _ "trocq.db"
-        (clause _ _
-          (trocq.db.known-gref GRRel GR subclass CList GR' (const WCRR))),
-
-      logging.info (sigma WCRRId\
-        coq.gref->id (const WCRR) WCRRId,
-        coq.info "accumulating" GRId
-          "@" subclass "(" CList ") ~" GR'Id
-          ":." WCRRId
-          "attached to relation" GRRelId
-      ),
-  ])
-].
-
-% several use in one go!
-main [str "RelatedWith", Rel, X, Y | Rest] :- !, std.do![
-    main [str "RelatedWith",  Rel, X], main [str "RelatedWith", Rel, Y | Rest]].
+% Parses `Trocq Register Witness [rel Rel] [: T ~ T' [@ AT]] [: DB]`
+% If not specified, Rel is set to Witness
+main [str "Register", ArgW | L0] :-
+  util.argument->term ArgW W,
+  if (L0 = [str "rel", ArgRel | L1])
+  (util.argument->term ArgRel Rel)
+  (L1 = L0, Rel = W),
+  if (L1 = [str ":", ArgT, str "~", ArgT' | L2])
+  (
+    util.argument->term ArgT T,
+    util.argument->term ArgT' T',
+    if (L2 = [str "@", ArgAT | L3])
+    (util.argument->term ArgAT ATT)
+    (L3 = L2)
+  )
+  (L3 = L1),
+  if (L3 = [str ":", ArgDB | L4])
+  (util.argument->gref ArgDB DB, ODB = some DB)
+  (L4 = L3, ODB = none),
+  L4 = [],
+  !,
+  add-to-database W Rel T T' {vernac.infer-aterm ATT} ODB.
 
 main [str "Usage"] :- !, coq.info {usage-msg}.
 
 main [str "Logging", str StrLevel] :- !,
   string->verbosity StrLevel Level,
   util.accumulate-replacing-named-clause _ "trocq.db" "log-level" (
-    log-level Level
+    trocq.db.log-level Level
   ).
 
 main [str "Coercion", str "On"] :- !,
@@ -179,33 +175,13 @@ main [str "Print", str "Translations", Obj] :- !,
   util.argument->gref Obj G,
   coq.info "Registered translations of" {coq.gref->string G} ":",
   trocq.data.translations.of G GS,
-  std.forall {util.cmp-undup cmp_term GS} (G'\ sigma SG' Inss InssU\
+  std.forall {util.cmp-undup cmp_term GS} (G'\ sigma SG' ATs\
     coq.gref->string G' SG',
     coq.info "->" SG',
-    trocq.data.translations.ins G G' Inss,
-    util.cmp-undup {util.lexicographic-cmp cmp_term} Inss InssU,
-    std.forall InssU (Ins\ sigma Outs UOuts SUOuts SIns\
-      trocq.data.translations.out G G' Ins Outs,
-      % We only show upper bounds as we suppose that all weakenings have been generated
-      param-class.upper-bounds Outs UOuts,
-      std.map UOuts param-class.to_string SUOuts,
-      std.map Ins param-class.to_string SIns,
-      coq.info "lvl" SIns "->" SUOuts
+    trocq.data.translations.lvl G G' ATs,
+    std.forall ATs (AT\
+      coq.info "lvl" AT
     )
   ).
 
 main _ :- trocq.error {std.string.concat "\n" ["command syntax error", {usage-msg}]}.
-
-pred usage-msg o:string.
-usage-msg U :-
-  std.string.concat "\n" [
-    "usage:",
-    "- Trocq Register Univalence <u>",
-    "- Trocq Register Funext <f>",
-    "- Trocq Use <RTrocq>+",
-    "- Trocq RelatedWith <Relation> <RTrocq>+",
-    "- Trocq Logging (\"off\"|\"info\"|\"debug\"|\"trace\")",
-    "- Trocq Coercion (\"On\"|\"Off\")",
-    "- Trocq Print Translations [Gref]",
-    "", "",
-  ] U.

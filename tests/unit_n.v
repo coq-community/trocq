@@ -21,10 +21,10 @@ Section N.
     Variable (Z : N) (Z' : N').
 
     Definition RN : Param2a2b.Rel N N'. admit. Admitted.
-    Trocq Use RN.
+    Trocq Register RN.
 
     Definition RNZ : RN Z Z'. admit. Admitted.
-    Trocq Use RNZ.
+    Trocq Register RNZ.
 
     Goal forall (P : N -> Type), (forall a : N, P a).
         trocq.

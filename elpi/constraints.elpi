@@ -1,0 +1,464 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            %                     Trocq                      %
+%  _______                   %        Copyright (C) 2023 Inria & MERCE        %
+% |__   __|                  %     (Mitsubishi Electric R&D Centre Europe)    %
+%    | |_ __ ___   ___ __ _  %        Cyril Cohen <cyril.cohen@inria.fr>      %
+%    | | '__/ _ \ / __/ _` | %        Enzo Crance <enzo.crance@inria.fr>      %
+%    | | | | (_) | (_| (_| | %    Assia Mahboubi <assia.mahboubi@inria.fr>    %
+%    |_|_|  \___/ \___\__, | %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                        | | %   This file is distributed under the terms of  %
+%                        |_| %   GNU Lesser General Public License Version 3  %
+%                            % (see LICENSE file for the text of the license) %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% -----------------------------------------------------------------------------
+% Constaints data
+% -----------------------------------------------------------------------------
+
+accumulate "Trocq.Elpi/data".
+accumulate "Trocq.Elpi/aterm".
+accumulate "Trocq.Elpi.constraints/constraints-impl".
+
+kind cstr type.
+
+typeabbrev cstr-list (list cstr).
+typeabbrev evar-list (list param-class).
+typeabbrev pc-edge (pair param-class param-class).
+typeabbrev pc-edges (list pc-edge).
+
+% D_π(C, C_A, C_B)
+type cstr-pi param-class -> param-class -> param-class -> cstr.
+
+% D_->(C, C_A, C_B)
+type cstr-arrow param-class -> param-class -> param-class -> cstr.
+
+% D_□(C, C_R)
+type cstr-type param-class -> param-class -> cstr.
+
+% G @ AT ~ T' ∵ RT
+type cstr-gref gref -> aterm -> term -> term -> cstr.
+
+% C >= C'
+type cstr-geq param-class -> param-class -> cstr.
+
+% C = C'
+type cstr-eq param-class -> param-class -> cstr.
+
+
+
+func param-class.pp param-class -> string.
+param-class.pp (uvar as X) S :- term_to_string X S, !.
+param-class.pp (pc N M) S :- (var N; var M), !, 
+    S is "(" ^ {term_to_string N} ^ "," ^ {term_to_string M} ^ ")".
+param-class.pp C S :- 
+    param-class.to_string C S.
+
+func cstr.pp cstr -> string.
+cstr.pp (cstr-eq X Y) S :- S is {param-class.pp X} ^ " = " ^ {param-class.pp Y}.
+cstr.pp (cstr-pi X Y Z) S :- S is "DΠ(" ^ {param-class.pp X} ^ ") = (" ^ {param-class.pp Y} ^ "," ^ {param-class.pp Z} ^ ")".
+cstr.pp (cstr-arrow X Y Z) S :- S is "D➜(" ^ {param-class.pp X} ^ ") = (" ^ {param-class.pp Y} ^ "," ^ {param-class.pp Z} ^ ")".
+cstr.pp (cstr-type X Y) S :- S is "D□(" ^ {param-class.pp X} ^ "," ^ {param-class.pp Y} ^ ")".
+cstr.pp (cstr-geq X Y) S :- S is {param-class.pp X} ^ " ⩾ " ^ {param-class.pp Y}.
+cstr.pp (cstr-gref G T G' RG) S :- S is {term_to_string G} ^ " @ " ^ {term_to_string T} ^ " ~ " ^ {term_to_string G'} ^ " ∵ " ^ {term_to_string RG}.
+
+func cstrs.pp list cstr -> string.
+cstrs.pp L S :- std.string.concat "\n" {std.map L cstr.pp} S.
+
+
+% `@pi-adecl N AT (ax\ x\ x'\ xr\ F x x' xr)` declares elpi pi-variables x x' xr with adecl
+% x has annotated type AT
+macro @pi-adecl N PAD_AT PAD_F :-
+  aterm.raw-triple PAD_AT PAD_T PAD_T' PAD_RT,
+  util.name-suffix N "'" N',
+  util.name-suffix N "R" NR,
+  @pi-decl N PAD_T x\ (
+  @pi-decl N' PAD_T' x'\ (
+  util.mk-app PAD_RT [x, x'] (PAD_RTx x x'),
+  @pi-decl NR (PAD_RTx x x') xR\ (
+  pi ax\ [
+    adecl ax N x x' xR PAD_AT
+  ] => (
+    logging.trace (coq.say "[adecl]" ax "==" x "@" PAD_AT "~" x' "∵" xR),
+    (PAD_F ax x x' xR)
+  )))).
+
+namespace map-class-cstr {
+
+    pred all -> map-class.
+    all map0.
+    all map1.
+    all map2a.
+    all map2b.
+    all map3.
+    all map4.
+
+    pred geq -> map-class, map-class.
+    geq map0  map0.
+    geq map1  M :- std.mem [map0, map1] M.
+    geq map2a M :- std.mem [map0, map1, map2a] M.
+    geq map2b M :- std.mem [map0, map1, map2b] M.
+    geq map3  M :- std.mem [map0, map1, map2a, map2b, map3] M.
+    geq map4  M :- all M.
+
+    func dep-pi map-class -> param-class, param-class.
+    dep-pi map0  (pc map0 map0)  (pc map0 map0).
+    dep-pi map1  (pc map0 map2a) (pc map1 map0).
+    dep-pi map2a (pc map0 map4)  (pc map2a map0).
+    dep-pi map2b (pc map0 map2a) (pc map2b map0).
+    dep-pi map3  (pc map0 map4)  (pc map3 map0).
+    dep-pi map4  (pc map0 map4)  (pc map4 map0).
+
+    % minimal dependencies to translate an arrow type, see the table in the article
+    func dep-arrow map-class -> param-class, param-class.
+    dep-arrow map0  (pc map0 map0)  (pc map0 map0).
+    dep-arrow map1  (pc map0 map1)  (pc map1 map0).
+    dep-arrow map2a (pc map0 map2b) (pc map2a map0).
+    dep-arrow map2b (pc map0 map2a) (pc map2b map0).
+    dep-arrow map3  (pc map0 map3)  (pc map3 map0).
+    dep-arrow map4  (pc map0 map4)  (pc map4 map0).
+}
+
+namespace param-class-cstr {
+
+    func negate param-class -> param-class.
+    negate (pc M N) (pc N M).
+
+    pred geq -> param-class, param-class.
+    geq (pc M1 N1) (pc M2 N2) :-
+        map-class-cstr.geq M1 M2,
+        map-class-cstr.geq N1 N2.
+
+    func dep-pi param-class -> param-class, param-class.
+    dep-pi (pc M N) ClassA ClassB :-
+        map-class-cstr.dep-pi M ClassAM ClassBM,
+        map-class-cstr.dep-pi N ClassAN ClassBN,
+        param-class.union ClassAM {param-class-cstr.negate ClassAN} ClassA,
+        param-class.union ClassBM {param-class-cstr.negate ClassBN} ClassB.
+
+    func dep-arrow param-class -> param-class, param-class.
+    dep-arrow (pc M N) ClassA ClassB :-
+        map-class-cstr.dep-arrow M ClassAM ClassBM,
+        map-class-cstr.dep-arrow N ClassAN ClassBN,
+        param-class.union ClassAM {param-class-cstr.negate ClassAN} ClassA,
+        param-class.union ClassBM {param-class-cstr.negate ClassBN} ClassB.
+
+    pred requires-axiom -> param-class.
+    requires-axiom (pc M N) :- (map-class-cstr.geq M map2b ; map-class-cstr.geq N map2b).
+    pred doesnt-require-axiom -> param-class.
+    doesnt-require-axiom (pc M N) :- map-class-cstr.geq map2a M, map-class-cstr.geq map2a N.
+
+    pred all -> param-class.
+    all (pc M N) :- map-class-cstr.all M, map-class-cstr.all N.
+
+    func certain param-class ->.
+    certain uvar :- !, fail.
+    certain (pc uvar _) :- !, fail.
+    certain (pc _ uvar) :- !, fail.
+    certain _.
+}
+
+% {aterm.certain A} checks wether there is no evars in the annotations of the aterm A
+% i.e. there is only one translation at that level in the database for some 3uple.
+func aterm.certain aterm ->.
+aterm.certain uvar :- !, fail.
+aterm.certain X :- name X, !.
+aterm.certain (asort _ C) :- !, param-class-cstr.certain C.
+aterm.certain (aprod N T F) :- !,
+    aterm.certain T,
+    @pi-adecl N T ax\ _\ _\ _\ (
+        aterm.certain (F ax)
+    ).
+aterm.certain (afun N T F) :- !,
+    aterm.certain T,
+    @pi-adecl N T ax\ _\ _\ _\ (
+        aterm.certain (F ax)
+    ).
+aterm.certain (aapp L) :- !, std.forall L aterm.certain.
+aterm.certain (aglobal _ X' RX) :- not (var X'), not (var RX), !.
+aterm.certain (apglobal _ _ X' RX) :- not (var X'), not (var RX), !.
+%XXX We should expand that with checking the gref
+% and with checking wether we have multiple copies of the gref in the database.
+
+pred has-funext-if-needed -> param-class.
+has-funext-if-needed C :-
+    if (trocq.db.funext _)
+    (param-class-cstr.all C)
+    (param-class-cstr.doesnt-require-axiom C).
+pred has-univ-if-needed -> param-class.
+has-univ-if-needed C :-
+    if (trocq.db.univalence _)
+    (param-class-cstr.all C)
+    (param-class-cstr.doesnt-require-axiom C).
+
+pred solve-gref-constraint i:cstr.
+solve-gref-constraint (cstr-gref G AT T' TR) :-
+    logging.trace (coq.say "[solve-gref]" G AT T' TR),
+    trocq.db.gref G AT' G' GR,
+    aterm.util.equals-ignore AT' AT,
+    logging.trace (coq.say "[found-gref]" G AT' G' GR),
+    coq.env.global G' T',
+    coq.env.global GR TR.
+%XXX Because database may be inconsistent, as a last resort, we try 
+% to match ignoring the rel part of the aterm
+% (don't forget to add back the bang)
+solve-gref-constraint (cstr-gref G AT T' TR) :- !,
+    logging.trace (coq.say "[solve-gref]" G AT T' TR),
+    trocq.db.gref G AT' G' GR,
+    aterm.util.equals-ignore-rel AT' AT,
+    logging.trace (coq.say "[found-gref]" G AT' G' GR),
+    coq.env.global G' T',
+    coq.env.global GR TR.
+
+func cstr->prop cstr -> prop.
+cstr->prop (cstr-eq X Y) (X = Y).
+cstr->prop (cstr-pi C CA CB) (has-funext-if-needed C, param-class-cstr.dep-pi C CA CB).
+cstr->prop (cstr-arrow C CA CB) (has-funext-if-needed C, param-class-cstr.dep-arrow C CA CB).
+cstr->prop (cstr-type C CR) (
+    (param-class-cstr.doesnt-require-axiom C, param-class-cstr.all CR) ;
+    (trocq.db.univalence _, param-class-cstr.all C, CR = (pc map4 map4))
+).
+cstr->prop (cstr-geq CA CB) (param-class-cstr.geq CA CB).
+cstr->prop (cstr-gref _ _ _ _ as Cstr) (solve-gref-constraint Cstr).
+
+
+
+% Extracts the list of param classes inside the constraint
+func cstr->varz cstr -> list param-class.
+cstr->varz (cstr-eq X Y) [X,Y].
+cstr->varz (cstr-pi X Y Z) [X,Y,Z].
+cstr->varz (cstr-arrow X Y Z) [X,Y,Z].
+cstr->varz (cstr-type X Y) [X,Y].
+cstr->varz (cstr-geq X Y) [X,Y].
+cstr->varz (cstr-gref _ T _ _) L :- aterm.util.all-classes T L.
+
+% Returns list of inputs and outputs param classes in a constraint
+% Inputs should be solved before Outputs i.e. if Inputs is certain, then
+% Outputs are deterministic
+func cstr->inout cstr -> list param-class, list param-class.
+cstr->inout (cstr-eq X Y) [X, Y] []. % For eq and geq, we need everything to be certain in order to be deterministic
+cstr->inout (cstr-pi X Y Z) [X] [Y, Z] :- !.
+cstr->inout (cstr-arrow X Y Z) [X] [Y, Z] :- !.
+cstr->inout (cstr-type X Y) [X] [Y] :- !.
+cstr->inout (cstr-geq X Y) [X, Y] [].
+cstr->inout (cstr-gref _ T _ _) Outs Ins :- !, % Outs are solved before Ins, that's why we invert
+    aterm.util.classes T Ins OO,
+    if (OO = some O) (Outs = [O]) (Outs = []).
+
+% Same as cstr->inout-evar but only keeps evars
+func cstr->inout-evar cstr -> evar-list, evar-list.
+cstr->inout-evar C IE OE :-
+    cstr->inout C I O,
+    std.filter I var IE,
+    std.filter O var OE.
+
+% Returns a list of pairs of evars (x < x') with resolution order
+func cstr->var-lt cstr -> pc-edges.
+cstr->var-lt C S :-
+    cstr->inout-evar C I O,
+    util.zip-prod I O S.
+
+% Checks wether the given constraints solves the given evar in param-class
+% i.e. if it is one of its outputs
+% Because evars have been sorted, if it is in output, all inputs should be certain
+func cstr->solves-evar param-class, cstr ->.
+cstr->solves-evar X C :- 
+    cstr->inout-evar C _ O,
+    util.mem-evar! O X, !.
+cstr->solves-evar X (cstr-geq (uvar as A) B) :-
+    not (var B), A == X, !.
+cstr->solves-evar X (cstr-geq A (uvar as B)) :-
+    not (var A), B == X, !.
+cstr->solves-evar X (cstr-eq A B) :-
+    (A == X ; B == X), !.
+
+
+func cstrs->evars cstr-list -> evar-list.
+cstrs->evars [] [].
+cstrs->evars [Cstr|Cstrz] L :-
+    cstrs->evars Cstrz L0,
+    cstr->varz Cstr LC,
+    util.append-uniq-evar L0 LC L, !.
+
+% Returns a list of evars in the order in which they should be solved according
+% to the constraints
+func cstrs->sorted-evars cstr-list -> evar-list.
+cstrs->sorted-evars Cstrs VarsT :- !,
+    cstrs->evars Cstrs Vars,
+    std.map Cstrs cstr->var-lt SS,
+    std.flatten SS S,
+    util.topo-sort S Vars VarsT.
+
+% {cstr-valid Ins Out Cstr} only if Out is in the outputs of the constraint
+% and all inputs of the constraints are in Ins
+func cstr-valid evar-list, param-class, cstr ->.
+cstr-valid Ins Out C :-
+    coq.say "[cstr-valid]" Ins "->" Out ":" C, fail, !.
+cstr-valid Ins Out C :-
+    cstr->inout-evar C CIns COuts,
+    coq.say "bbb" CIns COuts,
+    std.exists! COuts (x\ x == Out),
+    coq.say "ccc",
+    std.forall CIns (util.mem-evar! Ins),
+    coq.say "yep".
+
+func cstrs-sort evar-list, evar-list, cstr-list -> cstr-list.
+cstrs-sort _ [] Cstrs Cstrs. % If we have no output left to produce, all constraints can be put here
+cstrs-sort Ins [O|Outs] Cstrs CstrsOut :-
+    std.partition Cstrs (cstr-valid Ins O) CstrsNow CstrsLater,
+    cstrs-sort {std.append Ins [O]} Outs CstrsLater CstrsLaterSorted,
+    std.append CstrsNow CstrsLaterSorted CstrsOut.
+
+func add-cstr cstr-list, cstr -> cstr-list.
+add-cstr _ C _ :- logging.trace (coq.say "[cstr] Adding constraint" {cstr.pp C}), fail, !.
+add-cstr L C [C|L]. 
+
+func is-deterministic cstr -> bool.
+is-deterministic (cstr-eq _ _) tt:- !.
+is-deterministic (cstr-pi C _ _) tt :- param-class-cstr.certain C, !.
+is-deterministic (cstr-arrow C _ _) tt :- param-class-cstr.certain C, !.
+is-deterministic (cstr-type C CR) tt :- 
+    param-class-cstr.certain C, param-class-cstr.certain CR, !.
+is-deterministic (cstr-geq CA CB) tt :-
+    param-class-cstr.certain CA, param-class-cstr.certain CB, !.
+%XXX We should add constraints for certainty on G' and about what is in the database
+is-deterministic (cstr-gref _ AT _ _) tt :- aterm.certain AT, !. 
+is-deterministic _ ff.
+
+pred do-cstrz cstr-list.
+do-cstrz [].
+do-cstrz [Cstr|Cstrz] :-
+    cstr->prop Cstr P, !,
+    util.do-or P (logging.trace (coq.say "[cstr] Failed constraint" {cstr.pp Cstr})),
+    do-cstrz Cstrz.
+
+func do-cstrz-det cstr-list.
+do-cstrz-det [].
+do-cstrz-det [Cstr|Cstrz] :-
+    cstr->prop Cstr P, !,
+    util.do-or P (logging.trace (coq.say "[cstr] Failed constraint" {cstr.pp Cstr})), !,
+    do-cstrz-det Cstrz.
+
+% Solves deterministically as many constraints as possible.
+% Returns the ones that could not be solved
+func deterministic-progress cstr-list -> cstr-list.
+deterministic-progress [] [] :- !.
+deterministic-progress Cstrs OutCstrs:-
+    std.partition Cstrs (c\ is-deterministic c tt) DeterministicCstrs NonDeterministicCstrs,
+    if (DeterministicCstrs = [])
+    (OutCstrs = NonDeterministicCstrs) % We cannot go further deterministically
+    (
+        logging.trace (coq.say "[cstr]" "Deterministic" {std.map DeterministicCstrs cstr.pp}),
+        do-cstrz DeterministicCstrs, !,
+        deterministic-progress NonDeterministicCstrs OutCstrs
+    ).
+
+func undeterministic-progress cstr-list.
+undeterministic-progress [] :- !.
+undeterministic-progress Cstrz :-
+    deterministic-progress Cstrz Cstrz',
+    if (Cstrz' = [Cstr0|CstrzOther])
+    (
+        !,
+        logging.trace (cstr.pp Cstr0 Cstr0Str),
+        logging.trace (coq.say "[cstr]" "Solving" Cstr0Str "non-determinstically"),
+        do-cstrz [Cstr0], % Non-deterministically
+        logging.trace (coq.say "[cstr]" "Solved" Cstr0Str "to" {cstr.pp Cstr0}), 
+        undeterministic-progress CstrzOther,
+        !
+    ) (true),
+    !.
+
+% For a list of constraints, returns the list of directed edges and undirected edges
+pred make-arrow cstr -> pc-edges, pc-edges.
+make-arrow (cstr-geq X Y) [] [pr X Y] :- 
+    var X, var Y, (not (X == Y)), !.
+make-arrow (cstr-geq _ _) [] [] :- !. 
+make-arrow C S [] :-
+    cstr->inout-evar C I O,
+    util.zip-prod I O S.
+pred make-arrows cstr-list -> pc-edges, pc-edges.
+make-arrows [] [] [].
+make-arrows [C|CZ] DE UE :-
+    make-arrow C DEC UEC,
+    make-arrows CZ DEZ UEZ,
+    std.append DEC DEZ DE,
+    std.append UEC UEZ UE.
+
+% From a list of directed and undirected edges, contaminates undirecteds with directions
+func complete-graph pc-edges, pc-edges -> pc-edges.
+complete-graph S [] S :- !.
+complete-graph DE ([UEX|UER] as UE) Out :-
+    complete-graph-step DE UE DE' UE',
+    if (UE = UE')
+    (% We did not direct any edge, therefore we choose one to direct
+        complete-graph [UEX|DE] UER Out
+    ) (
+        complete-graph DE' UE' Out
+    ).
+func complete-graph-step pc-edges, pc-edges -> pc-edges, pc-edges.
+complete-graph-step DE UE DE' UE' :-
+    std.map DE fst Befores,
+    std.map DE snd Afters,
+    util.map-fails UE (direct-edge Befores Afters) DEPlus UE',
+    std.append DE DEPlus DE'.
+% Directs an edge if possible according to Befores and Afters
+% An edge pr B A means B is before A
+func direct-edge evar-list, evar-list, pc-edge -> pc-edge.
+direct-edge Befores _ (pr X Y) (pr Y X) :-
+    util.mem-evar! Befores X, !.
+direct-edge Befores _ (pr X Y) (pr X Y) :-
+    util.mem-evar! Befores Y, !.
+direct-edge _ Afters (pr X Y) (pr X Y) :-
+    util.mem-evar! Afters X, !.
+direct-edge _ Afters (pr X Y) (pr Y X) :-
+    util.mem-evar! Afters Y, !.
+
+func evars-from-edges pc-edges -> evar-list.
+evars-from-edges [] [].
+evars-from-edges [(pr X Y)|L] E' :-
+    evars-from-edges L E,
+    util.append-uniq-evar E [X, Y] E'.
+
+func solve-ordered evar-list, cstr-list.
+solve-ordered [(uvar as X)|L] Cstrs :- !,
+    logging.trace (coq.say "[cstr]" "Solving variable" X),
+    std.partition Cstrs (cstr->solves-evar X) CstrsNow CstrsLater,
+    logging.trace (coq.say "[cstr]" "Solving non-determinstically :", coq.say {cstrs.pp CstrsNow}),
+    do-cstrz CstrsNow, !,
+    logging.trace (coq.say "[cstr]" "Solved to" {param-class.to_string X}),
+    solve-ordered L CstrsLater.
+solve-ordered [_|L] Cstrs :- solve-ordered L Cstrs.
+solve-ordered [] Cstrs :-
+    logging.trace (coq.say "[cstr]" "Solving last constraints :", coq.say {cstrs.pp Cstrs}),
+    do-cstrz-det Cstrs.
+
+func solve-equality cstr ->.
+solve-equality (cstr-eq X Y) :- X = Y, !.
+solve-equality _.
+
+func solve-cstr-legacy cstr ->.
+solve-cstr-legacy (cstr-eq X Y) :-
+    cstr.eq X Y, !.
+solve-cstr-legacy (cstr-pi X Y Z) :-
+    cstr.dep-pi X Y Z, !.
+solve-cstr-legacy (cstr-arrow X Y Z) :-
+    cstr.dep-arrow X Y Z, !.
+solve-cstr-legacy (cstr-type X Y) :-
+    cstr.dep-type X Y, !.
+solve-cstr-legacy (cstr-geq X Y) :-
+    cstr.geq X Y, !.
+solve-cstr-legacy (cstr-gref G T G' RG) :- 
+    cstr.dep-gref G T G' RG, !.
+
+pred solve-constraints i:cstr-list.
+solve-constraints L :-
+    std.findall (trocq.db.gref _ _ _ _) DatabaseContents,
+    logging.trace (coq.say "[solve-constraints] Gref Database :" DatabaseContents),
+    logging.trace (coq.say "[solve-constraints] Solving constraints", coq.say {cstrs.pp L}), !,
+    cstr.init,
+    logging.trace (coq.say "[solve-constraints] Using legacy algorithm"),
+    std.forall L solve-equality,
+    std.forall L solve-cstr-legacy,
+    logging.trace (coq.say "[solve-constraints] Generated the constraint graph"),
+    cstr.local-db [],
+    (cstr.reduce-graph; trocq.error "Could not solve constraint graph"), !,
+    logging.trace (coq.say "[solve-constraints] Solved all constraints !").

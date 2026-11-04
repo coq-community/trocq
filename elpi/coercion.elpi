@@ -18,19 +18,19 @@ accumulate "Trocq.Elpi/param".
 
 
 pred translate-goal i:list prop, i:term, i:term, i:param-class, o:term, o:term.
-translate-goal DB Ty G C G' GR' :- DB => std.do! [
+translate-goal DB Ty G C G' GR' :- param-class.end-suspension ES => DB => std.do! [
   coq.reduction.lazy.norm Ty (sort S),
-  cstr.init,
   T = asort S C,
   logging.debug (coq.say "[translate-goal] will translate" G "at level" T),
-  term->aterm G AG,
+  aterm.fresh G AG,
   % generate the associated goal G' and witness GR
-  param AG T G' GR,
+  param AG T G' GR Cstrs,
   logging.debug (coq.say "[translate-goal] after translation: goal" G' "with proof" GR),
-  % reduce the graph, so the variables all become ground in the terms
-  cstr.local-db DB,
-  cstr.reduce-graph,
-  logging.debug (coq.say "[translate-goal] Beta-reducing proof" GR),
+  logging.debug (coq.say "These are the constraints" Cstrs),
+  solve-constraints Cstrs,
+  logging.debug (coq.say "[translate-goal] After constraint solve: goal" G' "with proof" GR),
+  ES = pc map0 map0, % This triggers elpi held constraints
+  logging.debug (coq.say "[translate-goal] After freeing constraints: goal" G' "with proof" GR),
   %TODO make β-reduction directly in weaken predicate (Issue #63)
   coq.reduction.lazy.bi-norm GR GR',
   logging.debug (coq.say "[transalte-goal] After reductions: goal" {coq.term->string G'} "with proof" {coq.term->string GR'}),
@@ -38,7 +38,7 @@ translate-goal DB Ty G C G' GR' :- DB => std.do! [
 
 
 pred coercion i:goal-ctx, i:term, i:term, i:term, o:term.
-coercion Ctx T G G' T' :- std.do! [
+coercion _ T G G' T' :- std.do! [
   trocq.db.coercion-enabled,
   
   % We have a coercion challenge to change a term T of type G to a term

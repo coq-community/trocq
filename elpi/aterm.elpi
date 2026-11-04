@@ -14,65 +14,185 @@
 % Annotated terms
 % -----------------------------------------------------------------------------
 
-accumulate "Trocq.Elpi/class".
+accumulate "Trocq.Elpi/aterm-type".
 accumulate "Trocq.Elpi/util".
+accumulate "Trocq.Elpi/util-rocq".
+accumulate "Trocq.Elpi/param-class-util".
+accumulate "Trocq.Elpi/data".
 
-kind aterm type.
-type asort    sort -> param-class -> aterm.
-type aglobal  gref -> aterm.
-type apglobal gref -> univ-instance -> aterm.
-type afun     name -> aterm -> (aterm -> aterm) -> aterm.     % fun x : t =>
-type aprod    name -> aterm -> (aterm -> aterm) -> aterm.         % forall x : t,
-type alet     name -> aterm -> aterm -> (aterm -> aterm) -> aterm. % let x : T := v in
-type aapp     list aterm -> aterm.                              % app [hd|args]
-type amatch   aterm -> aterm -> list aterm -> aterm.              % match t p [branch])
-type afix     name -> int -> aterm -> (term -> aterm) -> aterm.  % fix name rno ty bo
-type aprimitive primitive-value -> aterm.
+% `@pi-adecl N AT (ax\ x\ x'\ xr\ F x x' xr)` declares elpi pi-variables x x' xr with adecl
+% x has annotated type AT
+macro @pi-adecl N PAD_AT PAD_F :-
+  aterm.raw-triple PAD_AT PAD_T PAD_T' PAD_RT,
+  util.name-suffix N "'" N',
+  util.name-suffix N "R" NR,
+  @pi-decl N PAD_T x\ (
+  @pi-decl N' PAD_T' x'\ (
+  util.mk-app PAD_RT [x, x'] (PAD_RTx x x'),
+  @pi-decl NR (PAD_RTx x x') xR\ (
+  pi ax\ [
+    adecl ax N x x' xR PAD_AT
+  ] => (
+    logging.trace (coq.say "[adecl]" ax "==" x "@" PAD_AT "~" x' "∵" xR),
+    (PAD_F ax x x' xR)
+  )))).
 
-% Forgets the term annotations of a term
-func aterm->term aterm -> term.
-aterm->term (asort Sort _) (sort Sort) :- !.
-aterm->term (aglobal GRef) (global GRef) :- !.
-aterm->term (apglobal GRef Universe) (pglobal GRef Universe) :- !.
-aterm->term (afun N AT AF) (fun N T F) :-
-  aterm->term AT T,
-  pi ay\ pi y \ aterm->term ay y => aterm->term (AF ay) (F y), !.
-aterm->term (aprod N AT AF) (prod N T F) :- !,
-  aterm->term AT T,
-  pi ay\ pi y \ aterm->term ay y => aterm->term (AF ay) (F y), !.
-aterm->term (aapp AL) (app L) :-
-  std.map AL aterm->term L, !.
-aterm->term (uvar as AT) T :- !,
-  declare_constraint (aterm->term AT T) [AT].
-%TODO implement the other constructors
+% curry f := fun x => f (fst x) (snd x)
+% forall z : A * A', B[z] -> forall x : A, forall y : A', B[x,y]
+% TODO XXX Move this back to data.elpi
+func trocq.data.r param-class -> term.
+trocq.data.r C T :-
+  param-class.suspend-on C (
+      trocq.db.r C Const, !,
+      coq.env.global (const Const) T
+  ).
+func trocq.data.rel param-class -> term.
+trocq.data.rel C T :-
+  param-class.suspend-on C (
+      trocq.db.rel C Const _ _ _ _, !,
+      coq.env.global Const T
+  ).
 
-% Adds fresh annotation variable on every sort inside a term
-func term->aterm term -> aterm.
-term->aterm (sort S) (asort S Alpha_) :- !.
-term->aterm (global GRef) (aglobal GRef) :- !.
-term->aterm (pglobal GRef U) (apglobal GRef U) :- !.
-term->aterm (fun Name T F) (afun Name AT AF) :- !,
-  term->aterm T AT,
-  pi y\ pi ay\ term->aterm y ay => term->aterm (F y) (AF ay).
-term->aterm (prod Name T F) (aprod Name AT AF) :- !,
-  term->aterm T AT,
-  pi y\ pi ay\ term->aterm y ay => term->aterm (F y) (AF ay).
-term->aterm (app L) (aapp AL) :- !,
-  std.map L term->aterm AL.
-%TODO implement the other constructors
+namespace aterm {
+
+  func raw-triple aterm -> term,term,term.
+  raw-triple AX X X' RX :- adecl AX _ X X' RX _, !.
+  raw-triple (atriple X X' RX) X X' RX.
+  raw-triple (asort S _) (sort S) (sort S) (
+    fun `A` (sort S) a\ fun `B` (sort S) b\
+      prod _ a _\ prod _ b _\ sort _ 
+  ).
+  raw-triple (aglobal G TG' RG) (global G) TG' RG.
+  raw-triple (apglobal G U TG' RG) (pglobal G U) TG' RG.
+  raw-triple (afun N AT AF) (fun N T F) (fun N' T' F')
+      (fun N T x\ fun N' T' x'\ fun NR (TRx x x') rx\ RF x x' rx) :-
+    util.name-suffix N "'" N', 
+    util.name-suffix N "R" NR, 
+    raw-triple {raw AT} T T' RT,
+    @pi-decl N T x\ @pi-decl N' T' x'\ util.mk-app RT [x,x'] (TRx x x'),
+    @pi-adecl N AT (ay\ y\ y'\ ry\ raw-triple (AF ay) (F y) (F' y') (RF y y' ry)).
+  raw-triple (aprod N AT AF) (prod N T F) (prod N' T' F')
+      (fun `f` _ f\ fun `f'` _ f'\ prod N T x\ prod N' T' x'\ prod NR (TRx x x') rx\ RFOut f f' x x' rx) :-
+    util.name-suffix N "'" N',
+    util.name-suffix N "R" NR,
+    raw-triple AT T T' RT,
+    @pi-adecl N AT (ay\ y\ y'\ ry\
+      util.mk-app RT [y,y'] (TRx y y'),
+      raw-triple (AF ay) (F y) (F' y') (RF y y' ry),
+      @pi-decl `f` _ f\   (
+      @pi-decl `f'` _ f'\ ( sigma Fx Fx'\
+        util.mk-app f [y] Fx,
+        util.mk-app f' [y'] Fx',
+        util.mk-app (RF y y' ry) [Fx, Fx'] (RFOut f f' y y' ry)
+      ))
+    ).
+  raw-triple (aapp AL) (app [X|L]) (app [X'|L']) Out :-
+    util.mapTo3 AL raw-triple [X|L] [X'|L'] [RX|RL],
+    util.mk-app RX {util.interleave [L,L',RL]} Out.
+  raw-triple (uvar as AT) T T' RT :- !,
+    declare_constraint (raw-triple AT T T' RT) [AT].
+
+  func raw aterm -> aterm.
+  raw (asort S _) (asort S (pc map0 map0)) :- !.
+  raw (afun N AT AF) (afun N AT0 AF0) :- !,
+    raw AT AT0,
+    @pi-adecl N AT (ay\ y\ y'\ ry\ raw (AF ay) (AF0 ay)).
+  raw (aprod N AT AF) (aprod N AT0 AF0) :- !,
+    raw AT AT0,
+    @pi-adecl N AT (ay\ y\ y'\ ry\ raw (AF ay) (AF0 ay)).
+  raw (aapp AL) (aapp AL0) :- !,
+    std.map AL raw AL0.
+  raw (uvar as AT) AT0 :- !,
+    declare_constraint (raw AT AT0) [AT].
+  raw X X.
+
+  func triple aterm -> term,term,term.
+  triple AX X X' RX :- adecl AX _ X X' RX _, !.
+  triple (atriple X X' RX) X X' RX.
+  triple (asort S Cl) (sort S) (sort S) T :- 
+    trocq.data.rel Cl T.
+  triple (aglobal G TG' RG) (global G) TG' RG.
+  triple (apglobal G U TG' RG) (pglobal G U) TG' RG.
+  triple (afun N AT AF) (fun N T F) (fun N' T' F')
+      (fun N T x\ fun N' T' x'\ fun NR (TRx x x') rx\ RF x x' rx) :-
+    util.name-suffix N "'" N', 
+    util.name-suffix N "R" NR, 
+    triple {raw AT} T T' RT,
+    @pi-decl N T x\ @pi-decl N' T' x'\ util.mk-app RT [x,x'] (TRx x x'),
+    @pi-adecl N AT (ay\ y\ y'\ ry\ triple (AF ay) (F y) (F' y') (RF y y' ry)).
+  triple (aprod N AT AF) (prod N T F) (prod N' T' F')
+      (fun `f` _ f\ fun `f'` _ f'\ prod N T x\ prod N' T' x'\ prod NR (TRx x x') rx\ RFOut f f' x x' rx) :-
+    util.name-suffix N "'" N', 
+    util.name-suffix N "R" NR, 
+    triple AT T T' RT,
+    @pi-adecl N AT (ay\ y\ y'\ ry\
+      util.mk-app RT [y,y'] (TRx y y'),
+      triple (AF ay) (F y) (F' y') (RF y y' ry),
+      @pi-decl `f` _ f\   (
+      @pi-decl `f'` _ f'\ ( sigma Fx Fx'\
+        util.mk-app f [y] Fx,
+        util.mk-app f' [y'] Fx',
+        util.mk-app (RF y y' ry) [Fx, Fx'] (RFOut f f' y y' ry)
+      ))
+    ).
+  triple (aapp AL) (app [X|L]) (app [X'|L']) Out :-
+    util.mapTo3 AL triple [X|L] [X'|L'] [RX|RL],
+    util.mk-app RX {util.interleave [L,L',RL]} Out.
+  triple (uvar as AT) T T' RT :- !,
+    declare_constraint (triple AT T T' RT) [AT].
+
+  func erase aterm -> term.
+  erase AT T :- triple AT T _ _.
+
+  func tr aterm -> term.
+  tr AT T' :- triple AT _ T' _.
+
+  func rel aterm -> term.
+  rel AT RT :- triple AT _ _ RT.
+
+  % Annotates a term with fresh evars
+  func fresh term -> aterm.
+  fresh (sort S) (asort S Cl) :-
+    prune Cl []. %XXX Check wether those prunes will cause any trouble.
+  fresh (global G) (aglobal G G' RG) :-
+    prune G' [],
+    prune RG [].
+  fresh (pglobal G U) (apglobal G U G' RG) :-
+    prune G' [],
+    prune RG [].
+  fresh (fun Name T F) (afun Name AT AF) :- !,
+    fresh T AT,
+    pi y\ pi ay\ fresh y ay => fresh (F y) (AF ay).
+  fresh (prod Name T F) (aprod Name AT AF) :- !,
+    fresh T AT,
+    pi y\ pi ay\ fresh y ay => fresh (F y) (AF ay).
+  fresh (app L) (aapp AL) :- !,
+    std.map L fresh AL.
+
+  % TODO Implement the other constructors for all this section
+}
+
+func aterm.util.global i:aterm o:gref.
+aterm.util.global (aglobal G _ _) G :- !.
+aterm.util.global (apglobal G _ _ _) G :- !.
+aterm.util.global (uvar as AT) G :-
+  coq.env.global G T,
+  (
+    (T = global G, AT = aglobal G _ _);
+    (T = pglobal G U, AT = apglobal G U _ _)
+  ), !.
 
 namespace aterm.util {
+  %TODO XXX This method is weird, should it use pi-adecl ? Weird
   % Forgets the term annotations of a function aterm -> aterm
-  func atermfun->termfun (aterm -> aterm) -> (term -> term).
-  atermfun->termfun AF F :- !, 
-    pi ax x\ aterm->term ax x => aterm->term (AF ax) (F x).
-
+  func erase-fun name, atype, (aterm -> aterm) -> (term -> term).
+  erase-fun N AT AF F :- !, 
+    @pi-adecl N AT (ax\ x\ x'\ xr\
+      aterm.triple (AF ax) (F x) _ _
+    ).
   % {mk-app F Args} outputs a term corresponding to (aapp [F | Args])
-  % With some β-reductions
   func mk-app aterm, list aterm -> aterm.
   mk-app T [] T :- !.
-  mk-app (afun _ _ F) [X|XS] T :- !, mk-app (F X) XS T.
-  mk-app (alet _ _ X F) XS T :- !, mk-app (F X) XS T.
   mk-app (aapp L) XS (aapp L') :- !, std.append L XS L'.
   mk-app T XS (aapp [T|XS]) :- !.
 
@@ -128,52 +248,217 @@ namespace aterm.util {
     shape F FN B,
     N is FN + XsN.
   % The other cases are aglobal, apglobal, and (name X), which all leads to [],none
-  shape _ 0 ff :- !.
+  %XXX This is bugged, see example Vector_tuple, Elpi fails on coq.env.global _ X when X is pglobal «append»
+  %shape X 0 ff :- (coq.env.global _ X ; name X), !.
+  shape X 0 ff :- (X = global _ ; X = pglobal _ _ ; name X), !.
   shape.all T N :- !, shape T NT B, N is NT + {util.bool->int B}.
 
-  func mk-aterm term, list param-class, option param-class -> aterm.
-  func mk-aterm.all term, list param-class -> aterm.
-  mk-aterm.all T Cs AT :-
-    shape T N B,
-    if (B == tt) (
-      mk-aterm T {std.drop-last 1 Cs} (some {std.last Cs}) AT
-    ) (
-      mk-aterm T Cs none AT
+  % Create a aterm with legacy option/list decomposition.
+  % Annotates GRef with first thing found in db
+  func annotate-legacy term, list param-class, option param-class -> aterm.
+  func annotate-legacy.all term, list param-class -> aterm.
+  annotate-legacy.all X L AX :-
+    shape X N B,
+    util.if-bool B (std.split-at N L Cs [O], Out = some O) (Cs = L, Out = none),
+    annotate-legacy X Cs Out AX.
+  annotate-legacy (sort S) [] (some C) (asort S C) :- !.
+  annotate-legacy (prod Name T F) Cs Out (aprod Name AT AF) :- !,
+    shape.all T NT,
+    std.split-at NT Cs CsT CsF,
+    annotate-legacy.all T CsT AT,
+    @pi-adecl Name AT ax\ x\ _\ _\ (
+      annotate-legacy (F x) CsF Out (AF ax)
     ).
-  mk-aterm (sort S) [] (some C) (asort S C) :- !.
-  mk-aterm (prod N T F) Cs Out (aprod N AT AF) :- !,
-    pi x ax\ term->aterm x ax => (
-      shape.all T TN,
-      le_ TN {std.length Cs},
-      std.split-at TN Cs CsT CsF,
-      mk-aterm.all T CsT AT,
-      mk-aterm (F x) CsF Out (AF ax)
+  annotate-legacy (fun Name T F) Cs none (afun Name AT AF) :- !,
+    shape.all T NT,
+    std.split-at NT Cs CsT CsF,
+    annotate-legacy.all T CsT AT,
+    @pi-adecl Name AT ax\ x\ _\ _\ (
+      annotate-legacy.all (F x) CsF (AF ax)
     ).
-  mk-aterm (fun N T F) Cs Out (afun N AT AF) :- !,
-    pi x ax\ term->aterm x ax => (
-      shape.all T TN,
-      le_ TN {std.length Cs},
-      std.split-at TN Cs CsT CsF,
-      mk-aterm.all T CsT AT,
-      mk-aterm.all (F x) CsF (AF ax)
-    ).
-  mk-aterm (app [F|Xs]) Cs Out (aapp [AF|AXs]) :- !,
-    shape.all F FN,
-    le_ FN {std.length Cs},
-    std.split-at FN Cs CsF CsXs,
-    mk-aterm F CsF Out AF,
-    std.fold-map Xs CsXs (x\ csxs\ ax\ csxs'\ sigma XN CSX CSXSL'\
-      shape.all x XN,
-      std.length csxs CSXSL',
-      le_ XN CSXSL',
-      std.split-at XN csxs CSX csxs',
-      mk-aterm.all x CSX ax
-    ) AXs [].
-  mk-aterm (global G) _ _ (aglobal G) :- !.
-  mk-aterm (pglobal G U) _ _ (apglobal G U) :- !.
-  mk-aterm T _ _ AT :- name T, !, term->aterm T AT.
-}
+  annotate-legacy (app [F|Xs]) Cs Out (aapp [AF|AXs]) :- !,
+    std.map Xs shape.all NXs,
+    shape F NF _,
+    std.split-at NF Cs CsF CsXs,
+    util.multi-split NXs CsXs CsXsL,
+    std.map2 Xs CsXsL annotate-legacy.all AXs,
+    annotate-legacy F CsF Out AF.
+  annotate-legacy X [] none AX :- adecl AX _ X _ _ _, !.
+  annotate-legacy (global G) [] none (aglobal G TG' TRG) :-
+    trocq.db.gref G _ G' RG, !,
+    coq.env.global G' TG',
+    coq.env.global RG TRG. % We take first to match
+  annotate-legacy (pglobal G U) [] none (apglobal G U TG' TRG) :-
+    trocq.db.gref G _ G' RG, !,
+    coq.env.global G' TG',
+    coq.env.global RG TRG. % We take first to match
+  % If it failed, we try identity
+  % We put TG because we are not allowed to accumulate unification variables
+  annotate-legacy (global G) [] none (aglobal G TG TG) :-
+    coq.env.global G TG.
+  annotate-legacy (pglobal G U) [] none (apglobal G U TG TG) :-
+    coq.env.global G TG.
 
-func aterm.util.global i:aterm o:gref.
-aterm.util.global (aglobal G) G :- !.
-aterm.util.global (apglobal G _) G :- !.
+
+  func fake-term->aterm term -> aterm.
+  fake-term->aterm (app [PType|L]) (asort (typ U) Cl) :-
+    trocq.data.ptype PType, !,
+    L = [TM, TN],
+    trocq.data.term->map-class TM M,
+    trocq.data.term->map-class TN N,
+    if (var M, var N)
+    (Cl = _)
+    (Cl = pc M N),
+    coq.univ.new U.
+  fake-term->aterm (app [PTriple|L]) Out :-
+    trocq.data.ptriple PTriple,
+    L = [_,_,_,X,X',RX|L'], !,
+    std.map L' fake-term->aterm AL',
+    % XXX Reactivate this, but think about it first
+    %coq.elaborate-skeleton RX (prod `_` X _\ prod `_` X' _\ sort _) RXR Diag,
+    %(Diag = ok, ! ; trocq.error {coq.term->string RX} "is not a relation between" {coq.term->string X} "and" {coq.term->string X'} Diag), !,
+    RXR = RX,
+    if (X = global G)
+    (OutT = aglobal G X' RXR)
+    (if (X = pglobal G U)
+    (OutT = apglobal G U X' RXR)
+    (OutT = atriple X X' RXR)),
+    std.map L' fake-term->aterm AL',
+    aterm.util.mk-app OutT AL' Out.
+  fake-term->aterm (sort S) (asort S Cl) :- !,
+    prune Cl []. %XXX Check wether those prunes will cause any trouble.
+  fake-term->aterm (global G) (aglobal G G' RG) :- !,
+    prune G' [],
+    prune RG [].
+  fake-term->aterm (pglobal G U) (apglobal G U G' RG) :- !,
+    prune G' [],
+    prune RG [].
+  fake-term->aterm (fun Name T F) (afun Name AT AF) :- !,
+    fake-term->aterm T AT,
+    @pi-adecl Name AT (ay\ y\ _\ _\
+      fake-term->aterm (F y) (AF ay)
+    ).
+  fake-term->aterm (prod Name T F) (aprod Name AT AF) :- !,
+    fake-term->aterm T AT,
+    @pi-adecl Name AT (ay\ y\ _\ _\ 
+      fake-term->aterm (F y) (AF ay)
+    ).
+  fake-term->aterm (app L) (aapp AL) :- !,
+    std.map L fake-term->aterm AL.
+  fake-term->aterm X AX :- adecl AX _ X _ _ _, !.
+
+  % From a full aterm in the database, instantiates a aterm with holes
+  func equals-ignore aterm -> aterm.
+  equals-ignore X X' :-
+    logging.trace (coq.say "[equals-ignore]" X "vs" X'), fail, !.
+  equals-ignore (aprod N AT F) (aprod _ AT' F') :- !,
+    equals-ignore AT AT',
+    @pi-adecl N AT (ax\ _\ _\ _\ equals-ignore (F ax) (F' ax)).
+  equals-ignore (afun N AT F) (afun _ AT' F') :- !,
+    equals-ignore AT AT',
+    @pi-adecl N AT (ax\ _\ _\ _\ equals-ignore (F ax) (F' ax)).
+  equals-ignore (atriple X Y RX) (atriple X' Y' RX') :- !,
+    util.equals-ignore X X',
+    util.equals-ignore Y Y',
+    util.equals-ignore RX RX'.
+  equals-ignore (asort _ Cl) (asort _ Cl) :- !.
+  equals-ignore (aglobal G TG RG) (aglobal G TG' RG') :- !,
+    util.equals-ignore TG TG',
+    util.equals-ignore RG RG'.
+  equals-ignore (apglobal G _ TG RG) (apglobal G _ TG' RG') :- !,
+    util.equals-ignore TG TG',
+    util.equals-ignore RG RG'.
+  equals-ignore (aapp [X]) (aapp [X']) :- !,
+    equals-ignore X X'.
+  equals-ignore (aapp [X|L]) (aapp [X'|L']) :- !,
+    equals-ignore X X',
+    equals-ignore (aapp L) (aapp L').
+  equals-ignore X X :- !.
+
+  % From a full aterm in the database, instantiates a aterm with holes
+  % XXX This should be removed with database consistency
+  func equals-ignore-rel aterm -> aterm.
+  equals-ignore-rel X X' :-
+    logging.trace (coq.say "[equals-ignore-rel]" X "vs" X'), fail, !.
+  equals-ignore-rel (aprod N AT F) (aprod _ AT' F') :- !,
+    equals-ignore-rel AT AT',
+    @pi-adecl N AT (ax\ _\ _\ _\ equals-ignore-rel (F ax) (F' ax)).
+  equals-ignore-rel (afun N AT F) (afun _ AT' F') :- !,
+    equals-ignore-rel AT AT',
+    @pi-adecl N AT (ax\ _\ _\ _\ equals-ignore-rel (F ax) (F' ax)).
+  equals-ignore-rel (atriple X Y _) (atriple X' Y' _) :- !,
+    util.equals-ignore X X',
+    util.equals-ignore Y Y'.
+  equals-ignore-rel (asort _ Cl) (asort _ Cl) :- !.
+  equals-ignore-rel (aglobal G TG _) (aglobal G TG' _) :- !,
+    util.equals-ignore TG TG'.
+  equals-ignore-rel (apglobal G _ TG _) (apglobal G _ TG' _) :- !,
+    util.equals-ignore TG TG'.
+  equals-ignore-rel (aapp [X]) (aapp [X']) :- !,
+    equals-ignore-rel X X'.
+  equals-ignore-rel (aapp [X|L]) (aapp [X'|L']) :- !,
+    equals-ignore-rel X X',
+    equals-ignore-rel (aapp L) (aapp L').
+  equals-ignore-rel X X :- !.
+
+  % remove head weakenings from the input term
+  func remove-weakenings term -> term.
+  remove-weakenings (app [Weakener,_,_,T]) T' :- 
+    trocq.data.forget _ _ Weakener, !,
+    remove-weakenings T T'.
+  remove-weakenings T T.
+
+  % returns the weakest (resp. strongest) annotations for the given type
+  func bottomOf atype -> atype.
+  func topOf atype -> atype.
+  bottomOf T U :- logging.trace (coq.say "[bottomOf]" T "//" U), fail, !.
+  topOf T U :- logging.trace (coq.say "[topOf]" T "//" U), fail, !.
+  bottomOf (asort S _) (asort S Bot) :- !, param-class.bottom Bot.
+  topOf (asort S _) (asort S Top) :- !, param-class.top Top.
+  bottomOf (aprod N AT AF) (aprod N AT' AF') :- !,
+    topOf AT AT',
+    @pi-adecl N AT' (ax\ _\ _\ _\
+      % ax is also typed with AT because AT≤ AT'
+      bottomOf (AF ax) (AF' ax)
+    ), !.
+  topOf (aprod N AT AF) (aprod N AT' AF') :- !,
+    bottomOf AT AT',
+    @pi-adecl N AT (ax\ _\ _\ _\
+      % ax is also typed with AT' because AT'≤ AT
+      topOf (AF ax) (AF' ax)
+    ), !.
+  bottomOf (aapp [ (afun _ _ AF),AX1|AXs]) Out :- !,
+    % We beta-reduce
+    bottomOf (aapp [(AF AX1) | AXs]) Out.
+  topOf (aapp [ (afun _ _ AF),AX1|AXs]) Out :- !,
+    % We beta-reduce
+    topOf (aapp [(AF AX1) | AXs]) Out.
+  bottomOf (aapp [(uvar as XH)|_] as X) X' :- declare_constraint (bottomOf X X') [XH], !.
+  topOf (aapp [(uvar as XH)|_] as X) X' :- declare_constraint (topOf X X') [XH], !.
+  % sub-type is isovariant on arguments of an app, so we need equality
+  bottomOf (aapp [X|AXs] as T) (aapp [X'|AXs]) :- !,
+    (name X ; X = aglobal _ _ _ ; X = apglobal _ _ _ _ ; trocq.error "[bottomOf] Input" T "is not a type"), !,
+    bottomOf X X'.
+  topOf (aapp [X|AXs] as T) (aapp [X'|AXs]) :- !,
+    (name X ; X = aglobal _ _ _ ; X = apglobal _ _ _ _ ; trocq.error "[topOf] Input" T "is not a type"), !,
+    topOf X X'.
+  bottomOf X X :- !.
+  topOf X X :- !.
+
+  % {infer-aterm TR AT T T'} infers AT, T, and T' such that
+  % TR = [[AT]] T T'
+  func infer-aterm term -> aterm, term, term.
+  infer-aterm T _ _ _ :-
+    coq.say "Inferring on" T, fail, !.
+  infer-aterm (prod N T x\ prod N' T' x'\ prod NR (RTxx x x') rx\ RU x x' rx)
+    (aprod N AT ax\ AU ax)
+    (prod N T x\ U x)
+    (prod N' T' x'\ U' x') :-
+    @pi-decl N T x\ @pi-decl N' T' x'\ infer-aterm (RTxx x x') AT x x',
+    @pi-adecl N AT ax\ x\ x'\ rx\ (
+      infer-aterm (RU x x' rx) (AU ax) (U x) (U' x')
+    ).
+  infer-aterm (app [ParamRelCl,T,T']) (asort S Cl) T T' :-
+    trocq.data.param.rel->param-class ParamRelCl Cl, !,
+    coq.typecheck T (sort S) ok.
+}

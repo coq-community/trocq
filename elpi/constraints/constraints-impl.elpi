@@ -69,13 +69,13 @@ dep-gref GR AT Tm' TRR :-
     std.map TCs internal.link? IDs,
     declare_constraint (internal.c.dep-gref ID GR AT Tm' TRR IDs) [_]
   ) (
-    trocq.data.gref GR Out Cs Tm' TRR,
+    trocq.data.gref.legacy GR Out Cs Tm' TRR,
     std.forall2 TCs Cs eq
   ).
 
 % C >= C'
 geq CA CB :-
-  logging.trace (coq.say "[dep-geq]" CA "<=" CB), fail.
+  logging.trace (coq.say "[dep-geq]" CA ">=" CB), fail.
 geq C1 C2 :- var C1, var C2, !,
   internal.link? C1 ID1,
   internal.link? C2 ID2,
@@ -147,7 +147,8 @@ constraint c.link c.link? c.link- {
     prune C [],
     declare_constraint (c.link C ID) [_],
     vars! [ID|IDs],
-    ID' = ID
+    ID' = ID,
+    logging.trace (coq.say "[constraint-graph] Linking id" ID "with class" C)
   ).
   rule \ (c.link- _ _).
 }

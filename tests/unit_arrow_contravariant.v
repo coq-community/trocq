@@ -23,20 +23,22 @@ Section ArrowContravariant.
     Definition RA2 : Param01.Rel A A'':= mkParam01 f2.
     Definition RB  : Param11.Rel B B' := mkParam11 g1 g2.
 
-    Trocq Use RA1 RA2 RB.
+    Trocq Register RA1.
+    Trocq Register RA2.
+    Trocq Register RB.
 
     Goal A.
-        trocq.
+        trocq to A''.
         enough (x : A'') by exact x.
     Abort.
 
     Goal A -> B.
-        trocq.
+        trocq to (A' -> B').
         enough (x : A' -> B') by exact x.
     Abort.
 
     Goal B -> A.
-        trocq.
+        trocq to (B' -> A'').
         enough (x : B' -> A'') by exact x.
     Abort.
 

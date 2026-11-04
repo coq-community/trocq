@@ -3,7 +3,6 @@
 -arg -w -arg +elpi.typechecker
 
 -R . Trocq
--R ./generic/inductives Trocq
 -R ../elpi/ Trocq.Elpi
 
 HoTTNotations.v

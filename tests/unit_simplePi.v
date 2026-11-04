@@ -25,9 +25,9 @@ Section SimplePi.
     Variable (m : forall (X : A) (X' : A') (RX : RA X X'), (B' X') -> (B X)).
     Definition RL (X : A) (X' : A') (XR : RA X X') := mkParam01 (m X X' XR). 
 
-    Trocq Use RA RL.
+    Trocq Register RA.
+    Trocq Register RL.
 
-    (* D(0,1) = ((2a,0),(0,1)) *)
     Goal forall X : A, B X.
         trocq.
         enough (x : forall X' : A', B' X') by exact x.

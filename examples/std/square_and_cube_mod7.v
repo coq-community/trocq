@@ -122,9 +122,16 @@ apply: (@Param01.BuildRel (x ≡ y) (k = l) (fun _ _ => unit)) => //.
 by constructor; rewrite -exk -eyl.
 Qed.
 
-Trocq Use Rp Rmul Rzero Rone Radd Param10_paths Reqmodp01.
-Trocq Use Param01_Empty.
-Trocq Use Param10_Empty.
+Trocq Register Rp.
+Trocq Register Radd.
+Trocq Register Rmul.
+Trocq Register Rzero.
+Trocq Register Rone.
+Trocq Register Reqmodp01.
+
+
+Trocq Register Param01_Empty.
+Trocq Register Param10_Empty.
 
 Lemma square_and_cube_mod7 : forall (m n p : ℤ),
   (m = n²)%Z -> (m = p³)%Z -> m ≡ 0 ∨ m ≡ 1.

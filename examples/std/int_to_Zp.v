@@ -118,9 +118,13 @@ Proof. by unshelve eexists (fun _ _ => True); constructor. Defined.
 Definition Runit : Param01.Rel unit unit.
 Proof. by unshelve eexists (fun _ _ => unit); constructor. Defined.
 
-Trocq Use RTrue Runit.
+Trocq Register RTrue.
+Trocq Register Runit.
 
-Trocq RelatedWith Rp Rp Rmul Rzero Reqmodp01.
+Trocq Register Rp : Rp.
+Trocq Register Rmul : Rp.
+Trocq Register Reqmodp01 : Rp.
+
 
 Local Open Scope ring_scope.
 

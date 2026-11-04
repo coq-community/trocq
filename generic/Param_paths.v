@@ -173,4 +173,12 @@ Proof.
   - constructor.
 Defined.
 
+Definition pathsRel@{i}
+  (A A' : Type@{i}) (AR : Param44.Rel@{i} A A')
+  (a1 : A) (a1' : A') (a1R : AR a1 a1') (a2 : A) (a2' : A') (a2R : AR a2 a2') :
+  Param00.Rel@{i} (a1 = a2) (a1' = a2').
+  apply forget_10_00.
+  apply (Param10_paths A A' AR a1 a1' a1R a2 a2' a2R).
+Defined.
+
 (* todo generator *)

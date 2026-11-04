@@ -15,6 +15,7 @@
 % -----------------------------------------------------------------------------
 
 accumulate "Trocq.Elpi/util".
+accumulate "Trocq.Elpi/aterm-type".
 
 % Some of the Coq native predicates raise errors in Elpi, stopping all
 % ongoing computations. Adding a custom flag like do-not-fail gives us an
@@ -44,11 +45,11 @@ trocq.error _ _ _ _ _ _ _ _ _ :- do-not-fail, !, false.
 trocq.error X1 X2 X3 X4 X5 X6 X7 X8 X9 :- !, coq.error X1 X2 X3 X4 X5 X6 X7 X8 X9, !.
 
 
-func trocq.error.translation-not-found gref, param-class, list param-class, term ->.
-trocq.error.translation-not-found G Alpha L uvar :- !,
-  trocq.error "Could not find a translation of gref" G "at level" Alpha.
-trocq.error.translation-not-found G Alpha L G' :- !,
-  trocq.error "Could not find a translation of gref" G "to" G' "at level" Alpha.
+func trocq.error.translation-not-found gref, aterm, term ->.
+trocq.error.translation-not-found G AT uvar :- !,
+  trocq.error "Could not find a translation of gref" G "at level" AT.
+trocq.error.translation-not-found G AT G' :- !,
+  trocq.error "Could not find a translation of gref" G "to" G' "at level" AT.
 % subst-gref T GR' T'
 % substitutes GR for GR' in T if T = (global GR) or (pglobal GR I)
 pred subst-gref i:term, i:gref, o:term.
@@ -165,10 +166,37 @@ mk-app HD [] HD :- !.
 mk-app (app L) Args R :- !, std.append L Args LArgs, R = app LArgs.
 mk-app HD Args (app [HD|Args]).
 
+func equals-ignore term -> term.
+equals-ignore (prod N AT F) (prod _ AT' F') :- !,
+  equals-ignore AT AT',
+  @pi-decl N AT (x\ equals-ignore (F x) (F' x)).
+equals-ignore (fun N AT F) (fun _ AT' F') :- !,
+  equals-ignore AT AT',
+  @pi-decl N AT (x\ equals-ignore (F x) (F' x)).
+equals-ignore (sort _) (sort _) :- !.
+equals-ignore (global G) (global G) :- !.
+equals-ignore (pglobal G _) (pglobal G _) :- !.
+equals-ignore (app AL) (app AL') :- !,
+  std.map AL equals-ignore AL'.
+equals-ignore X X :- !.
+
 func gref->string gref -> string.
 gref->string G S :-
   coq.env.global G T,
   coq.term->string T S.
+
+% Checks if a Rocq term is evar-free
+func evar-closed term ->.
+evar-closed uvar :- !, fail.
+evar-closed (fun N A B) :- !, evar-closed A, @pi-decl N A x\ evar-closed (B x).
+evar-closed (prod N A B) :- !, evar-closed A, @pi-decl N A x\ evar-closed (B x).
+evar-closed (app L) :- !, std.forall L evar-closed.
+evar-closed _ :- !.
+
+func name-suffix name, any -> name.
+name-suffix uvar _ _ :- !.
+name-suffix X S O :- coq.name-suffix X S O.
+
 
 % Elpi does not allow replacing a named clause with a named clause. This is not allowed:
 %   coq.elpi.accumulate Scope Database (clause ClauseName (replace ClauseName) Content)

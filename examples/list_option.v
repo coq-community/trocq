@@ -45,7 +45,7 @@ Proof.
   - apply Param_option_list_d.
   - apply (Param42b_list A A' AR).
 Defined.
-Trocq Use Param42b_option_list.
+Trocq Register Param42b_option_list.
 
 Definition omap {A B : Type} (f : A -> B) (xo : option A) : option B :=
   match xo with
@@ -91,9 +91,7 @@ Proof.
     + rewrite <- r. apply option_to_list_map_morph.
     + exact (mapR A A' AR B B' BR f f' fR l l' lR).
 Defined.
-Trocq Use omap_map_R.
-
-Trocq Use Param01_paths.
+Trocq Register omap_map_R.
 
 Theorem map_compose (A B C : Type) (l : list A) (f : A -> B) (g : B -> C) :
   map g (map f l) = map (fun x => g (f x)) l.

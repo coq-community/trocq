@@ -21,7 +21,7 @@ Section Transfer.
     Variable (f : I -> I').
 
     Definition Rf := mkParam30 f.
-    Trocq Use Rf.
+    Trocq Register Rf.
 
 
     Variable (pe : I -> Prop) (pe' : I'  -> Prop).
@@ -30,7 +30,7 @@ Section Transfer.
     Definition Rpe
         (n : I) (n' : I') (rn : Rf n n')
          := mkParam01 (peR n n' rn).
-    Trocq Use Rpe.
+    Trocq Register Rpe.
 
     Variable (qe : I -> I -> Prop) (qe' : I' -> I' -> Prop).
     Variable (qeR : forall (n m : I) (n' m' : I'), Rf n n' -> Rf m m' -> qe n m -> qe' n' m').
@@ -38,7 +38,7 @@ Section Transfer.
         (n : I) (n' : I') (rn : Rf n n')
         (m : I) (m' : I') (rm : Rf m m')
         := mkParam10 (qeR n m n' m' rn rm).
-    Trocq Use Rqe.
+    Trocq Register Rqe.
 
     Goal forall (m : I), qe m m -> pe m.
         assert (H : True -> True) by exact (fun x => x).
