@@ -1,14 +1,23 @@
+% -----------------------------------------------------------------------------
+% This plugin derives a function for every argument in every constructor of an
+% inductive type. Given a constructor K, and two terms of the type of its
+% arguments args and args'. This plugin generates a function of type
+% K args = K args' -> proj i (K args) = proj i (K args') for every argument
+% of the constructor.
+% -----------------------------------------------------------------------------
+
 accumulate "Trocq.Elpi.inductives/utils".
 accumulate "elpi.apps.derive.elpi/injection".
 
-shorten derive.algo-utils.{duplicate-arguments, count-args, name-ijs, for-K-get-KI}.
+shorten derive.algo-utils.{duplicate-arguments, count-args, name-ijs,
+  for-K-get-KI}.
 
 namespace derive.injections {
 
 /* for all projectors of type forall Args T, ret
 generate
 
-forall Args1-> Args2-> (e : Kj args->1 = Kj args->2) argj
+forall Args1 Args2, (e : Kj args = Kj args) -> arg i = arg' i
 
 Take an inductive Ind,
 take its constructors global references,
@@ -22,13 +31,15 @@ Return the processed Types */
 % TyParam, ArgNo, F, Type of the equality, Left HS, Right HS
 % F is of type forall (Typarams : Type) ((Arg1 : A1) (Arg2 : A2) ...), Ret
 % Ret is discarded and replaced by Left = Right
-pred craft-eq i:int, i:int, i:int, i:int, i:term, i:term, i:term, i:term, i:term, i:term, i:term, o:term.
+pred craft-eq i:int, i:int, i:int, i:int, i:term, i:term, i:term, i:term,
+  i:term, i:term, i:term, o:term.
 craft-eq 0 0 _ _ _ EqTy Left Right ConclEqTy ConclL ConclR R:-  !,
   coq.mk-app {{lib:@trocq.paths}} [EqTy, Left, Right] AETy,
   coq.mk-app {{lib:@trocq.paths}} [ConclEqTy, ConclL, ConclR] C,
   R = {{ forall (e : lp:AETy), lp:C }}.
 
-craft-eq 0 ArgNo J Max (prod N1 T x\ prod N2 T y\ (Bo x y)) EqTy Left Right ConclEq ConclL ConclR (prod N1 T x\ prod N2 T y\ (S x y)) :- !,
+craft-eq 0 ArgNo J Max (prod N1 T x\ prod N2 T y\ (Bo x y)) EqTy Left Right
+  ConclEq ConclL ConclR (prod N1 T x\ prod N2 T y\ (S x y)) :- !,
   M is ArgNo - 1,
   J? is Max - ArgNo + 1,
   @pi-decl N1 T x\
@@ -43,9 +54,11 @@ craft-eq 0 ArgNo J Max (prod N1 T x\ prod N2 T y\ (Bo x y)) EqTy Left Right Conc
          NewConclR = ConclR)),
     coq.mk-app Left [x] NewLeft,
     coq.mk-app Right [y] NewRight,
-    craft-eq 0 M J Max (Bo x y) EqTy NewLeft NewRight NewConclEq NewConclL NewConclR (S x y).
+    craft-eq 0 M J Max (Bo x y) EqTy NewLeft NewRight NewConclEq NewConclL
+    NewConclR (S x y).
 
-craft-eq TyParam ArgNo J Max (prod N T Bo) EqTy Left Right CE CL CR (prod N T x\ S x) :- !,
+craft-eq TyParam ArgNo J Max (prod N T Bo) EqTy Left Right CE CL CR
+  (prod N T x\ S x) :- !,
   M is TyParam - 1,
   @pi-decl N T x\
   sigma NewEqTy NewLeft NewRight\
@@ -54,18 +67,23 @@ craft-eq TyParam ArgNo J Max (prod N T Bo) EqTy Left Right CE CL CR (prod N T x\
     coq.mk-app Right [x] NewRight,
     craft-eq M ArgNo J Max (Bo x) NewEqTy NewLeft NewRight CE CL CR (S x).
 
-pred build-type-K-injector i:int, i:int, i:inductive, i:constructor, i:int, i:term, i:list term, o:list term.
+pred build-type-K-injector i:int, i:int, i:inductive, i:constructor, i:int,
+  i:term, i:list term, o:list term.
 build-type-K-injector _ _ _ _ _ _ [] [] :- !.
 build-type-K-injector TyParamNo J GR Kn ArgNo KTy [PJ|PJs] [Eq|RS] :- std.do! [
   Jn is J + 1,
   duplicate-arguments TyParamNo ArgNo PJ S,
-  (craft-eq TyParamNo ArgNo J ArgNo S {coq.env.global (indt GR)} {coq.env.global (indc Kn)} {coq.env.global (indc Kn)} {{tt}} {{tt}} {{tt}} Eq),
+  (craft-eq TyParamNo ArgNo J ArgNo S {coq.env.global (indt GR)}
+    {coq.env.global (indc Kn)} {coq.env.global (indc Kn)} {{tt}} {{tt}} {{tt}}
+    Eq),
   (@keepunivs! => coq.typecheck Eq _ ok),
   build-type-K-injector TyParamNo Jn GR Kn ArgNo KTy PJs RS].
 
-pred build-types-injectors i:int, i: inductive, i:list constructor, i: list int, i:list (term), i:list (list term), o:list (list term).
+pred build-types-injectors i:int, i: inductive, i:list constructor, i: list int,
+  i:list (term), i:list (list term), o:list (list term).
 build-types-injectors _ _ [] [] [] [] [] :- !.
-build-types-injectors TyParamNo GR [Kn|KNs] [ArgNo|ArgsNos] [KTy|KTys] [PJs|PJss] [R|RS] :-
+build-types-injectors TyParamNo GR [Kn|KNs] [ArgNo|ArgsNos] [KTy|KTys]
+  [PJs|PJss] [R|RS] :-
   build-type-K-injector TyParamNo 1 GR Kn ArgNo KTy PJs R,
   build-types-injectors TyParamNo GR KNs ArgsNos KTys PJss RS.
 
@@ -76,15 +94,21 @@ implement-K-injector-J 0 J 0 TyParam (prod E Ty _) R :- !,
   @pi-decl E Ty e\
     sigma GR TyArgs GRK KArgs A B\
     ltac.injection? Ty GR TyArgs GRK KArgs A B,
-    ltac.injection.arg-i I J {{lib:@trocq.ap }} GR TyArgs TyParam GRK KArgs A B e [(PL e)].
+    ltac.injection.arg-i I J {{lib:@trocq.ap }} GR TyArgs TyParam GRK KArgs A B
+    e [(PL e)].
 
-implement-K-injector-J 0 J ArgNo TyParam (prod ArgN1 ArgTy1 a\ (prod ArgN2 ArgTy2 b\ (Bo a b))) (fun ArgN1 ArgTy1 a\ fun ArgN2 ArgTy2 b\ (R a b) ) :- !,
+implement-K-injector-J 0 J ArgNo TyParam
+  (prod ArgN1 ArgTy1 a\
+    (prod ArgN2 ArgTy2 b\ (Bo a b)))
+  (fun ArgN1 ArgTy1 a\
+    fun ArgN2 ArgTy2 b\ (R a b) ) :- !,
   ArgNon is ArgNo - 1,
   @pi-decl ArgN1 ArgTy1 a\
   @pi-decl ArgN2 ArgTy2 b\
     implement-K-injector-J 0 J ArgNon TyParam (Bo a b) (R a b).
 
-implement-K-injector-J ParamNo J ArgNo TyParam (prod TyArg T t\ (Bo t)) (fun TyArg T t\ (R t) ) :-
+implement-K-injector-J ParamNo J ArgNo TyParam
+  (prod TyArg T t\ (Bo t)) (fun TyArg T t\ (R t) ) :-
   ParamNon is ParamNo - 1,
   @pi-decl TyArg T t\
     implement-K-injector-J ParamNon J ArgNo TyParam (Bo t) (R t).
@@ -97,13 +121,15 @@ implement-K-injectors TyParam J ArgNo [InjTy | InjTys] [R | RS] :-
   (@keepunivs! => coq.elaborate-skeleton RSkel _ R ok),
   implement-K-injectors TyParam Jn ArgNo InjTys RS.
 
-pred implement-injectors i:int, i:list int, i:list (list term), o:list (list term).
+pred implement-injectors i:int, i:list int, i:list (list term),
+  o:list (list term).
 implement-injectors _ _ [] [].
 implement-injectors TyParam [ArgNo | ArgNos] [InjTys | InjTyss] [R | RS ] :-
   implement-K-injectors TyParam 1 ArgNo InjTys R,
   implement-injectors TyParam ArgNos InjTyss RS.
 
-pred for-K-get-projectors i:int, i:list constructor, i:list term, o: list int, o:list (list term).
+pred for-K-get-projectors i:int, i:list constructor, i:list term, o: list int,
+  o:list (list term).
 for-K-get-projectors TyParamNo KNs KTys ArgsNos PJss :-
   for-K-get-KI TyParamNo KNs KTys (grk\ i\ p\ projK-db grk i p) ArgsNos PJss.
 
@@ -119,12 +145,18 @@ main GR Prefix Clauses :- std.do! [
   coq.ensure-fresh-global-id Name FName,
   coq.env.indt GR _ TyParamNo _ _ KNs KTys,
   for-K-get-projectors TyParamNo KNs KTys ArgsNos PJss,
-  std.map PJss (x\ r\ sigma R\ (std.map x (y\ r\ sigma Ty\ (@keepunivs! => coq.typecheck y Ty ok), r = Ty) R), r = R) PJTyss,
+  std.map PJss
+    (x\ r\ sigma R\
+      (std.map x
+        (y\ r\ sigma Ty\
+          (@keepunivs! => coq.typecheck y Ty ok), r = Ty)
+       R),
+    r = R) PJTyss,
   build-types-injectors TyParamNo GR KNs ArgsNos KTys PJTyss InjTyss,
   implement-injectors TyParamNo ArgsNos InjTyss Injss,
   name-ijs FName 1 GR KNs Injss register.aux Clausess,
   std.flatten Clausess Clauses,
-  ClausesFin = [injections-done GR | Clauses], %[injections-done GR, injections GR (const C)],
+  ClausesFin = [injections-done GR | Clauses],
   std.forall ClausesFin (x\
     coq.elpi.accumulate _ "derive.injections.db" (clause _ _ x)
   ),

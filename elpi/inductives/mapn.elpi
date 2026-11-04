@@ -1,3 +1,8 @@
+% -----------------------------------------------------------------------------
+% This plugin assembles instances of all kinds of map classes for an inductive
+% type, given the fields to build such a map
+% -----------------------------------------------------------------------------
+
 accumulate "Trocq.Elpi.inductives/common_algo".
 accumulate "Trocq.Elpi.inductives/utils".
 
@@ -14,7 +19,10 @@ namespace derive.mapn {
 pred mk-mapn-type-priv i:int, i:term, i:term, i:term, i:term, i:term, o:term.
 mk-mapn-type-priv 0 _ IndL IndR Rel MTy {{ lp:MTy lp:IndL lp:IndR lp:Rel}}.
 mk-mapn-type-priv N (prod TN Ty t\ (Bo t)) IndL IndR Rel MTy
-        (prod TN1 Ty t1\ prod TN2 Ty t2\ prod TRN (ARTy t1 t2) ar\ prod URN (UMTy t1 t2 ar) ur\ (R t1 t2 ar ur)) :-
+                  (prod TN1 Ty t1\
+                    prod TN2 Ty t2\
+                     prod TRN (ARTy t1 t2) ar\
+                      prod URN (UMTy t1 t2 ar) ur\ (R t1 t2 ar ur)) :-
   M is N - 1,
   gen-names-map TN TN1 TN2 TRN URN,
   @pi-decl TN1 Ty t1\
@@ -26,7 +34,8 @@ mk-mapn-type-priv N (prod TN Ty t\ (Bo t)) IndL IndR Rel MTy
     coq.mk-app IndL [t1] (NIndL t1),
     coq.mk-app IndR [t2] (NIndR t2),
     coq.mk-app Rel [t1,t2,ar] (NRel t1 t2 ar),
-    mk-mapn-type-priv M (Bo t1) (NIndL t1) (NIndR t2) (NRel t1 t2 ar) MTy (R t1 t2 ar ur).
+    mk-mapn-type-priv M (Bo t1) (NIndL t1) (NIndR t2) (NRel t1 t2 ar) MTy
+      (R t1 t2 ar ur).
 
 % TyParamNo Arity Ind MapTy Rel
 pred mk-mapn-type i:int, i:term, i:term, i:term, i:term, o:term.
@@ -34,10 +43,20 @@ mk-mapn-type TyParamNo Arity Ind Rel MTy R :-
   mk-mapn-type-priv TyParamNo Arity Ind Ind Rel MTy R.
 
 % TyParamNo MapnTy IndL IndR Rel listReqs IndMap MR RM MRRMK
-pred implement-mapn i:int, i:term, i:term, i:term, i:term, i: list term, i:term, o:term.
+pred implement-mapn i:int, i:term, i:term, i:term, i:term, i: list term, i:term,
+  o:term.
 implement-mapn 0 _ IndL IndR Rel Reqs BH R :-
   coq.mk-app BH [IndL,IndR,Rel | Reqs] R.
-implement-mapn N (prod TN1 Ty1 t1\ prod TN2 Ty2 t2\ prod TRN (ARTy t1 t2) ar\ prod URN (UMTy t1 t2 ar) ur\ (Bo t1 t2 ar ur)) IndL IndR Rel Reqs BH (fun TN1 Ty1 t1\ fun TN2 Ty2 t2\ fun TRN (ARTy t1 t2) ar\ fun URN (UMTy t1 t2 ar) ur\ (R t1 t2 ar ur)) :-
+implement-mapn N
+  (prod TN1 Ty1 t1\
+    prod TN2 Ty2 t2\
+     prod TRN (ARTy t1 t2) ar\
+      prod URN (UMTy t1 t2 ar) ur\ (Bo t1 t2 ar ur))
+  IndL IndR Rel Reqs BH
+  (fun TN1 Ty1 t1\
+    fun TN2 Ty2 t2\
+     fun TRN (ARTy t1 t2) ar\
+      fun URN (UMTy t1 t2 ar) ur\ (R t1 t2 ar ur)) :-
   M is N - 1,
   @pi-decl TN1 Ty1 t1\
   @pi-decl TN2 Ty2 t2\
@@ -46,7 +65,9 @@ implement-mapn N (prod TN1 Ty1 t1\ prod TN2 Ty2 t2\ prod TRN (ARTy t1 t2) ar\ pr
     coq.mk-app IndL [t1] (NIndL t1),
     coq.mk-app IndR [t2] (NIndR t2),
     coq.mk-app Rel [t1,t2,ar] (NRel t1 t2 ar),
-    std.map Reqs (x\ r\ sigma TMP\ coq.mk-app x [t1,t2,ar,ur] TMP, r = TMP) (NewReqs t1 t2 ar ur),
+    std.map Reqs
+      (x\ r\ sigma TMP\ coq.mk-app x [t1,t2,ar,ur] TMP, r = TMP)
+      (NewReqs t1 t2 ar ur),
     implement-mapn M (Bo t1 t2 ar ur) (NIndL t1) (NIndR t2) (NRel t1 t2 ar)
                       (NewReqs t1 t2 ar ur) BH (R t1 t2 ar ur).
 
@@ -83,20 +104,25 @@ implement-mapM M GR RMapn :-
   build-has-of M BH4,
   % todo: address universe polymorphism
   mk-mapn-type TyParamNo Arity Ind IndR (pglobal UM _) MapnTySkel,
-  std.assert-ok! (coq.elaborate-skeleton MapnTySkel _ MapnTy) "derive.mapn generates illtyped type",
+  std.assert-ok!
+    (coq.elaborate-skeleton MapnTySkel _ MapnTy)
+    "derive.mapn generates illtyped type",
   implement-mapn TyParamNo MapnTy Ind Ind IndR Reqs (pglobal BH4 _) RMapnSkel,
-  std.assert-ok! (coq.elaborate-skeleton RMapnSkel _ RMapn) "derive.mapn generates illtyped term".
+  std.assert-ok!
+    (coq.elaborate-skeleton RMapnSkel _ RMapn)
+    "derive.mapn generates illtyped term".
 
 func main inductive, string -> list prop.
 main GR Prefix Clauses :- std.do! [
-  std.fold {map-class.all-of-kind all} [] (M\ C\ C'\ sigma RMapn NameMapn FNameMapn CMapn Entry\
-    implement-mapM M GR RMapn,
-    NameMapn is Prefix ^ "map" ^ {map-class.to_string M},
-    coq.ensure-fresh-global-id NameMapn FNameMapn,
-    coq.env.add-const FNameMapn RMapn _ _ CMapn,
-    Entry = trocq.db.map-def (indt GR) M (const CMapn),
-    coq.elpi.accumulate _ "trocq.db" (clause _ _ Entry),
-    C' = [Entry | C]
+  std.fold {map-class.all-of-kind all} []
+    (M\ C\ C'\ sigma RMapn NameMapn FNameMapn CMapn Entry\
+      implement-mapM M GR RMapn,
+      NameMapn is Prefix ^ "map" ^ {map-class.to_string M},
+      coq.ensure-fresh-global-id NameMapn FNameMapn,
+      coq.env.add-const FNameMapn RMapn _ _ CMapn,
+      Entry = trocq.db.map-def (indt GR) M (const CMapn),
+      coq.elpi.accumulate _ "trocq.db" (clause _ _ Entry),
+      C' = [Entry | C]
   ) MClauses,
   DEntry = (trocq.db.map-ind-done GR),
   coq.elpi.accumulate _ "trocq.db" (clause _ _ DEntry),

@@ -1,9 +1,11 @@
 namespace derive.algo-utils {
 
+% generate names for the duplicated arguments
 func names12 name -> name, name.
 names12 N N1 N2 :- !,
   coq.name-suffix N 1 N1, coq.name-suffix N 2 N2.
 
+% generate names for the quadruplicated arguments
 pred gen-names-map i:name, o:name, o:name, o:name, o:name.
 gen-names-map N N1 N2 NR NU :-
   coq.name-suffix N 1 N1,
@@ -17,6 +19,10 @@ name-prefix N P R :-
   S is P ^ NS,
   coq.string->name S R.
 
+% When the conclusion is a path this predicates decides which eliminator to
+% call. HoTT paths has a manually generated induction principle,
+% which does not align with the shape of the ones generated automatically.
+% To sort this out we use the one we define in hott/Stdlib.v
 pred elim-into-path-suffix i:string, o:string.
 elim-into-path-suffix Id Suff :-
   (indt Eq) = {{:gref @lib:trocq.paths}},
@@ -26,13 +32,18 @@ elim-into-path-suffix Id Suff :-
     (Suff = "_ind")
     (Suff = "_rect")).
 
-% given TyParam ArgNo and T,
-% duplicate-argument skips TyParam products,
-% then for the first ArgNo products adds another product expecting an argument of the same Type,
-% after all lambdas are processed returns the body unchanged
-pred duplicate-arguments i:int, i:int, i:term, o:term.
+% duplicate-arguments TyParam ArgNo T
+% traverses T and skips TyParam products,
+% then for the first ArgNo products adds another product expecting an argument
+% of the same type, after all lambdas are processed returns the body unchanged
+pred duplicate-arguments
+  i:int,  % TyParam: number of type arguments
+  i:int,  % ArgNo: number of arguments
+  i:term, % a type T,
+  o:term.
 duplicate-arguments 0 0 T T :- !.
-duplicate-arguments 0 O (prod N TyA T) (prod Arg1 TyA a1\ (prod Arg2 TyA a2\ (S a1 a2))) :-
+duplicate-arguments 0 O (prod N TyA T) (prod Arg1 TyA a1\
+                                         (prod Arg2 TyA a2\ (S a1 a2))) :-
     O > 0,
     P is O - 1,
     names12 N Arg1 Arg2,
@@ -47,56 +58,79 @@ count-args N T R :-
   coq.count-prods T M,
   R is M - N.
 
-% given list eta-src type, eta-RT, list of etas, list of src, list of dest, list of src = dest,
-% builds the corresponding ap.
-pred mk-aps-etas i:list term, i:term, i:list term, i:list term, i:list term, i:list term, o:list term.
+% mk-aps-etas DTys ITyTy Etas SArgs DArgs EQs
+pred mk-aps-etas i:list term, % list eta-src type
+  i:term,                    % Type of Inductive
+  i:list term,               % list eta-RT
+  i:list term,               % list of etas
+  i:list term,               % list of src arguments
+  i:list term,               % list of dest arguments
+  o:list term.               % list
 mk-aps-etas [] _ [] [] [] [] [].
-mk-aps-etas [DTy|DestTys] ITyTy [Eta|Etas] [SA|SrcArgs] [DA|DestArgs] [Eq|Eqs] [RE | RS] :-
+mk-aps-etas [DTy|DestTys] ITyTy [Eta|Etas] [SA|SrcArgs] [DA|DestArgs] [Eq|Eqs]
+  [RE | RS] :-
   Ap = {{ lib:@trocq.ap }},
   coq.mk-app Ap [DTy,ITyTy,Eta,SA,DA,Eq] R,
   (@keepunivs! => coq.elaborate-skeleton R _ RE ok),
   mk-aps-etas DestTys ITyTy Etas SrcArgs DestArgs Eqs RS.
 
-% K comes with type arguments already applied.
-pred mk-ith-eta i:int, i:list term, i:list term, i:list term, i:term, o:term.
+% mk-ith-eta I MArgs DestArgs DestTys K takes a constructor with all its type
+% parameters applied and applies to it the first I - 1 Dest args, abstracts over
+% the Ith arg, and applies the remaining Margs
+pred mk-ith-eta
+  i:int,       % The Ith
+  i:list term, % list of Source arguments
+  i:list term, % list of Dest arguments
+  i:list term, % list of Dest types
+  i:term,      % a constructor
+  o:term.
 mk-ith-eta I MArgs DestArgs DestTys K FR :-
   J is I - 1,
   std.take J DestArgs Done, % list of args already processed.
-  std.drop I MArgs MTODO, % list of args to yet process
+  std.drop I MArgs MTODO,   % list of args to yet process
   std.nth J DestTys CurrTy,
   (pi curr\
     coq.mk-app K {std.append Done [curr|MTODO]} (KArgs curr)),
   FR = fun `R` CurrTy (r\ (KArgs r)).
 
 
-% KDest comes with the type arguments already applied.
-pred mk-etas-priv i:list term, i:list term, i:list term, i:int, i:int, i: term, o:list term.
+% assumption: KDest comes with the type arguments already applied.
+pred mk-etas-priv i:list term, i:list term, i:list term, i:int, i:int, i: term,
+  o:list term.
 mk-etas-priv _ _ _ M N  _ [] :- M > N.
 mk-etas-priv SrcArgs DestArgs DestTys I N KDest [R| RS] :-
   J is I + 1,
   mk-ith-eta I SrcArgs DestArgs DestTys KDest R,
   mk-etas-priv SrcArgs DestArgs DestTys J N KDest RS.
 
+% Entry-point to mk-etas
 pred mk-etas i:list term, i:list term, i:list term, i: term, o:list term.
 mk-etas SrcArgs DestArgs TyDest KAppTyArgs REtas :-
   mk-etas-priv SrcArgs DestArgs TyDest 1 {std.length DestArgs} KAppTyArgs REtas.
 
+% compose-path Args End ITy sequentially concatenates paths in ITy
 pred compose-path i:list term, i:term, i:term o: term.
 compose-path [] End _ End.
-compose-path [Argk|Args] End ITy {{ lib:@trocq.concat lp:ITy _ _ _ lp:Argk lp:R }} :-
+compose-path [Argk|Args] End ITy
+  {{ lib:@trocq.concat lp:ITy _ _ _ lp:Argk lp:R }} :-
   compose-path Args End ITy R.
 
-% List of src args, list of dest args and their types, K applied to type parameters, equalities src = dest, type of K TyParam Dest.
+% mk-chain SrcArgs DestArgs DestArgsTy K Eqs ITyTy RHS
+% assumption: K has all its type parameters already applied
+% computes a path between K SrcArgs and K DestArgs, given pointwise identities
+% between Src and Dest args.
 % returns (ap eta1 s1 d1 e1) @ ... @ ap etan sn dn en.
-pred mk-chain i:list term, i:list term, i:list term, i:term, i:list term, i:term, i:term, o:term.
+pred mk-chain i:list term, i:list term, i:list term, i:term, i:list term,
+  i:term, i:term, o:term.
 mk-chain SrcArgs DestArgs DestArgsTy K Eqs ITyTy RHS R :-
   mk-etas SrcArgs DestArgs DestArgsTy K REtas,
   mk-aps-etas DestArgsTy ITyTy REtas SrcArgs DestArgs Eqs Raps,
   compose-path Raps {{ lib:@trocq.idpath lp:ITyTy lp:RHS }} ITyTy RSkel,
   @keepunivs! => coq.elaborate-skeleton RSkel _ R ok.
 
-% pred name-ij i:string, i:int, i:int, i:inductive, i:constructor, i:list term, i: constructor -> int -> constant -> prop, o:list prop.
-pred name-ij i:string, i:int, i:int, i:inductive, i:constructor, i:list term, i: (pred i:constructor, i:int, i:constant, o:list prop), o:list prop.
+% declares a clause in a db indexed by constructor and arguments
+pred name-ij i:string, i:int, i:int, i:inductive, i:constructor, i:list term,
+  i: (pred i:constructor, i:int, i:constant, o:list prop), o:list prop.
 name-ij _ _ _ _ _ [] _ [].
 name-ij FName I J GR Kn [InjTyS|InjTyss] F ClausesR :-
   Jn is J + 1,
@@ -107,23 +141,30 @@ name-ij FName I J GR Kn [InjTyS|InjTyss] F ClausesR :-
   name-ij FName I Jn GR Kn InjTyss F ClausesRec,
   std.append Clauses ClausesRec ClausesR.
 
-% Prefix, current constructor, an inductive, its constructors, list of list of terms to name
-pred name-ijs i:string, i:int, i:inductive, i:list constructor, i:list (list term), i: (pred i:constructor, i:int, i:constant, o:list prop), o:list (list prop).
-% pred name-ijs i:string, i:int, i:inductive, i:list constructor, i:list (list term), i: constructor -> int -> constant -> prop, o:list (list prop).
+% interface to batch declare databases indexed by constructors and arguments
+% Prefix, current constructor, an inductive, its constructors, list of list of
+% terms to name
+pred name-ijs i:string, i:int, i:inductive, i:list constructor,
+  i:list (list term), i: (pred i:constructor, i:int, i:constant, o:list prop),
+  o:list (list prop).
 name-ijs _ _ _ [] [] _ [].
 name-ijs FName I GR [Kn | KNs] [InjTys | InjTyss] F [Clauses | Clausess] :-
   In is I + 1,
   name-ij FName I 1 GR Kn InjTys F Clauses,
   name-ijs FName In GR KNs InjTyss F Clausess.
 
+% queries all arguments of constructor K in database F
 % Returns the list of P of F K I P of a constructor.
-pred get-KI i:constructor, i:int, i:int, i:(pred i:constructor, i:int, o:term), o:list term.
+pred get-KI i:constructor, i:int, i:int, i:(pred i:constructor, i:int, o:term),
+  o:list term.
 get-KI _ Max Max _ [] :- !.
 get-KI GRK J Max F [P|PJs] :-
     I is J + 1,
     F GRK I P,
     get-KI GRK I Max F PJs.
 
+% aggregates queries all arguments of constructor K in database F
+% Returns the list of P of F K I P of a constructor.
 % for a list of P of F K I for a list of constructors
 pred for-K-get-KI i:int, i:list constructor, i:list term,
 i:(pred i:constructor, i:int, o:term),
@@ -134,23 +175,27 @@ for-K-get-KI TyParamNo [Kn|KNs] [KTy|KTys] F [ArgsNo|ArgsNos] [R|RS]:-
     get-KI Kn 0 ArgsNo F R,
     for-K-get-KI TyParamNo KNs KTys F ArgsNos RS.
 
-% from a type of shape 3*(forall (a1 : T1) (a2 : T2), AR a1 a2, ...) extracts list of T1 and T2
+% from a type of shape 3*(forall (a1 : T1) (a2 : T2), AR a1 a2, ...) extracts
+% list of T1 and T2
 pred type-of-args i:term, i:int, o:list term, o:list term.
 type-of-args _ 0 [] [].
-type-of-args (prod _ ATy1 a1\ prod _ ATy2 a2\ prod _ _ ar\ (Bo a1 a2 ar)) N [ATy1| SR] [ATy2 | DR] :-
+type-of-args (prod _ ATy1 a1\ prod _ ATy2 a2\ prod _ _ ar\ (Bo a1 a2 ar)) N
+  [ATy1| SR] [ATy2 | DR] :-
   M is N - 1,
   pi a1 a2 ar\
    type-of-args (Bo a1 a2 ar) M SR DR.
 
- % whd beta-iota-delta-zeta, main code
+ % whd reduction with fuel for delta
 pred whd-fuel i:term, i:stack, i:int, o:term, o:stack.
 whd-fuel T S 0 T S.
 whd-fuel (app [Hd|Args]) C N X XC :- !, whd-fuel Hd {std.append Args C} N X XC.
 whd-fuel (fun _ _ _ as X) [] _ X [] :- !.
 whd-fuel (fun N T F) [B|C] M X XC :- !,
-  (pi x\ def x N T B => cache x BN_ => whd-fuel (F x) C M (F1 x) (C1 x)), X = F1 B, XC = C1 B.
+  (pi x\ def x N T B => cache x BN_ =>
+    whd-fuel (F x) C M (F1 x) (C1 x)), X = F1 B, XC = C1 B.
 whd-fuel (let N T B F) C M X XC :- !,
-  (pi x\ def x N T B => cache x BN_ => whd-fuel (F x) C M (F1 x) (C1 x)), X = F1 B, XC = C1 B.
+  (pi x\ def x N T B => cache x BN_ =>
+    whd-fuel (F x) C M (F1 x) (C1 x)), X = F1 B, XC = C1 B.
 whd-fuel (global (const GR)) C M X XC :-
   O is M - 1, unfold GR none C D DC, !, whd-fuel D DC O X XC.
 whd-fuel (pglobal (const GR) I) C M X XC :-
@@ -166,19 +211,23 @@ whd-fuel (global (const GR) as HD) C M X XC :- coq.env.primitive? GR, !,
   if (same_term Orig R) (X = HD, XC = C) (whd-fuel R [] O X XC).
 whd-fuel (match A _ L) C M X XC :- whd-indc A GR KA, !,
   whd-fuel {match-red GR KA L C} M X XC.
-whd-fuel (fix _ N _ F as Fix) C M X XC :- nth-stack N C LA A RA, whd-indc A GR KA, !,
+whd-fuel (fix _ N _ F as Fix) C M X XC :- nth-stack N C LA A RA,
+  whd-indc A GR KA, !,
   whd-fuel {fix-red F Fix LA GR KA RA} M X XC.
-whd-fuel N C M X XC :- name N, def N _ _ V, !, cache-whd N VN V, whd-fuel VN C M X XC.
+whd-fuel N C M X XC :- name N, def N _ _ V, !, cache-whd N VN V,
+  whd-fuel VN C M X XC.
 whd-fuel X C _ X C.
 
 pred unfold-prim-proj i:term, i:stack, o:term, o:stack.
-unfold-prim-proj (let _ _ ((app [ (primitive (proj _ _)) | _ ]) as B) F) C XX CC :-
+unfold-prim-proj (let _ _ ((app [ (primitive (proj _ _)) | _ ]) as B) F) C XX
+  CC :-
   whd B [] B' [],
   Hd = F B', Args = C,
   unfold-prim-proj Hd Args XX CC.
 unfold-prim-proj X C XX CC :-
   hd-beta X C XX CC.
 
+% if the scrutinee has primitive projections, it unfolds them
 pred iota-step i:term, i:stack, o:term, o:stack.
 iota-step (match A _ L) C X XC :- whd-indc A GR KA, !,
  match-red GR KA L C X XC.
@@ -189,12 +238,14 @@ iota-step (let _ _ B F) C X XC :- !,
 
 pred invert-eqs i:list term, o:list term.
 invert-eqs Eqs IEqs :-
-  std.map Eqs (x\r\ sigma Skel TMP Err\ Skel = {{ lib:@trocq.inverse _ _ _ lp:x}},
+  std.map Eqs (x\r\ sigma Skel TMP Err\
+              Skel = {{ lib:@trocq.inverse _ _ _ lp:x}},
               (@keepunivs! => coq.elaborate-skeleton Skel _ TMP ok),
               r = TMP
               ) IEqs.
 
-% expects list of equations
+% Given a goal and a lists of equations and patterns, it rewrites the goal
+% under the equations, sequentially
 pred rewrite-with i:list term, i:list term, i:term, o:term.
 rewrite-with [] [] End End.
 rewrite-with [Eq|Eqs] [Pat|Pats] End R :-
@@ -212,6 +263,7 @@ rewrite-with [Eq|Eqs] [Pat|Pats] End R :-
   (@keepunivs! => coq.elaborate-skeleton RSkel _ R ok).
 
 % checks if two types refer to the same indt, and returns a canonical one.
+% a helper to deal with universes
 pred cmp-indt i:term, i:term, o:term, o:term.
 cmp-indt T1 T2 R T2Hd:-
     coq.safe-dest-app T1 T1Hd _,

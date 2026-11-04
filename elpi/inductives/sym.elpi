@@ -1,3 +1,8 @@
+% -----------------------------------------------------------------------------
+% This plugin derives a function showing that parametricity translations are
+% symmetric by induction on the translation
+% -----------------------------------------------------------------------------
+
 accumulate "Trocq.Elpi.inductives/common_algo".
 accumulate "Trocq.Elpi.inductives/utils".
 
@@ -6,11 +11,18 @@ shorten derive.algo-utils.{cmp-indt}.
 
 namespace derive.sym {
 
-% [|K|], remaining args, number of type args, KRTy, Type of args Ksource, Type of args KDest, Goal,
+% [|K|], remaining args, number of type args, KRTy, Type of args Ksource,
+% Type of args KDest, Goal,
 pred process-args i:term, i:int, i:int, i:term, i:term, i:term, o:term.
 process-args KR 0 _ _ _ _ KR.
-process-args KR N _TyArgsNo (prod AN1 A1Ty a1\ prod AN2 A2Ty a2\ prod ARN (ARTy a1 a2) ar\ (Bo a1 a2 ar)) Goal ITyTy
-                                   (fun AN1 A1Ty a1\ fun AN2 A2Ty a2\ fun ARN (ARTy a1 a2) ar\ (RF a1 a2 ar)):-
+process-args KR N _TyArgsNo
+  (prod AN1 A1Ty a1\
+    prod AN2 A2Ty a2\
+     prod ARN (ARTy a1 a2) ar\ (Bo a1 a2 ar))
+  Goal ITyTy
+  (fun AN1 A1Ty a1\
+    fun AN2 A2Ty a2\
+     fun ARN (ARTy a1 a2) ar\ (RF a1 a2 ar)):-
   M is N - 1,
   @pi-decl AN1 A1Ty a1\
   @pi-decl AN2 A2Ty a2\
@@ -35,21 +47,32 @@ mkBranch KR N KTyR ITyTy Goal Eq:-
   whd ITyTy [] _ TyArgs,
   process-args KR N {std.length TyArgs} KTyR Goal ITyTy Eq.
 
-pred mkBranches i:list term, i:list term, i:list term, i:term, i:term o:list term.
+pred mkBranches i:list term, i:list term, i:list term, i:term, i:term,
+  o:list term.
 mkBranches [] [] [] _ _ [].
 mkBranches [KR|KRs][KTy|KTys] [KTyR|KTyRs] ITyTy Goal [R|Rs] :-
   mkBranch KR {coq.count-prods KTy} KTyR ITyTy Goal R,
   mkBranches KRs KTys KTyRs ITyTy Goal Rs.
 
-pred implement-sym i:int, i:int, i:term, i:list term, i:list term, i:list term, i:term, i:term, o:term.
+pred implement-sym i:int, i:int, i:term, i:list term, i:list term, i:list term,
+  i:term, i:term, o:term.
 % Pred comes with Type parameters applied
 % RInd comes with Type parameters applied
-implement-sym 0 _TyParamNo (prod IN1 ITy1 i1\ prod IN2 ITy2 i2\ prod ARN (ARTy i1 i2) ar\ (Bo i1 i2 ar)) KRs KTys KTyRs Pred RInd
-            (fix `f` 2 RT f\ fun IN1 ITy1 i1\ fun IN2 ITy2 i2\ fun ARN (ARTy i1 i2) ar\ (R f i1 i2 ar)) :-
+implement-sym 0 _TyParamNo
+  (prod IN1 ITy1 i1\
+    prod IN2 ITy2 i2\
+     prod ARN (ARTy i1 i2) ar\ (Bo i1 i2 ar))
+  KRs KTys KTyRs Pred RInd
+  (fix `f` 2 RT f\
+    fun IN1 ITy1 i1\
+     fun IN2 ITy2 i2\
+      fun ARN (ARTy i1 i2) ar\ (R f i1 i2 ar)) :-
   coq.safe-dest-app ITy2 Ind _,
   coq.env.global (indt GR) Ind,
   coq.env.recursive? GR, !,
-  RT = (prod IN1 ITy1 i1\ prod IN2 ITy2 i2\ prod ARN (ARTy i1 i2) ar\ (Bo i1 i2 ar)),
+  RT = (prod IN1 ITy1 i1\
+         prod IN2 ITy2 i2\
+          prod ARN (ARTy i1 i2) ar\ (Bo i1 i2 ar)),
   coq.mk-app RInd [Pred] RIndP,
   @pi-decl `f` RT f\
   @pi-decl IN1 ITy1 i1\
@@ -59,8 +82,14 @@ implement-sym 0 _TyParamNo (prod IN1 ITy1 i1\ prod IN2 ITy2 i2\ prod ARN (ARTy i
       mkBranches KRs KTys KTyRs ITy2 Pred (Brs f)),
     std.append (Brs f) [i1,i2,ar] (IndArgs f i1 i2 ar),
     coq.mk-app RIndP (IndArgs f i1 i2 ar) (R f i1 i2 ar).
-implement-sym 0 _TyParamNo (prod IN1 ITy1 i1\ prod IN2 ITy2 i2\ prod ARN (ARTy i1 i2) _) KRs KTys KTyRs Pred RInd
-            (fun IN1 ITy1 i1\ fun IN2 ITy2 i2\ fun ARN (ARTy i1 i2) ar\ (R i1 i2 ar)) :-
+implement-sym 0 _TyParamNo
+  (prod IN1 ITy1 i1\
+    prod IN2 ITy2 i2\
+     prod ARN (ARTy i1 i2) _)
+  KRs KTys KTyRs Pred RInd
+  (fun IN1 ITy1 i1\
+    fun IN2 ITy2 i2\
+     fun ARN (ARTy i1 i2) ar\ (R i1 i2 ar)) :-
   !,
   coq.mk-app RInd [Pred] RIndP,
   @pi-decl IN1 ITy1 i1\
@@ -69,8 +98,14 @@ implement-sym 0 _TyParamNo (prod IN1 ITy1 i1\ prod IN2 ITy2 i2\ prod ARN (ARTy i
     mkBranches KRs KTys KTyRs ITy2 Pred Brs,
     std.append Brs [i1,i2,ar] (IndArgs i1 i2 ar),
     coq.mk-app RIndP (IndArgs i1 i2 ar) (R i1 i2 ar).
-implement-sym N TyParamNo (prod AN1 ATy1 a1\ prod AN2 ATy2 a2\ prod ARN (ARTy a1 a2) ar\ (Bo a1 a2 ar)) KRs KTys KTyRs Pred RInd
-            (fun AN1 ATy1 a1\ fun AN2 ATy2 a2\ fun ARN (ARTy a1 a2) ar\ (R a1 a2 ar)) :-
+implement-sym N TyParamNo
+  (prod AN1 ATy1 a1\
+    prod AN2 ATy2 a2\
+     prod ARN (ARTy a1 a2) ar\ (Bo a1 a2 ar))
+  KRs KTys KTyRs Pred RInd
+  (fun AN1 ATy1 a1\
+    fun AN2 ATy2 a2\
+     fun ARN (ARTy a1 a2) ar\ (R a1 a2 ar)) :-
   M is N - 1,
   @pi-decl AN1 ATy1 a1\ %A1 : Type
   @pi-decl AN2 ATy2 a2\ %A2 : Type
@@ -79,24 +114,39 @@ implement-sym N TyParamNo (prod AN1 ATy1 a1\ prod AN2 ATy2 a2\ prod ARN (ARTy a1
 
     (ARType a1 a2) = {{ lp:a1 -> lp:a2 -> Type }},
     coq.elaborate-skeleton ar (ARType a1 a2) (RelAR a1 a2 ar) ok,
-    coq.elaborate-skeleton {{ sym_rel lp:{{ RelAR a1 a2 ar }} }} (ARType a2 a1) (RelRA a1 a2 ar) ok,
+    coq.elaborate-skeleton {{ sym_rel lp:{{ RelAR a1 a2 ar }} }} (ARType a2 a1)
+      (RelRA a1 a2 ar) ok,
 
     coq.mk-app RInd [a1,a2,ar] (NewRIndSkel a1 a2 ar),
     coq.elaborate-skeleton (NewRIndSkel a1 a2 ar) _ (NewRInd a1 a2 ar) ok,
 
-    std.map KRs (x\ r\ sigma TMP\ coq.mk-app x [a2,a1, (RelRA a1 a2 ar)] TMP, r = TMP) (NewKRs a1 a2 ar),
+    std.map KRs
+      (x\ r\ sigma TMP\
+        coq.mk-app x [a2,a1, (RelRA a1 a2 ar)] TMP, r = TMP)
+      (NewKRs a1 a2 ar),
 
-    std.map KTys (x\ r\ sigma TMP\ coq.subst-prod [a2] x TMP, r = TMP) (NewKTys a2),
-    std.map KTyRs (x\ r\ sigma TMP1\ coq.subst-prod [a1,a2,(RelAR a1 a2 ar)] x TMP1, r = TMP1) (NewKTyRs a1 a2 ar),
+    std.map KTys
+      (x\ r\ sigma TMP\
+        coq.subst-prod [a2] x TMP, r = TMP)
+        (NewKTys a2),
+    std.map KTyRs
+      (x\ r\ sigma TMP1\
+        coq.subst-prod [a1,a2,(RelAR a1 a2 ar)] x TMP1, r = TMP1)
+      (NewKTyRs a1 a2 ar),
     Sym = {{ @sym_rel }},
     coq.mk-app Sym [a1, a2, ar] (SymApp a1 a2 ar),
-    (SymFun a1 a2 ar) = {{ fun (a1 : lp:{{a1}}) (a2 : lp:{{a2}}) (ar : lp:{{SymApp a1 a2 ar}})=> ar }},
+    (SymFun a1 a2 ar) = {{
+      fun (a1 : lp:{{a1}})
+          (a2 : lp:{{a2}})
+          (ar : lp:{{SymApp a1 a2 ar}})=> ar }},
     sym-db a1 (SymFun a1 a2 ar) ==>
-    implement-sym M TyParamNo (Bo a1 a2 ar) (NewKRs a1 a2 ar) (NewKTys a2) (NewKTyRs a1 a2 ar) (NewPred a1 a2 ar) (NewRInd a1 a2 ar) (R a1 a2 ar).
+    implement-sym M TyParamNo (Bo a1 a2 ar) (NewKRs a1 a2 ar) (NewKTys a2)
+      (NewKTyRs a1 a2 ar) (NewPred a1 a2 ar) (NewRInd a1 a2 ar) (R a1 a2 ar).
 
 func main inductive, string -> list prop.
 main GR Prefix Clauses :- std.do! [
 
+  % collects requirements
   coq.env.indt GR _ TyParamNo _ _ _ KTys,
   coq.env.global (indt GR) Ind,
   std.assert! (param Ind Ind TR) "derive.sym: use derive.param2 before",
@@ -105,15 +155,24 @@ main GR Prefix Clauses :- std.do! [
   coq.env.indt GRR _ _ _ TRTy KRNs KTyRs,
 
   mk-mR-type-sym TyParamNo TRTy TR MRTy,
-  std.assert-ok! (coq.elaborate-skeleton MRTy _ MRTyE) "derive.sym generates illtyped type",
+  std.assert-ok!
+   (coq.elaborate-skeleton MRTy _ MRTyE) "derive.sym generates illtyped type",
+
+  % searches elimination scheme for [| I |]
   RInductionName is Rname ^ "_rect",
   coq.locate RInductionName RInd,
   coq.env.global RInd RIndT,
+
+  % generates the motive of the elimination from the type to implement
   coq.prod->fun MRTyE Pred,
-  std.map KRNs (x\ r\ sigma TMP\ coq.env.global (indc x) TMP, r = TMP) KRs,
+  std.map KRNs
+    (x\ r\ sigma TMP\ coq.env.global (indc x) TMP, r = TMP)
+    KRs,
   implement-sym TyParamNo TyParamNo MRTyE KRs KTys KTyRs Pred RIndT R,
-  std.assert-ok! (coq.elaborate-skeleton R MRTyE Re) "derive.sym generates illtyped term",
+  std.assert-ok!
+    (coq.elaborate-skeleton R MRTyE Re) "derive.sym generates illtyped term",
   Name is Prefix ^ "sym",
+  % todo: refactor below into a func in utils
   coq.ensure-fresh-global-id Name FName,
   coq.env.add-const FName Re MRTyE _ C,
   Clauses = [sym-done GR, sym-def (indt GR) (const C)],

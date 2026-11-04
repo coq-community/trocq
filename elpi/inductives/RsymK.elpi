@@ -1,13 +1,21 @@
+% -----------------------------------------------------------------------------
+% This plugin assembles a proof that parametricity translations have an
+% involutive symmetry function
+% -----------------------------------------------------------------------------
+
 accumulate "Trocq.Elpi.inductives/common_algo".
 accumulate "Trocq.Elpi.inductives/utils".
 
-shorten derive.algo-utils.{type-of-args, whd-fuel, iota-step, invert-eqs, rewrite-with}.
+shorten derive.algo-utils.{type-of-args, whd-fuel, iota-step, invert-eqs,
+  rewrite-with}.
 shorten derive.common-algo.{mk-mR-type-rsymK, sym-tyargs}.
 
 namespace derive.rsymK {
 
 pred implement-rsymK i:int, i:term, i:term, i:term, i:list term, o:term.
-implement-rsymK 0 (prod IN1 ITy1 i1\ prod IN2 ITy2 i2\ _) Sym SymK LRev (fun IN1 ITy1 i1\ fun IN2 ITy2 i2\ (R i1 i2)) :-
+implement-rsymK 0
+  (prod IN1 ITy1 i1\ prod IN2 ITy2 i2\ _)
+  Sym SymK LRev (fun IN1 ITy1 i1\ fun IN2 ITy2 i2\ (R i1 i2)) :-
   !,
   std.rev LRev L,
   sym-tyargs L LSym,
@@ -19,9 +27,17 @@ implement-rsymK 0 (prod IN1 ITy1 i1\ prod IN2 ITy2 i2\ _) Sym SymK LRev (fun IN1
     (F i1 i2) = {{ lp:FSym lp:i2 lp:i1 }},
     (G i1 i2) = {{ lp:GSym lp:i1 lp:i2 }},
     (FGK i1 i2) = {{ lp:SymKSym lp:i2 lp:i1 }},
-    (R i1 i2) = {{ lib:trocq.exist _ lp:{{ (F i1 i2) }} (lib:trocq.exist _ lp:{{ (G i1 i2) }} lp:{{ (FGK i1 i2) }}) }}.
-implement-rsymK N (prod AN1 ATy1 a1\ prod AN2 ATy2 a2\ prod ARN (ARTy a1 a2) ar\ (Bo a1 a2 ar)) Sym SymK L
-            (fun AN1 ATy1 a1\ fun AN2 ATy2 a2\ fun ARN (ARTy a1 a2) ar\ (R a1 a2 ar)) :-
+    (R i1 i2) = {{
+      lib:trocq.exist _ lp:{{ (F i1 i2) }}
+      (lib:trocq.exist _ lp:{{ (G i1 i2) }} lp:{{ (FGK i1 i2) }}) }}.
+implement-rsymK N
+  (prod AN1 ATy1 a1\
+    prod AN2 ATy2 a2\
+     prod ARN (ARTy a1 a2) ar\ (Bo a1 a2 ar))
+  Sym SymK L
+  (fun AN1 ATy1 a1\
+    fun AN2 ATy2 a2\
+     fun ARN (ARTy a1 a2) ar\ (R a1 a2 ar)) :-
   M is N - 1,
   @pi-decl AN1 ATy1 a1\ %A1 : Type
   @pi-decl AN2 ATy2 a2\ %A2 : Type
@@ -38,11 +54,15 @@ main GR Prefix Clauses :- std.do! [
   std.assert! (param Ind Ind TR) "derive.rsymK: use derive.param2 before",
   coq.typecheck TR TRTy ok,
   mk-mR-type-rsymK TyParamNo TRTy TR {{ fun (A B : Type) => A <->> B }} SymKTy,
-  std.assert-ok! (coq.elaborate-skeleton SymKTy _ SymKTyE) "derive.rsymK generates illtyped type",
+  std.assert-ok!
+    (coq.elaborate-skeleton SymKTy _ SymKTyE)
+    "derive.rsymK generates illtyped type",
   std.assert! (sym-db Ind SymInd) "derive.rsymK: use derive.sym before",
   std.assert! (symK-db Ind SymKInd) "derive.rsymK: use derive.symK before",
   implement-rsymK TyParamNo SymKTyE SymInd SymKInd [] R,
-  std.assert-ok! (coq.elaborate-skeleton R SymKTyE Re) "derive.rsymK generates illtyped term",
+  std.assert-ok!
+    (coq.elaborate-skeleton R SymKTyE Re)
+    "derive.rsymK generates illtyped term",
   Name is Prefix ^ "rsymK",
   coq.ensure-fresh-global-id Name FName,
   coq.env.add-const FName Re SymKTyE _ C,

@@ -1,13 +1,23 @@
+% -----------------------------------------------------------------------------
+% This plugin derives a function for every argument in every constructor of an
+% inductive type. Given a constructor K, two terms of the type of its
+% arguments args and args', and an equality pi: arg i = arg' i.
+% This plugin generates a function of type
+% inj K i _ (ap (eta K) p1 @ ... @ ap (eta K) pi @ ...) = pi
+% -----------------------------------------------------------------------------
+
 accumulate "Trocq.Elpi.inductives/utils".
 
-shorten derive.algo-utils.{duplicate-arguments,count-args, name-prefix, mk-chain, name-ijs}.
+shorten derive.algo-utils.{duplicate-arguments,count-args, name-prefix,
+  mk-chain, name-ijs}.
 
 namespace derive.injK {
 
 pred add-equalities i:int, i:int, i:term, o:term.
 add-equalities 0 0 T T.
 add-equalities 0 M (prod AN1 ATy a1\ prod AN2 ATy a2\ (Bo a1 a2))
-                  (prod AN1 ATy a1\ prod AN2 ATy a2\ prod EN (EqTy a1 a2) e\ (R a1 a2)) :-
+                  (prod AN1 ATy a1\ prod AN2 ATy a2\ prod EN (EqTy a1 a2) e\
+                    (R a1 a2)) :-
   O is M - 1,
   name-prefix AN1 "p_" EN,
   pi a1 a2\
@@ -19,7 +29,8 @@ add-equalities N M (prod AN1 ATy a1\ (Bo a1))
   pi a1\
     add-equalities O M (Bo a1) (R a1).
 
-pred get-injectors i:list term, i: list int, o: list (list term), o:list (list int).
+pred get-injectors i:list term, i: list int, o: list (list term),
+  o:list (list int).
 get-injectors [] [] [] [].
 get-injectors [K|Ks] [ArgNo|ArgNos] [R|RS] [Tmp|Tmps]:-
   std.iota ArgNo Tmp,
@@ -27,9 +38,11 @@ get-injectors [K|Ks] [ArgNo|ArgNos] [R|RS] [Tmp|Tmps]:-
   std.map Add1 (x\r\ sigma R\ injections-db K x R, r = R) R,
   get-injectors Ks ArgNos RS Tmps.
 
-% TyParam, ArgNo, type of duplicated args + eq, injector, dest path no, RHS path (dflt dummy).
+% TyParam, ArgNo, type of duplicated args + eq, injector, dest path no,
+% RHS path (dflt dummy).
 %
-pred add-concl i:int, i:int, i:int, i:term, i:term, i:int, i:term, i:term, i:list term, i:list term, i: list term, o:term.
+pred add-concl i:int, i:int, i:int, i:term, i:term, i:int, i:term, i:term,
+  i:list term, i:list term, i: list term, o:term.
 add-concl 0 ArgNo ArgNo _ Injtor _ RHS K SrcArgs_R DestArgs_R Eqs_R R :-
   % M > ArgNo,
   !,
@@ -43,8 +56,10 @@ add-concl 0 ArgNo ArgNo _ Injtor _ RHS K SrcArgs_R DestArgs_R Eqs_R R :-
   coq.mk-app Injtor [Chain] LHS,
   coq.mk-app {{lib:@trocq.paths}} [{{ _ }}, LHS, RHS] RSkel,
   @keepunivs! => coq.elaborate-skeleton RSkel _ R ok.
-add-concl 0 M ArgNo (prod AN1 ATy a1\ prod AN2 ATy a2\ prod EN (ETy a1 a2) e\ (Bo a1 a2 e)) Injtor DestPathNo RHS K SrcArgs DestArgs Eqs
-                  (prod AN1 ATy a1\ prod AN2 ATy a2\ prod EN (ETy a1 a2) e\ (R a1 a2 e)) :-
+add-concl 0 M ArgNo
+  (prod AN1 ATy a1\ prod AN2 ATy a2\ prod EN (ETy a1 a2) e\ (Bo a1 a2 e))
+  Injtor DestPathNo RHS K SrcArgs DestArgs Eqs
+  (prod AN1 ATy a1\ prod AN2 ATy a2\ prod EN (ETy a1 a2) e\ (R a1 a2 e)) :-
   !,
   O is M + 1,
   @pi-decl AN1 ATy a1\
@@ -54,28 +69,37 @@ add-concl 0 M ArgNo (prod AN1 ATy a1\ prod AN2 ATy a2\ prod EN (ETy a1 a2) e\ (B
     if (M = DestPathNo)
       ((NewRHS e) = e)
       ((NewRHS e) = RHS),
-    add-concl 0 O ArgNo (Bo a1 a2 e) (NewInjtor a1 a2) DestPathNo (NewRHS e) K [a1 | SrcArgs] [a2| DestArgs] [e | Eqs] (R a1 a2 e).
+    add-concl 0 O ArgNo (Bo a1 a2 e) (NewInjtor a1 a2) DestPathNo (NewRHS e) K
+      [a1 | SrcArgs] [a2| DestArgs] [e | Eqs] (R a1 a2 e).
 
-add-concl N 0 ArgNo (prod AN1 ATy a1\ (Bo a1)) Injtor DestPathNo RHS K SrcArgs DestArgs Eqs
-                  (prod AN1 ATy a1\ (R a1)) :-
+add-concl N 0 ArgNo (prod AN1 ATy a1\ (Bo a1)) Injtor DestPathNo RHS K SrcArgs
+  DestArgs Eqs (prod AN1 ATy a1\ (R a1)) :-
   M is N - 1,
   @pi-decl AN1 ATy a1\
     coq.mk-app Injtor [a1] (NewInjtor a1),
     coq.mk-app K [a1] (NewK a1),
-    add-concl M 0 ArgNo (Bo a1) (NewInjtor a1) DestPathNo RHS (NewK a1) SrcArgs DestArgs Eqs (R a1).
+    add-concl M 0 ArgNo (Bo a1) (NewInjtor a1) DestPathNo RHS (NewK a1) SrcArgs
+    DestArgs Eqs (R a1).
 
-% type of duplicated arguments + eq, list of injectors, list of dest path number.
+% type of duplicated arguments + eq, list of injectors, list of dest path number
 % todo: add K applied to typaram
-pred add-conclss i:list term, i:list term, i:int, i:list int, i:list (list term), i:list (list int), o: list (list term).
+pred add-conclss i:list term, i:list term, i:int, i:list int,
+  i:list (list term), i:list (list int), o: list (list term).
 add-conclss [] [] _ [] [] [] [].
-add-conclss [PTy|PTys] [K|Ks] TyParamNo [ArgNo|ArgNos] [Injs|Injss] [DestNos|DestNoss] [InjTys|InjTyss] :-
-  std.map2 Injs DestNos (x\y\r\ sigma R\ add-concl TyParamNo 0 ArgNo PTy x y {{Type}} K [] [] [] R, r = R) InjTys,
+add-conclss [PTy|PTys] [K|Ks] TyParamNo [ArgNo|ArgNos] [Injs|Injss]
+  [DestNos|DestNoss] [InjTys|InjTyss] :-
+  std.map2 Injs DestNos
+    (x\y\r\ sigma R\
+      add-concl TyParamNo 0 ArgNo PTy x y {{Type}} K [] [] [] R,
+      r = R)
+      InjTys,
   add-conclss PTys Ks TyParamNo ArgNos Injss DestNoss InjTyss.
 
 %TyParamNo, constructors, type of constructors, output.
 % for every constructor,
 % collects its injectors and build the corresponding type for every injector
-pred mk-injK-types i:int, i: list constructor, i:list term, o:list (list term), o:list int, o:list (list int).
+pred mk-injK-types i:int, i: list constructor, i:list term, o:list (list term),
+  o:list int, o:list (list int).
 mk-injK-types TyParamNo KNs KTys InjTyss ArgNos DestNoss :-
   std.map KTys (x\ r\ sigma R\ count-args TyParamNo x R, r = R) ArgNos,
   std.map2 KTys ArgNos
@@ -88,26 +112,31 @@ mk-injK-types TyParamNo KNs KTys InjTyss ArgNos DestNoss :-
   add-conclss PTy Ks TyParamNo ArgNos Injss DestNoss InjTyss.
 
 % rm argno
-pred mk-pred i:int, i:int, i:int, i:term, i:term, i:term, i:list term, i:list term, i:list term, i:list term, i:list term, o:term.
+pred mk-pred i:int, i:int, i:int, i:term, i:term, i:term, i:list term,
+  i:list term, i:list term, i:list term, i:list term, o:term.
 mk-pred _ _ _ Pred _ _ [] [] [] [] [] Pred.
-mk-pred Curr I ArgNo Pred T P [A1|Args1] [_A2|Args2] [A2Ty|TyArgs2] [_Path|Paths] [_PathTy|TyPaths] R :-
+mk-pred Curr I ArgNo Pred T P [A1|Args1] [_A2|Args2] [A2Ty|TyArgs2]
+  [_Path|Paths] [_PathTy|TyPaths] R :-
   Curr < I,
   !,
   J is Curr + 1,
   coq.mk-app Pred [A1,A1,{{ lib:@trocq.idpath lp:A2Ty lp:A1}}] NewPred,
   mk-pred J I ArgNo NewPred T P Args1 Args2 TyArgs2 Paths TyPaths R.
 
-mk-pred I I ArgNo Pred T P [A1|Args1] [_A2|Args2] [_A2Ty|TyArgs2] [_Path|Paths] [_PathTy|TyPaths] R :-
+mk-pred I I ArgNo Pred T P [A1|Args1] [_A2|Args2] [_A2Ty|TyArgs2] [_Path|Paths]
+  [_PathTy|TyPaths] R :-
   !,
   J is I + 1,
   coq.mk-app Pred [A1,T,P] NewPred,
   mk-pred J I ArgNo NewPred T P Args1 Args2 TyArgs2 Paths TyPaths R.
 
-mk-pred Curr I ArgNo Pred T P [A1|Args1] [A2|Args2] [_A2Ty|TyArgs2] [Path|Paths] [_PathTy|TyPaths] R :-
+mk-pred Curr I ArgNo Pred T P [A1|Args1] [A2|Args2] [_A2Ty|TyArgs2] [Path|Paths]
+  [_PathTy|TyPaths] R :-
   coq.mk-app Pred [A1,A2,Path] NewPred,
   mk-pred Curr I ArgNo NewPred T P Args1 Args2 TyArgs2 Paths TyPaths R.
 
-pred mk-preds i:int, i:int, i:list term, i:list term, i:list term, i:list term, i:list term, i:list term, o:list term.
+pred mk-preds i:int, i:int, i:list term, i:list term, i:list term, i:list term,
+  i:list term, i:list term, o:list term.
 mk-preds _ _ [] _ _ _ _ _ [].
 mk-preds I ArgNo [P|Preds] Args1 Args2 TyArgs2 Paths TyPaths [ RP | RS ] :-
   J is I + 1,
@@ -121,7 +150,8 @@ mk-preds I ArgNo [P|Preds] Args1 Args2 TyArgs2 Paths TyPaths [ RP | RS ] :-
   (@keepunivs! => coq.elaborate-skeleton RPSkel _ RP ok),
   mk-preds J ArgNo Preds Args1 Args2 TyArgs2 Paths TyPaths RS.
 
-pred iter-convs i:list term, i:list term, i:list term, i:list term, i:list term, i:term, o:term.
+pred iter-convs i:list term, i:list term, i:list term, i:list term, i:list term,
+  i:term, o:term.
 iter-convs [] [] [] [] [] End End.
 iter-convs [Ty|Tys] [A1|Args1] [A2|Args2] [Path|Paths] [Pred|Preds] End R :-
   Conv = {{lib:@trocq.conv}},
@@ -129,8 +159,10 @@ iter-convs [Ty|Tys] [A1|Args1] [A2|Args2] [Path|Paths] [Pred|Preds] End R :-
   coq.mk-app Conv [ Ty, A1, A2, Path, Pred, P0] R.
 
 
-pred implement-injK i:int, i:int, i:int, i:int, i:term, i:term, i:list term, i:list term, i:list term, i:list term, i:list term, i:list term, o:term.
-implement-injK 0 0 ArgNo DestNo _ Pred TyParamsR Args1R Args2R TyArgs2R PathsR TyPathsR R :- !,
+pred implement-injK i:int, i:int, i:int, i:int, i:term, i:term, i:list term,
+  i:list term, i:list term, i:list term, i:list term, i:list term, o:term.
+implement-injK 0 0 ArgNo DestNo _ Pred TyParamsR Args1R Args2R TyArgs2R PathsR
+  TyPathsR R :- !,
   std.rev TyParamsR TyParams,
   std.rev Args1R Args1,
   std.rev Args2R Args2,
@@ -152,32 +184,45 @@ implement-injK 0 0 ArgNo DestNo _ Pred TyParamsR Args1R Args2R TyArgs2R PathsR T
 
 % build the stuff.
 % reverse args
-implement-injK 0 N ArgNo DestNo (prod AN1 ATy a1\ prod AN2 ATy a2\ prod EN (EqTy a1 a2) e\ (Bo a1 a2 e))
-  Pred TyParams Args1 Args2 TyArgs2 Paths TyPaths (fun AN1 ATy a1\ fun AN2 ATy a2\ fun EN (EqTy a1 a2) e\ (R a1 a2 e)) :-
+implement-injK 0 N ArgNo DestNo
+  (prod AN1 ATy a1\
+    prod AN2 ATy a2\
+     prod EN (EqTy a1 a2) e\ (Bo a1 a2 e))
+  Pred TyParams Args1 Args2 TyArgs2 Paths TyPaths
+  (fun AN1 ATy a1\
+    fun AN2 ATy a2\
+     fun EN (EqTy a1 a2) e\ (R a1 a2 e)) :-
   M is N - 1,
   @pi-decl AN1 ATy a1\
   @pi-decl AN2 ATy a2\
   @pi-decl EN (EqTy a1 a2) e\
-    implement-injK 0 M ArgNo DestNo (Bo a1 a2 e) Pred TyParams [a1|Args1] [a2|Args2] [ATy|TyArgs2] [e|Paths] [(EqTy a1 a2)|TyPaths] (R a1 a2 e).
+    implement-injK 0 M ArgNo DestNo (Bo a1 a2 e) Pred TyParams [a1|Args1]
+    [a2|Args2] [ATy|TyArgs2] [e|Paths] [(EqTy a1 a2)|TyPaths] (R a1 a2 e).
 
-implement-injK M N ArgNo DestNo (prod AN1 ATy a1\ (Bo a1)) Pred TyParams Args1 Args2 TyArgs2 Paths TyPaths (fun AN1 ATy a1\ (R a1)) :-
+implement-injK M N ArgNo DestNo (prod AN1 ATy a1\ (Bo a1)) Pred TyParams Args1
+  Args2 TyArgs2 Paths TyPaths (fun AN1 ATy a1\ (R a1)) :-
   O is M - 1,
   @pi-decl AN1 ATy a1\
-    implement-injK O N ArgNo DestNo (Bo a1) Pred [a1|TyParams] Args1 Args2 TyArgs2 Paths TyPaths (R a1).
+    implement-injK O N ArgNo DestNo (Bo a1) Pred [a1|TyParams] Args1 Args2
+    TyArgs2 Paths TyPaths (R a1).
 
 % todo rm constructor as arg
-pred implement-injKs i:int, i:constructor, i:int, i:list term, i:list int, o:list term.
+pred implement-injKs i:int, i:constructor, i:int, i:list term, i:list int,
+  o:list term.
 implement-injKs _ _ _ [] [] [].
 implement-injKs TyParamNo _ ArgNo [InjKTy|InjKTys] [DestNo | DestNos] [R| RS] :-
   coq.prod->fun InjKTy Pred,
-  implement-injK TyParamNo ArgNo ArgNo DestNo InjKTy Pred [] [] [] [] [] [] RSkel,
+  implement-injK TyParamNo ArgNo ArgNo DestNo InjKTy Pred [] [] [] [] [] []
+  RSkel,
   coq.elaborate-skeleton RSkel _ R ok,
   implement-injKs TyParamNo _ ArgNo InjKTys DestNos RS.
 
 % todo rm constructors as arg
-pred implement-injK-types i:int, i: list constructor, i:list int, i:list (list term), i:list (list int), o:list (list term).
+pred implement-injK-types i:int, i: list constructor, i:list int,
+  i:list (list term), i:list (list int), o:list (list term).
 implement-injK-types _ [] [] [] [] [].
-implement-injK-types TyParamNo [Kn|KNs] [ArgNo|ArgNos] [InjKTys|InjKTyss] [DestNos| DestNoss] [R|RS] :-
+implement-injK-types TyParamNo [Kn|KNs] [ArgNo|ArgNos] [InjKTys|InjKTyss]
+  [DestNos| DestNoss] [R|RS] :-
   implement-injKs TyParamNo Kn ArgNo InjKTys DestNos R,
   implement-injK-types TyParamNo KNs ArgNos InjKTyss DestNoss RS.
 

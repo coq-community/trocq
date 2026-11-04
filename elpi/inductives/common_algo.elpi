@@ -1,3 +1,21 @@
+% -----------------------------------------------------------------------------
+% This file generates the type to be implemented by the following plugins:
+% mR Rm mRRmK sym symK and rsymK
+% The type for those plugins are easily obtained from the type of the
+% parametricity translation of the target type, where the sort in the conclusion
+% is replaced by the conclusion of interest.
+%
+% The type we need to derive may need modifications, we have three categories.
+% If the type only requires to modify the conclusion, we call it raw
+% If for every type parameter, we need to add structure on the corresponding
+% relation, we call it refine
+% If we replace the relation by something else, we call it subst
+
+% the predicate mk-mR-type-priv uniformly traverses the type of a parametricity
+% translation, performing the modifications, either raw, refine, or subst.
+% Every plugin only needs to declare how to translate relations,
+% and how to build the type in the conclusion
+% -----------------------------------------------------------------------------
 
 namespace derive.common-algo {
 
@@ -6,19 +24,32 @@ type raw    param-surgery.
 type refine param-surgery.
 type subst  param-surgery.
 
-pred rel-mode i:int o:term. 
-% 0 - 4 could be merged for the change on the type parameters, but they have a different conclusion
-rel-mode 0 {{ forall (A B : Type) (AR : A -> B -> Type) (_ : lib:trocq.map1 AR) (Rest : Type), Rest }}. % my-map
-rel-mode 1 {{ forall (A B : Type) (AR : A -> B -> Type) (_ : lib:trocq.map2a AR) (Rest : Type), Rest }}. % mR
-rel-mode 2 {{ forall (A B : Type) (AR : A -> B -> Type) (_ : lib:trocq.map2b AR) (Rest : Type), Rest }}. % Rm
-rel-mode 3 {{ forall (A B : Type) (AR : A -> B -> Type) (_ : lib:trocq.map3 AR) (Rest : Type), Rest }}. % _
-rel-mode 4 {{ forall (A B : Type) (AR : A -> B -> Type) (_ : lib:trocq.map4 AR) (Rest : Type), Rest }}. % mRRmK
-% 5 - 7 don't require extra assumption, the only changes happen on the conclusion 
+% rel-mode rules how to traverse the type of parametricity translation
+% every number represents a different plugin.
+% the number determines two things:
+% 1. how to go over type parameters when traversing the type.
+% 2. which conclusion to put when the type has been completely traversed
+pred rel-mode i:int o:term.
+% 0 - 4 could be merged for the change on the type parameters,
+%   but they have a different conclusion
+rel-mode 0 {{ forall (A B : Type) (AR : A -> B -> Type) (_ : lib:trocq.map1 AR)
+  (Rest : Type), Rest }}. % my-map
+rel-mode 1 {{ forall (A B : Type) (AR : A -> B -> Type) (_ : lib:trocq.map2a AR)
+  (Rest : Type), Rest }}. % mR
+rel-mode 2 {{ forall (A B : Type) (AR : A -> B -> Type) (_ : lib:trocq.map2b AR)
+  (Rest : Type), Rest }}. % Rm
+rel-mode 3 {{ forall (A B : Type) (AR : A -> B -> Type) (_ : lib:trocq.map3 AR)
+  (Rest : Type), Rest }}. % _
+rel-mode 4 {{ forall (A B : Type) (AR : A -> B -> Type) (_ : lib:trocq.map4 AR)
+  (Rest : Type), Rest }}. % mRRmK
+% 5 - 7 don't require extra assumption, the only changes happen on the
+% conclusion
 rel-mode 5 {{ fun (A B : Type)=> A -> B -> Type }}. % sym
 rel-mode 6 {{ fun (A B : Type)=> A -> B -> Type }}. % symK
 rel-mode 7 {{ fun (A B : Type)=> A -> B -> Type }}. % rsymK
-% substitutes the relation of type (A -> B -> Type) for (AR A B), which is provided on the client side
-rel-mode 8 {{ forall (A B : Type) (AR : Type -> Type -> Type), (AR A B) }}. 
+% substitutes the relation of type (A -> B -> Type) for (AR A B),
+% which is provided on the client side
+rel-mode 8 {{ forall (A B : Type) (AR : Type -> Type -> Type), (AR A B) }}.
 
 pred swap i:term, i:term, i:bool, o:term, o:term.
 swap A B tt B A.
@@ -26,7 +57,7 @@ swap A B ff A B.
 
 % Reached a sort, return map L = R -> IR.
 pred mk-impl-return i:term, i:term, i:term, i:bool, i:term, o:term.
-mk-impl-return ML MR Rel SwapB ITyTy2 R :- 
+mk-impl-return ML MR Rel SwapB ITyTy2 R :-
   Map = {{ lib:@trocq.paths lp:ITyTy2 lp:ML lp:MR }},
   swap Map Rel SwapB First Second,
   R = prod `_` First _\ Second.
@@ -35,15 +66,14 @@ mk-impl-return ML MR Rel SwapB ITyTy2 R :-
 % 2 is Rm
 % 4 is mRRmK
 pred mk-return i:term, i:term, i:term, i:int, i:term, o:term.
-mk-return ML MR Rel 1 ITyTy2 R :- 
+mk-return ML MR Rel 1 ITyTy2 R :-
   mk-impl-return ML MR Rel ff ITyTy2 R.
-mk-return ML MR Rel 2 ITyTy2 R :- 
+mk-return ML MR Rel 2 ITyTy2 R :-
   mk-impl-return ML MR Rel tt ITyTy2 R.
-% mk-return ML MR Rel 
 
 pred sym-tyargs-priv i: list term, i: list term, o: list term.
 sym-tyargs-priv [] L L.
-sym-tyargs-priv [A1, A2, AR | L2] Acc R :- 
+sym-tyargs-priv [A1, A2, AR | L2] Acc R :-
   coq.mk-app {{ @sym_rel }} [A1,A2,AR] RAS,
   std.append Acc [A2, A1, RAS ] NewAcc,
   sym-tyargs-priv L2 NewAcc R.
@@ -54,7 +84,7 @@ sym-tyargs L R :-
 
 pred clean-l i: list term, o: list term.
 clean-l [] [].
-clean-l [A1, A2, AR, _ | L2] [A1,A2,AR | R] :- 
+clean-l [A1, A2, AR, _ | L2] [A1,A2,AR | R] :-
   clean-l L2 R.
 
 % The number of Type parameters in T
@@ -64,36 +94,36 @@ clean-l [A1, A2, AR, _ | L2] [A1,A2,AR | R] :-
 % MR RHS of map equality
 % Rel type of TR applied to arguments
 % Returns the type of map in R for T
-% Does it add an extra hyp on the relation?
-% X is the first inductive, Y is the second inductive. 
-pred mk-mR-type-priv i:int, i:term, i:term, i:term, i:term, i:int, i:list term, i: term, i: term, i:param-surgery, o:term.
+% Does it add an extra hypothesis on the relation?
+% X is the first inductive, Y is the second inductive.
+pred mk-mR-type-priv i:int, i:term, i:term, i:term, i:term, i:int, i:list term,
+  i: term, i: term, i:param-surgery, o:term.
 % Introducing X and Y.
 % The RHS of the equality is Y.
 mk-mR-type-priv 0 (prod IN1 ITyTy x\ prod IN2 ITyTy2 _) ML _ Rel Swap LRev _ _ _
-             (prod IN1 ITyTy x\ prod IN2 ITyTy2 y\ (R x y)) :-
+  (prod IN1 ITyTy x\ prod IN2 ITyTy2 y\ (R x y)) :-
   (Swap = 1 ; Swap = 2),
   @pi-decl IN1 ITyTy x\
   @pi-decl IN2 ITyTy2 y\
     sigma NewML NewMR NewRel L\
       std.rev LRev L,
-      coq.mk-app ML {std.append L [x]} NewML, 
+      coq.mk-app ML {std.append L [x]} NewML,
       NewMR = y,
       clean-l L CL,
       coq.mk-app Rel {std.append CL [x,y]} NewRel,
       mk-return NewML NewMR NewRel Swap ITyTy2 (R x y).
 mk-mR-type-priv 0 (prod IN1 ITyTy x\ prod IN2 ITyTy2 _) _ _ Rel 4 LRev MR RM _
-             (prod IN1 ITyTy x\ prod IN2 ITyTy2 y\ prod `IR` (RelTy x y) iR\ (R x y iR)) :-
+  (prod IN1 ITyTy x\ prod IN2 ITyTy2 y\ prod `IR` (RelTy x y) iR\
+  (R x y iR)) :-
   std.rev LRev L,
   @pi-decl IN1 ITyTy x\
   @pi-decl IN2 ITyTy2 y\
   clean-l L CL,
   coq.mk-app Rel {std.append CL [x,y]} (RelTy x y),
-  @pi-decl `IR` (RelTy x y) iR\ 
-    % sigma NewML NewMR NewRel L\
-      % whd ITyTy2 [] _ _,
-      coq.mk-app RM {std.append L [x,y,iR]} (Rm x y iR),
-      coq.mk-app MR {std.append L [x,y,(Rm x y iR)]} (MRRM x y iR),
-      (R x y iR) = {{ lib:@trocq.paths _ lp:{{MRRM x y iR}} lp:iR }}.
+  @pi-decl `IR` (RelTy x y) iR\
+    coq.mk-app RM {std.append L [x,y,iR]} (Rm x y iR),
+    coq.mk-app MR {std.append L [x,y,(Rm x y iR)]} (MRRM x y iR),
+    (R x y iR) = {{ lib:@trocq.paths _ lp:{{MRRM x y iR}} lp:iR }}.
 mk-mR-type-priv 0 (prod IN1 ITyTy x\ prod IN2 ITyTy2 _) _ _ Rel 5 LRev _ _ _
              (prod IN1 ITyTy x\ prod IN2 ITyTy2 y\ (R x y)) :-
   std.rev LRev L,
@@ -118,48 +148,72 @@ mk-mR-type-priv 0 (prod _ ITyTy x\ prod _ ITyTy2 _) _ RelSTy _ 8 _ _ _ _
   rel-mode 8 ARSkel,
   coq.subst-prod [ITyTy, ITyTy2, RelSTy] ARSkel R.
 mk-mR-type-priv 0 (prod IN1 ITyTy x\ prod IN2 ITyTy2 _) SymC _ Rel 6 LRev _ _ _
-             (prod IN1 ITyTy x\ prod IN2 ITyTy2 y\ prod `IR` (RelTy x y) iR\ (R x y iR)) :-
+             (prod IN1 ITyTy x\ prod IN2 ITyTy2 y\ prod `IR` (RelTy x y) iR\
+             (R x y iR)) :-
   std.rev LRev L,
   sym-tyargs L L2,
   @pi-decl IN1 ITyTy x\
   @pi-decl IN2 ITyTy2 y\
   coq.mk-app Rel {std.append L [x,y]} (RelTy x y),
-  @pi-decl `IR` (RelTy x y) iR\ 
+  @pi-decl `IR` (RelTy x y) iR\
     % sigma NewML NewMR NewRel L\
       coq.mk-app SymC {std.append L [x,y,iR]} (SymR x y iR),
       coq.mk-app SymC {std.append L2 [y,x,(SymR x y iR)]} (SymSym x y iR),
       (R x y iR) = {{ lib:@trocq.paths _ lp:{{SymSym x y iR}} lp:iR }}.
 % Process two type parameters + 1 relation at a time.
 % Apply these parameters to the LHS of the equation.
-% This branch deals with adding the additional hypothesis in case the input boolean is set.
-mk-mR-type-priv N (prod AN1 ATy1 a1\ prod AN2 ATy2 a2\ prod ARN (ARTy a1 a2) ar\ (Bo a1 a2 ar)) ML _ Rel Swap L MR RM refine
-             (prod AN1 ATy1 a1\ prod AN2 ATy2 a2\ prod ARN (ARTy a1 a2) ar\ prod NM (MTy a1 a2 ar) am\ (Rest a1 a2 ar am)) :-
-  M is N - 1, 
+% This branch deals with adding the additional hypothesis in case the input
+% boolean is set.
+mk-mR-type-priv N
+  (prod AN1 ATy1 a1\
+    prod AN2 ATy2 a2\
+     prod ARN (ARTy a1 a2) ar\ (Bo a1 a2 ar))
+  ML _ Rel Swap L MR RM refine
+  (prod AN1 ATy1 a1\
+    prod AN2 ATy2 a2\
+     prod ARN (ARTy a1 a2) ar\
+      prod NM (MTy a1 a2 ar) am\ (Rest a1 a2 ar am)) :-
+  M is N - 1,
   rel-mode Swap ARSkel,
-  coq.name-suffix AN1 "M" NM, 
+  coq.name-suffix AN1 "M" NM,
   pi a1 a2 ar am\
     sigma NewL\
       std.append [am,ar,a2,a1] L NewL,
-    mk-mR-type-priv M (Bo a1 a2 ar) ML {{ Type }} Rel Swap NewL MR RM refine (R a1 a2 ar am),
+    mk-mR-type-priv M (Bo a1 a2 ar) ML {{ Type }} Rel Swap NewL MR RM refine
+      (R a1 a2 ar am),
     coq.subst-prod [a1, a2, ar] ARSkel (prod _ (MTy a1 a2 ar) _),
     coq.subst-prod [a1, a2, ar, am, (R a1 a2 ar am)] ARSkel (Rest a1 a2 ar am).
-% This branch deals with the branch when the boolean is unset. 
-mk-mR-type-priv N (prod AN1 ATy1 a1\ prod AN2 ATy2 a2\ prod ARN (ARTy a1 a2) ar\ (Bo a1 a2 ar)) ML _ Rel Swap L MR RM raw
-             (prod AN1 ATy1 a1\ prod AN2 ATy2 a2\ prod ARN (ARTy a1 a2) ar\ (R a1 a2 ar)) :-
-  M is N - 1, 
+% This branch deals with the branch when the boolean is unset.
+mk-mR-type-priv N
+  (prod AN1 ATy1 a1\
+    prod AN2 ATy2 a2\
+     prod ARN (ARTy a1 a2) ar\ (Bo a1 a2 ar))
+     ML _ Rel Swap L MR RM raw
+     (prod AN1 ATy1 a1\
+       prod AN2 ATy2 a2\
+        prod ARN (ARTy a1 a2) ar\ (R a1 a2 ar)) :-
+  M is N - 1,
   pi a1 a2 ar\
     sigma NewL\
       std.append [ar,a2,a1] L NewL,
-    mk-mR-type-priv M (Bo a1 a2 ar) ML {{ Type }} Rel Swap NewL MR RM raw (R a1 a2 ar).
-mk-mR-type-priv N (prod AN1 ATy1 a1\ prod AN2 ATy2 a2\ prod ARN _ ar\ (Bo a1 a2 ar)) ML RelSTy Rel Swap L MR RM subst
-             (prod AN1 ATy1 a1\ prod AN2 ATy2 a2\ prod ARN (NewARTy a1 a2) ar\ (R a1 a2 ar)) :-
-  M is N - 1, 
+    mk-mR-type-priv M (Bo a1 a2 ar) ML {{ Type }} Rel Swap NewL MR RM raw
+      (R a1 a2 ar).
+mk-mR-type-priv N
+  (prod AN1 ATy1 a1\
+    prod AN2 ATy2 a2\
+     prod ARN _ ar\ (Bo a1 a2 ar))
+     ML RelSTy Rel Swap L MR RM subst
+     (prod AN1 ATy1 a1\
+       prod AN2 ATy2 a2\
+        prod ARN (NewARTy a1 a2) ar\ (R a1 a2 ar)) :-
+  M is N - 1,
   rel-mode Swap ARSkel,
   pi a1 a2 ar\
     sigma NewL\
       std.append [ar,a2,a1] L NewL,
       coq.subst-prod [a1, a2, RelSTy] ARSkel (NewARTy a1 a2),
-    mk-mR-type-priv M (Bo a1 a2 ar) ML RelSTy Rel Swap NewL MR RM subst (R a1 a2 ar).
+    mk-mR-type-priv M (Bo a1 a2 ar) ML RelSTy Rel Swap NewL MR RM subst
+      (R a1 a2 ar).
 
 pred mk-mR-type-mR i:int, i:term, i:term, i:term, i:term, o:term.
 mk-mR-type-mR N T ML MR Rel RTy :-

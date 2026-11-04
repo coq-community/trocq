@@ -2,6 +2,8 @@ digraph {
 
     # STYLE
     rankdir=TB; # Dependencies are from top to bottom
+    compound=true;
+    #ranksep="1.1 1.1";
 
     ## ELPI FILES
     "class" [shape=box, URL="https://github.com/rocq-community/trocq/blob/master/elpi/class.elpi"];
@@ -20,6 +22,24 @@ digraph {
     "param" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/param.elpi"];
     "tactic" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/tactic.elpi"];
     "vernac" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/vernac.elpi"];
+    "injection" [URL="https://github.com/LPCIC/coq-elpi/blob/master/apps/derive/elpi/injection.elpi"];
+    "projK" [URL="https://github.com/LPCIC/coq-elpi/blob/master/apps/derive/elpi/projK.elpi"];
+    "discriminate" [URL="https://github.com/LPCIC/coq-elpi/blob/master/apps/derive/elpi/discriminate.elpi"];
+    "param2" [URL="https://github.com/LPCIC/coq-elpi/blob/master/apps/derive/elpi/param2.elpi"];
+    "isK" [URL="https://github.com/LPCIC/coq-elpi/blob/master/apps/derive/elpi/isK.elpi"];
+    "sym" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/sym.elpi"];
+    "symK" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/symK.elpi"];
+    "rsymK" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/RsymK.elpi"];
+    "injections" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/injection_lemmas.elpi"];
+    "injK" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/injK.elpi"];
+    "mapn" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/mapn.elpi"];
+    "mRRmK" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/mRRmK.elpi"];
+    "Rm" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/Rm.elpi"];
+    "mR" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/mR.elpi"];
+    "mymap" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/mymap.elpi"];
+    "relnm" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/relnm.elpi"];
+    "common_algo" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/common_algo.elpi"];
+    "utils" [URL="https://github.com/rocq-community/trocq/blob/master/elpi/inductives/utils.elpi"];
 
     ## DEPENDENCIES
     "util" -> {"aterm" "util-rocq"};
@@ -37,8 +57,66 @@ digraph {
     "param-class-util" -> "vernac";
     "param" -> {"coercion" "tactic"};
 
+    "param2" -> {"sym" "mR" "Rm"};
+    "sym" -> {"symK"};
+    "symK" -> {"rsymK"};
+    "rsymK" -> {"relnm"};
+    "mapn" -> {"relnm"};
+    "mRRmK" -> {"mapn"};
+    "injK" -> {"mRRmK"};
+    "injections" -> {"injK" "mR"};
+    "isK" -> {"mR"};
+    "mymap" -> {"mR" "Rm"};
+    "mR" -> {"mRRmK"};
+    "Rm" -> {"mRRmK"};
+    "projK" -> {"injections"};
+    "injection" -> {"injections"};
+    #"utils" -> {"injections" "injK" "mapn" "mR" "mRRmK" "relnm" "Rm" "rsymK" "sym" "symK"};
+    #"common_algo" -> {"mapn" "mR" "mRRmK" "relnm" "Rm" "rsymK" "sym" "symK"};
+    "discriminate" -> {"mR"};
+
     ## CLUSTERS
+    subgraph cluster_assembling {
+        margin=20;
+        label="assembling components";
+        style=filled;
+        fillcolor="#c0c4fd";
+        "rsymK" "mapn" "relnm";
+    }
+
+    subgraph cluster_inductive_gen {
+        label="parametricity translation inductive types";
+        style=filled;
+        fillcolor="#c0e9fd";
+        subgraph cluster_elpi_derive {
+            label="elpi.apps.derive";
+            style=filled;
+            fillcolor="#fdeec0";
+            "param2" "isK" "projK" "injection" "discriminate";
+        }
+        subgraph cluster_symmetrization {
+            margin="30";
+            label="symmetrization";
+            style=filled;
+            fillcolor="#c0d4fd";
+            "sym" "symK"; 
+        }
+        subgraph cluster_hierarchy {
+            label="hierarchy";
+            style=filled;
+            fillcolor="#c0d4fd";
+            "injections" "injK" "mR" "Rm" "mRRmK" "mymap";
+        }
+        "utils" "common_algo";
+        "common_algo" -> {"mR"} [lhead=cluster_hierarchy];
+        "common_algo" -> {"sym"} [lhead=cluster_symmetrization];
+        #"common_algo" -> {"mapn"} [lhead=cluster_assembling];
+        "utils" -> {"mR"} [lhead=cluster_hierarchy];
+        "utils" -> {"sym"} [lhead=cluster_symmetrization];
+        #"utils" -> {"mapn"} [lhead=cluster_assembling];
+    }
     subgraph cluster_trocqdb {
+        margin=30;
         label="trocq.db header";
         style=filled;
         fillcolor="#dffdc0";
@@ -52,4 +130,7 @@ digraph {
         URL="https://github.com/rocq-community/trocq/tree/master/elpi/constraints";
         "constraints" "simple-graph" "constraint-graph" "constraints-impl";
     }
+
+    ## CLUSTER DEPENDENCIES
+    "database" -> {"mapn" "relnm"} [lhead=cluster_assembling ltail=cluster_trocqdb];
 }
