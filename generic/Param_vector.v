@@ -35,7 +35,7 @@ Definition hd : forall {A : Type} {n : nat}, t A (S n) -> A :=
     return match m with O => Unit | S _ => A end
     with
     | nil => tt
-    | cons _ a _ => a
+    | @cons _ _ a _ => a
     end.
 
 Definition tail : forall {A : Type} {n : nat}, t A (S n) -> t A n :=
@@ -44,7 +44,7 @@ Definition tail : forall {A : Type} {n : nat}, t A (S n) -> t A n :=
     return match m with O => Unit | S k => t A k end
     with
     | nil => tt
-    | cons _ _ v' => v'
+    | @cons _ _ _ v' => v'
     end.
 
 Definition const : forall {A : Type} (a : A) (n : nat), t A n :=
@@ -103,14 +103,14 @@ Definition map :
 Definition t0 {A} (v : t A O) : v = nil := match v in t _ m return
      (match m return t A m -> Type with
        O => fun v => v = nil | S k => fun _ => Unit end) v
-   with nil => 1%path | cons _ _ _ => tt end.
+   with nil => 1%path | @cons _ _ _ _ => tt end.
 
 Definition tE {A n} (v : t A (S n)) : v = cons (hd v) (tail v) :=
  (match v in t _ m return
      (match m return t A m -> Type with
        O => fun _ => Unit | S k => fun v => v = (cons (hd v) (tail v))
      end) v
-   with nil => tt | cons _ a w => 1%path end).
+   with nil => tt | @cons _ _ a w => 1%path end).
 
 Lemma path_prodE  {A B : Type} {x x' : A} {y y' : B} :
   (x, y) = (x', y') -> x = x' /\ y = y'.
@@ -123,7 +123,7 @@ Defined.
 Definition t0P A P (v : t A O) : P nil -> P v := match v in t _ m return
      (match m return t A m -> Type with
        O => fun v => P nil -> P v | S k => fun _ => Unit end) v
-   with nil => idmap | cons _ _ _ => tt end.
+   with nil => idmap | @cons _ _ _ _ => tt end.
 
 Definition tSP A n P : (forall a (v : t A n), P (cons a v)) -> forall v, P v.
 Proof. by move=> Pn v; apply (transport P (tE _)^); apply Pn. Defined.

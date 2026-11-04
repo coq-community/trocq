@@ -493,8 +493,8 @@ apply (equiv_compose' equiv_sig_relequiv^-1).
 unshelve eapply equiv_adjointify.
 - move=> [R mR msR]; exists R; exact: umap_equiv_isfun.
 - move=> [R mR msR]; exists R; exact: (umap_equiv_isfun _)^-1%equiv.
-- by move=> [R mR msR]; rewrite !equiv_invK.
-- by move=> [R mR msR]; rewrite !equiv_funK.
+- by move=> [R mR msR]; cbv zeta; rewrite !equiv_invK.
+- by move=> [R mR msR]; cbv zeta; rewrite !equiv_funK.
 Defined.
 
 Definition id_umap {A : Type} : IsUMap (@paths A) :=
