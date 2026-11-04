@@ -55,8 +55,8 @@ Definition Map2a_arrow@{i j k}
 Proof.
   exists (Map1.map@{k} _ (Map1_arrow@{i j k} PA PB)).
   move=> f f' /= e a a' aR; apply (map_in_R@{j} PB).
-  apply (transport@{j j} (fun t => _ = t a') e) => /=.
-  by apply (transport@{j j} (fun t => _ = map _ (f t))
+  apply (transport@{k j} (fun t => _ = t a') e) => /=.
+  by apply (transport@{i j} (fun t => _ = map _ (f t))
      (R_in_comap@{i} PA _ _ aR)^).
 Defined.
 

@@ -14,6 +14,10 @@ mkCoqDerivation {
     with lib.versions;
     lib.switch coq.coq-version [
       {
+        case = "9.2";
+        out = "9.1";
+      }
+      {
         case = range "8.14" "9.1";
         out = coq.coq-version;
       }

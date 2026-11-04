@@ -33,6 +33,16 @@
 	
       };
     };
+    "rocq-9.2" = {
+      rocqPackages = { rocq-core.override.version = "9.2"; 
+        rocq-elpi.override.version = "ba3cc750eda486c85d94e3eb35fb0eba77609338"; # 3.4.0. is enough for trocq-std, trocq-hott needs https://github.com/LPCIC/coq-elpi/pull/1030
+	};
+      coqPackages = common-bundles // {
+        coq.override.version = "9.2";
+        coq-elpi.override.version = "ba3cc750eda486c85d94e3eb35fb0eba77609338"; # 3.4.0. is enough for trocq-std, trocq-hott needs https://github.com/LPCIC/coq-elpi/pull/1030
+	
+      };
+    };
     ## Trocq is broken on Rocq-master
     # "rocq-master" = {
     #   rocqPackages = {
