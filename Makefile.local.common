@@ -1,0 +1,11 @@
+ELPIINSTALL=$(COQLIBINSTALL)/Trocq/Elpi
+
+ELPIFILES=$(shell find ../elpi/ -type f -name *.elpi)
+ELPITARGETS=$(patsubst ../elpi/%,$(ELPIINSTALL)/%,$(ELPIFILES))
+
+$(ELPIINSTALL)/%.elpi : ../elpi/%.elpi
+	@install -Dm 0644 $< $@
+	echo INSTALL $< $@
+
+install-extra:: $(ELPITARGETS)
+	echo Installed elpi source files to $(COQLIBINSTALL)
